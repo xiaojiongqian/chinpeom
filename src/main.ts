@@ -9,6 +9,7 @@ import es from './locales/es'
 import ja from './locales/ja'
 import fr from './locales/fr'
 import de from './locales/de'
+import './assets/theme.css'
 import './assets/main.css'
 
 const i18n = createI18n({

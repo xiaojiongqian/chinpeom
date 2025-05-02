@@ -13,22 +13,32 @@ export interface User {
 }
 
 /**
+ * 诗句信息
+ */
+export interface Sentence {
+  senid: number;
+  content: string;
+}
+
+/**
  * 诗歌信息
  */
 export interface Poem {
-  id: number;
+  id: string;
   title: string;
   author: string;
-  dynasty: string;
-  content: string[];
+  sentence: Sentence[];
 }
 
 /**
  * 诗歌翻译
  */
 export interface TranslatedPoem {
-  id: number;
-  translations: string[];
+  id: string;
+  sentence: {
+    senid: number;
+    content: string;
+  }[];
 }
 
 /**
@@ -85,7 +95,7 @@ export interface AnswerResult {
   correctLine: string;
   selectedLine: string;
   poem: Poem;
-  lineIndex: number;
+  sentenceIndex: number;
 }
 
 /**
@@ -113,5 +123,5 @@ export interface HistoryItem {
   poem: Poem;
   correct: boolean;
   score: number;
-  lineIndex: number;
+  sentenceIndex: number;
 } 

@@ -1,25 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-export interface Poem {
-  id: number;
-  title: string;
-  author: string;
-  dynasty: string;
-  content: string[];
-}
-
-export interface TranslatedPoem {
-  id: number;
-  translations: string[];
-}
+import { Poem, TranslatedPoem, Sentence, SupportedLanguage } from '../types'
 
 export const usePoemStore = defineStore('poem', () => {
   // 状态
   const currentPoem = ref<Poem | null>(null)
   const currentTranslation = ref<TranslatedPoem | null>(null)
-  const displayLanguage = ref<string>('english')
-  const currentLineIndex = ref<number>(0)
+  const displayLanguage = ref<SupportedLanguage>('english')
+  const currentSentenceIndex = ref<number>(0)
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem[]>>({})
   const selectedOptions = ref<string[]>([])
@@ -27,7 +15,7 @@ export const usePoemStore = defineStore('poem', () => {
   
   // 计算属性
   const hasImage = computed(() => {
-    return currentPoem.value !== null && currentPoem.value.id > 0
+    return currentPoem.value !== null && currentPoem.value.id !== ''
   })
   
   const imagePath = computed(() => {
@@ -39,11 +27,12 @@ export const usePoemStore = defineStore('poem', () => {
   const displayContent = computed(() => {
     if (!currentPoem.value) return []
     
-    return currentPoem.value.content.map((line, index) => {
-      if (index === currentLineIndex.value && currentTranslation.value) {
-        return currentTranslation.value.translations[index]
+    return currentPoem.value.sentence.map((sen) => {
+      if (sen.senid === currentSentenceIndex.value && currentTranslation.value) {
+        const translatedSentence = currentTranslation.value.sentence.find(ts => ts.senid === sen.senid)
+        return translatedSentence ? translatedSentence.content : sen.content
       }
-      return line
+      return sen.content
     })
   })
   
@@ -59,7 +48,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
   
   // 加载指定语言的翻译
-  async function loadTranslations(language: string) {
+  async function loadTranslations(language: SupportedLanguage) {
     if (allTranslations.value[language]) return
     
     try {
@@ -77,8 +66,8 @@ export const usePoemStore = defineStore('poem', () => {
     const randomIndex = Math.floor(Math.random() * allPoems.value.length)
     currentPoem.value = allPoems.value[randomIndex]
     
-    // 随机选择一行进行替换
-    selectRandomLine()
+    // 随机选择一句进行替换
+    selectRandomSentence()
     
     // 获取对应的翻译
     if (allTranslations.value[displayLanguage.value]) {
@@ -91,19 +80,24 @@ export const usePoemStore = defineStore('poem', () => {
     generateOptions()
   }
   
-  // 随机选择一行进行替换
-  function selectRandomLine() {
+  // 随机选择一句进行替换
+  function selectRandomSentence() {
     if (!currentPoem.value) return
     
-    currentLineIndex.value = Math.floor(Math.random() * currentPoem.value.content.length)
+    const randomIndex = Math.floor(Math.random() * currentPoem.value.sentence.length)
+    currentSentenceIndex.value = currentPoem.value.sentence[randomIndex].senid
   }
   
   // 生成备选答案
   function generateOptions() {
     if (!currentPoem.value) return
     
+    // 获取当前选中的句子
+    const currentSentence = currentPoem.value.sentence.find(s => s.senid === currentSentenceIndex.value)
+    if (!currentSentence) return
+    
     // 正确选项
-    correctOption.value = currentPoem.value.content[currentLineIndex.value]
+    correctOption.value = currentSentence.content
     
     // 生成3个干扰选项
     const distractors = generateDistractors(correctOption.value, 3)
@@ -117,7 +111,7 @@ export const usePoemStore = defineStore('poem', () => {
   function generateDistractors(correctLine: string, count: number): string[] {
     // 获取相似长度的诗句
     const similarLengthLines = allPoems.value
-      .flatMap(poem => poem.content)
+      .flatMap(poem => poem.sentence.map(s => s.content))
       .filter(line => {
         // 排除正确答案
         if (line === correctLine) return false
@@ -149,7 +143,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
   
   // 设置显示语言
-  function setDisplayLanguage(language: string) {
+  function setDisplayLanguage(language: SupportedLanguage) {
     displayLanguage.value = language
     loadTranslations(language)
     
@@ -179,7 +173,7 @@ export const usePoemStore = defineStore('poem', () => {
     currentPoem,
     currentTranslation,
     displayLanguage,
-    currentLineIndex,
+    currentSentenceIndex,
     displayContent,
     hasImage,
     imagePath,
