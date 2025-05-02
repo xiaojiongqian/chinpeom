@@ -1,0 +1,57 @@
+[
+  {
+    "id": "1",
+    "title": "Thoughts on a Silent Night",
+    "author": "Li Bai",
+    "content": [
+      "Before my bed, the moon shines bright,",
+      "I suspect it is frost on the ground.",
+      "I raise my head to gaze at the moon,",
+      "I lower my head and think of my hometown."
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Spring Dawn",
+    "author": "Meng Haoran",
+    "content": [
+      "I slept through spring unaware of dawn,",
+      "Everywhere I hear birds singing.",
+      "In the night came the sound of wind and rain,",
+      "Who knows how many flowers have fallen."
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Climbing the Stork Tower",
+    "author": "Wang Zhihuan",
+    "content": [
+      "The white sun rests on mountain tops,",
+      "The Yellow River flows into the sea.",
+      "To see a thousand miles farther,",
+      "Climb one more floor of the tower."
+    ]
+  },
+  {
+    "id": "4",
+    "title": "Longing",
+    "author": "Wang Wei",
+    "content": [
+      "Red beans grow in southern lands,",
+      "In spring how many branches appear.",
+      "I wish you would gather many,",
+      "This thing reminds of deepest longing."
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Viewing the Waterfall at Mount Lu",
+    "author": "Li Bai",
+    "content": [
+      "Sunlight strikes the incense burner, producing purple smoke,",
+      "In the distance, a waterfall hangs over the front river.",
+      "Water flows straight down three thousand feet,",
+      "As if the Milky Way were falling from the ninth heaven."
+    ]
+  }
+] 
