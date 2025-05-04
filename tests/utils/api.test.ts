@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { userApi, poemApi } from '../../src/utils/api'
 import * as helpers from '../../src/utils/helpers'
+import { loadPoemData, getPoemImageUrl } from '../../src/utils/api'
 
 // 模拟helpers模块
 vi.mock('../../src/utils/helpers', () => ({
@@ -152,5 +153,54 @@ describe('诗歌API测试', () => {
     
     expect(poem).toEqual(mockPoems[0])
     expect(poemApi.getChinesePoems).toHaveBeenCalled()
+  })
+})
+
+describe('API utilities', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  describe('loadPoemData', () => {
+    it('should load poem data for the specified language', async () => {
+      const mockPoemData = [
+        {
+          id: '123',
+          title: 'Test Poem',
+          author: 'Test Author',
+          sentence: [{ senid: 0, content: 'Test content' }]
+        }
+      ]
+
+      // Setup mock fetch response
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockPoemData
+      })
+
+      const result = await loadPoemData('chinese')
+      
+      expect(fetch).toHaveBeenCalledWith('/resource/data/poem_chinese.json')
+      expect(result).toEqual(mockPoemData)
+    })
+
+    it('should throw an error if fetch fails', async () => {
+      // Setup mock fetch response for failure
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false
+      })
+
+      await expect(loadPoemData('english')).rejects.toThrow('Failed to load english poem data')
+      expect(fetch).toHaveBeenCalledWith('/resource/data/poem_english.json')
+    })
+  })
+
+  describe('getPoemImageUrl', () => {
+    it('should return the correct image URL for a poem ID', () => {
+      const poemId = '927908c0-999f-4d3f-8192-d67d28f93576'
+      const result = getPoemImageUrl(poemId)
+      
+      expect(result).toBe(`/resource/poem_images/${poemId}.webp`)
+    })
   })
 }) 

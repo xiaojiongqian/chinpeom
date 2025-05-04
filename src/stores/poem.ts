@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { Poem, TranslatedPoem, Sentence, SupportedLanguage } from '../types'
+import { loadPoemData, getPoemImageUrl, LanguageType } from '../utils/api'
 
 export const usePoemStore = defineStore('poem', () => {
   // 状态
@@ -20,7 +21,7 @@ export const usePoemStore = defineStore('poem', () => {
   
   const imagePath = computed(() => {
     if (!hasImage.value) return ''
-    return `/resource/images/${currentPoem.value!.id}.jpg`
+    return getPoemImageUrl(currentPoem.value!.id)
   })
   
   // 获取当前显示的诗句（包含替换的外语）
@@ -40,8 +41,7 @@ export const usePoemStore = defineStore('poem', () => {
   // 加载所有诗歌数据
   async function loadAllPoems() {
     try {
-      const response = await fetch('/resource/poem_chinese.json')
-      allPoems.value = await response.json()
+      allPoems.value = await loadPoemData('chinese') as Poem[]
     } catch (error) {
       console.error('加载诗歌数据失败', error)
     }
@@ -52,8 +52,7 @@ export const usePoemStore = defineStore('poem', () => {
     if (allTranslations.value[language]) return
     
     try {
-      const response = await fetch(`/resource/poem_${language}.json`)
-      allTranslations.value[language] = await response.json()
+      allTranslations.value[language] = await loadPoemData(language as LanguageType) as TranslatedPoem[]
     } catch (error) {
       console.error(`加载${language}翻译失败`, error)
     }

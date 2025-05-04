@@ -182,4 +182,36 @@ export const poemApi = {
     const translations = await this.getTranslations(language)
     return translations.find(t => t.id === poemId) || null
   }
+}
+
+/**
+ * 支持的语言类型
+ */
+export type LanguageType = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish'
+
+/**
+ * 加载诗歌数据
+ * @param language 语言类型
+ * @returns 诗歌数据Promise
+ */
+export async function loadPoemData(language: LanguageType = 'chinese'): Promise<Poem[] | TranslatedPoem[]> {
+  try {
+    const response = await fetch(`/resource/data/poem_${language}.json`)
+    if (!response.ok) {
+      throw new Error(`Failed to load ${language} poem data`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error(`Error loading poem data: ${error}`)
+    throw error
+  }
+}
+
+/**
+ * 获取诗歌配图URL
+ * @param poemId 诗歌ID
+ * @returns 配图URL
+ */
+export function getPoemImageUrl(poemId: string): string {
+  return `/resource/poem_images/${poemId}.webp`
 } 
