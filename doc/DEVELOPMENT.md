@@ -8,11 +8,12 @@
 │   └── PRD.md              # 产品需求文档
 │
 ├── public/                 # 静态资源
-│
-├── resource/               # 诗歌资源文件
-│   ├── poem_chinese.json   # 中文诗歌数据
-│   ├── poem_english.json   # 英文翻译数据
-│   └── ...                 # 其他语言翻译数据
+│   ├── resource/           # 诗歌资源文件
+│   │   ├── data/           # 诗歌数据目录
+│   │   │   ├── poem_chinese.json   # 中文诗歌数据
+│   │   │   ├── poem_english.json   # 英文翻译数据
+│   │   │   └── ...                 # 其他语言翻译数据
+│   │   └── poem_images/    # 诗歌配图目录
 │
 ├── src/                    # 源代码
 │   ├── assets/             # 项目资源文件

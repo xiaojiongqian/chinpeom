@@ -2,11 +2,12 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Poem, TranslatedPoem, PoemOption } from '@/types/poem'
 import { 
-  loadPoemData, 
+  loadPoemData as loadPoemDataUtil, 
   getRandomPoemWithTranslation, 
   generateOptions as generatePoemOptions,
   LanguageType
 } from '@/utils/poemData'
+import { getPoemImageUrl } from '@/utils/api'
 
 export const usePoemStore = defineStore('poem', () => {
   // 状态
@@ -25,7 +26,7 @@ export const usePoemStore = defineStore('poem', () => {
   
   const imagePath = computed(() => {
     if (!hasImage.value) return ''
-    return `/resource/poem_images/${currentPoem.value!.id}.jpg`
+    return getPoemImageUrl(currentPoem.value!.id)
   })
   
   // 获取当前显示的诗句（包含替换的外语）
@@ -49,7 +50,7 @@ export const usePoemStore = defineStore('poem', () => {
     
     try {
       // 加载中文和当前显示语言的诗歌数据
-      await loadPoemData(['chinese', displayLanguage.value])
+      await loadPoemDataUtil(['chinese', displayLanguage.value])
       // 初始化后选择一首随机诗
       selectRandomPoem()
       isLoading.value = false
@@ -114,7 +115,7 @@ export const usePoemStore = defineStore('poem', () => {
     
     try {
       // 加载新语言的诗歌数据
-      await loadPoemData(['chinese', language])
+      await loadPoemDataUtil(['chinese', language])
       // 重新选择随机诗歌
       selectRandomPoem()
       isLoading.value = false

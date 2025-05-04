@@ -9,8 +9,17 @@ import es from './locales/es'
 import ja from './locales/ja'
 import fr from './locales/fr'
 import de from './locales/de'
+import { checkResourceFiles } from './utils/resourceChecker'
 import './assets/theme.css'
 import './assets/main.css'
+
+// 检查资源文件
+checkResourceFiles().then(result => {
+  if (!result.success) {
+    console.error('资源文件检查失败:', result.errors)
+    alert('应用资源文件加载失败，请检查控制台获取详细信息。')
+  }
+})
 
 const i18n = createI18n({
   legacy: false,

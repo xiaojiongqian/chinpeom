@@ -19,8 +19,8 @@
 6. 使用VueUse管理状态
 
 ## 资源描述
-1. resource中poem_images文件夹内置了唐诗约300首唐诗的配图，配图名字对应JSON中的id
-2. resource中内置了唐诗约300首，以不同语言存放在不同JSON文件中，文件名称为poem_chinese.json, poem_english.json, poem_french.json, poem_german.json, poem_japanese.json, poem_spanish.json，这些文件结构相同。
+1. public/resource/data/ 文件夹中内置了唐诗约300首，以不同语言存放在不同JSON文件中，文件名称为poem_chinese.json, poem_english.json, poem_french.json, poem_german.json, poem_japanese.json, poem_spanish.json，这些文件结构相同。
+2. public/resource/poem_images/ 文件夹中内置了唐诗约300首唐诗的配图，配图名字对应JSON中的id
 
 ## 数据结构
 1. 用户表, 包含用户名, 密码, 得分, 古代学级称号, 提示语言

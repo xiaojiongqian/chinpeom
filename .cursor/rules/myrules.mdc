@@ -3,6 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-1.若运行python程序时，使用系统 python3
-2.resource目录下的资源文件，除了tools下的python代码能修改，cursor agent不允许对其修改
-
+1.增加新文件的时候，请提示用户确认，并说明这个文件的作用。
