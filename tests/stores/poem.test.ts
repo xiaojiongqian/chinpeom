@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePoemStore } from '@/stores/poem'
 
+// 先声明模拟数据
 // 模拟数据
 const mockPoem = {
   id: '1',
@@ -25,15 +26,37 @@ const mockTranslation = {
   ]
 }
 
-// 模拟poemData模块
-vi.mock('@/utils/poemData', () => {
-  const randomPoemResult = {
-    poem: mockPoem,
-    translated: mockTranslation
+// 模拟sentenceTranslation模块
+vi.mock('@/utils/sentenceTranslation', () => ({
+  createDisplayContent: vi.fn().mockReturnValue([
+    '床前明月光',
+    'I thought it was frost on the ground',
+    '举头望明月',
+    '低头思故乡'
+  ])
+}))
+
+// 模拟randomPoemSelector模块
+vi.mock('@/utils/randomPoemSelector', () => {
+  const sentenceResult = {
+    original: '疑是地上霜',
+    translated: 'I thought it was frost on the ground',
+    sentenceIndex: 1
   }
   
+  return {
+    selectRandomPoemAndPrepareTranslation: vi.fn().mockReturnValue({
+      poem: mockPoem,
+      translation: mockTranslation,
+      sentenceResult
+    })
+  }
+})
+
+// 模拟poemData模块
+vi.mock('@/utils/poemData', () => {
   const optionsResult = [
-    { value: '床前明月光', label: '床前明月光', isCorrect: true },
+    { value: '疑是地上霜', label: '疑是地上霜', isCorrect: true },
     { value: '春眠不觉晓', label: '春眠不觉晓', isCorrect: false },
     { value: '白日依山尽', label: '白日依山尽', isCorrect: false },
     { value: '谁言寸草心', label: '谁言寸草心', isCorrect: false }
@@ -44,18 +67,14 @@ vi.mock('@/utils/poemData', () => {
       chinese: [mockPoem],
       english: [mockTranslation]
     }),
-    getRandomPoemWithTranslation: vi.fn().mockReturnValue(randomPoemResult),
-    generateOptions: vi.fn().mockReturnValue(optionsResult),
-    LanguageType: {
-      chinese: 'chinese',
-      english: 'english',
-      french: 'french',
-      german: 'german',
-      japanese: 'japanese',
-      spanish: 'spanish'
-    }
+    generateOptions: vi.fn().mockReturnValue(optionsResult)
   }
 })
+
+// 模拟API模块
+vi.mock('@/utils/api', () => ({
+  getPoemImageUrl: vi.fn().mockReturnValue('/resource/poem_images/1.jpg')
+}))
 
 describe('诗歌状态管理测试', () => {
   beforeEach(() => {
@@ -63,10 +82,6 @@ describe('诗歌状态管理测试', () => {
     setActivePinia(createPinia())
     // 重置所有模拟函数
     vi.resetAllMocks()
-    
-    // 模拟Math.random为固定值，使得测试结果可预测
-    const randomSpy = vi.spyOn(Math, 'random')
-    randomSpy.mockReturnValue(0.1) // 使用固定的随机值
   })
   
   it('初始化应该加载诗歌数据并选择一首随机诗', async () => {
@@ -90,19 +105,19 @@ describe('诗歌状态管理测试', () => {
     await store.initialize()
     
     // 重置模拟函数以验证后续调用
-    const { getRandomPoemWithTranslation } = await import('@/utils/poemData')
-    vi.mocked(getRandomPoemWithTranslation).mockClear()
+    const { selectRandomPoemAndPrepareTranslation } = await import('@/utils/randomPoemSelector')
+    vi.mocked(selectRandomPoemAndPrepareTranslation).mockClear()
     
     // 调用选择随机诗歌
     store.selectRandomPoem()
     
     // 验证方法被调用
-    expect(getRandomPoemWithTranslation).toHaveBeenCalledWith('english')
+    expect(selectRandomPoemAndPrepareTranslation).toHaveBeenCalled()
     
     // 验证状态被更新
     expect(store.currentPoem).not.toBeNull()
     expect(store.currentTranslation).not.toBeNull()
-    expect(store.currentSentenceIndex).toBeDefined()
+    expect(store.currentSentenceIndex).toBe(1)
   })
   
   it('检查正确答案应该返回true', async () => {

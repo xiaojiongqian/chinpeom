@@ -23,11 +23,16 @@ export interface Sentence {
 /**
  * 诗歌信息
  */
+export interface PoemSentence {
+  senid: number;
+  content: string;
+}
+
 export interface Poem {
   id: string;
   title: string;
   author: string;
-  sentence: Sentence[];
+  sentence: PoemSentence[];
 }
 
 /**
@@ -35,10 +40,9 @@ export interface Poem {
  */
 export interface TranslatedPoem {
   id: string;
-  sentence: {
-    senid: number;
-    content: string;
-  }[];
+  title?: string;
+  author?: string;
+  sentence: PoemSentence[];
 }
 
 /**
@@ -124,4 +128,32 @@ export interface HistoryItem {
   correct: boolean;
   score: number;
   sentenceIndex: number;
+}
+
+export type PoemLanguage = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish';
+
+export interface UserData {
+  username: string;
+  score: number;
+  level: string;
+  language: PoemLanguage;
+}
+
+export interface GameState {
+  currentPoem: Poem | null;
+  currentTranslation: TranslatedPoem | null;
+  selectedSentenceIndex: number;
+  options: string[];
+  correctAnswer: string;
+  userAnswer: string | null;
+  isCorrect: boolean | null;
+}
+
+/**
+ * 诗句选项
+ */
+export interface PoemOption {
+  value: string;
+  label: string;
+  isCorrect: boolean;
 } 

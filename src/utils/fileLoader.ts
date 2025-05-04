@@ -1,18 +1,17 @@
 /**
- * 加载JSON文件数据
- * @param filePath 文件路径
- * @returns Promise<T> 解析后的JSON数据
+ * 加载JSON文件并解析为指定类型
+ * @param path 文件路径
+ * @returns 解析后的数据
  */
-export async function loadJsonFile<T>(filePath: string): Promise<T> {
+export async function loadJsonFile<T>(path: string): Promise<T> {
   try {
-    const response = await fetch(filePath)
+    const response = await fetch(path);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(`Failed to load ${path}`);
     }
-    const data = await response.json()
-    return data as T
+    return await response.json() as T;
   } catch (error) {
-    console.error(`加载文件失败: ${filePath}`, error)
-    throw error
+    console.error(`Error loading file ${path}:`, error);
+    throw error;
   }
 } 

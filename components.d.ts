@@ -14,6 +14,8 @@ declare module 'vue' {
     BaseInput: typeof import('./src/components/common/BaseInput.vue')['default']
     ExampleButton: typeof import('./src/components/common/ExampleButton.vue')['default']
     MainLayout: typeof import('./src/components/layout/MainLayout.vue')['default']
+    PoemDisplay: typeof import('./src/components/PoemDisplay.vue')['default']
+    PoemImage: typeof import('./src/components/PoemImage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

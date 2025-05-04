@@ -1,13 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Poem, TranslatedPoem, PoemOption } from '@/types/poem'
+import type { Poem, TranslatedPoem, PoemOption } from '@/types'
 import { 
   loadPoemData as loadPoemDataUtil, 
-  getRandomPoemWithTranslation, 
   generateOptions as generatePoemOptions,
   LanguageType
 } from '@/utils/poemData'
 import { getPoemImageUrl } from '@/utils/api'
+import { 
+  selectRandomPoemAndPrepareTranslation,
+  type TranslatedSentenceResult 
+} from '@/utils/randomPoemSelector'
+import { createDisplayContent } from '@/utils/sentenceTranslation'
 
 export const usePoemStore = defineStore('poem', () => {
   // 状态
@@ -18,6 +22,8 @@ export const usePoemStore = defineStore('poem', () => {
   const options = ref<PoemOption[]>([])
   const isLoading = ref(true)
   const loadError = ref<string | null>(null)
+  const allPoems = ref<Poem[]>([])
+  const allTranslations = ref<Record<string, TranslatedPoem>>({})
   
   // 计算属性
   const hasImage = computed(() => {
@@ -31,15 +37,11 @@ export const usePoemStore = defineStore('poem', () => {
   
   // 获取当前显示的诗句（包含替换的外语）
   const displayContent = computed(() => {
-    if (!currentPoem.value) return []
-    
-    return currentPoem.value.sentence.map((sen) => {
-      if (sen.senid === currentSentenceIndex.value && currentTranslation.value) {
-        const translatedSentence = currentTranslation.value.sentence.find(ts => ts.senid === sen.senid)
-        return translatedSentence ? translatedSentence.content : sen.content
-      }
-      return sen.content
-    })
+    return createDisplayContent(
+      currentPoem.value,
+      currentTranslation.value,
+      currentSentenceIndex.value
+    )
   })
   
   // 方法
@@ -50,7 +52,17 @@ export const usePoemStore = defineStore('poem', () => {
     
     try {
       // 加载中文和当前显示语言的诗歌数据
-      await loadPoemDataUtil(['chinese', displayLanguage.value])
+      const poemData = await loadPoemDataUtil(['chinese', displayLanguage.value])
+      
+      // 保存所有诗歌数据
+      allPoems.value = [...poemData.chinese]
+      
+      // 构建翻译字典
+      allTranslations.value = {}
+      poemData[displayLanguage.value].forEach((poem: TranslatedPoem) => {
+        allTranslations.value[poem.id] = poem
+      })
+      
       // 初始化后选择一首随机诗
       selectRandomPoem()
       isLoading.value = false
@@ -64,13 +76,24 @@ export const usePoemStore = defineStore('poem', () => {
   // 随机选择一首诗
   function selectRandomPoem() {
     try {
-      // 获取随机诗歌和其翻译
-      const { poem, translated } = getRandomPoemWithTranslation(displayLanguage.value)
-      currentPoem.value = poem
-      currentTranslation.value = translated
+      if (allPoems.value.length === 0) {
+        throw new Error('诗歌数据尚未加载')
+      }
       
-      // 随机选择一句进行替换
-      selectRandomSentence()
+      // 使用新的随机诗歌选择器
+      const { 
+        poem, 
+        translation, 
+        sentenceResult 
+      } = selectRandomPoemAndPrepareTranslation(
+        allPoems.value, 
+        allTranslations.value
+      )
+      
+      // 更新状态
+      currentPoem.value = poem
+      currentTranslation.value = translation
+      currentSentenceIndex.value = sentenceResult.sentenceIndex
       
       // 生成选项
       generateOptions()
@@ -78,14 +101,6 @@ export const usePoemStore = defineStore('poem', () => {
       console.error('选择随机诗歌失败', error)
       loadError.value = '选择诗歌失败，请重试'
     }
-  }
-  
-  // 随机选择一句进行替换
-  function selectRandomSentence() {
-    if (!currentPoem.value) return
-    
-    const randomIndex = Math.floor(Math.random() * currentPoem.value.sentence.length)
-    currentSentenceIndex.value = currentPoem.value.sentence[randomIndex].senid
   }
   
   // 生成备选答案
@@ -115,7 +130,14 @@ export const usePoemStore = defineStore('poem', () => {
     
     try {
       // 加载新语言的诗歌数据
-      await loadPoemDataUtil(['chinese', language])
+      const poemData = await loadPoemDataUtil(['chinese', language])
+      
+      // 更新翻译字典
+      allTranslations.value = {}
+      poemData[language].forEach((poem: TranslatedPoem) => {
+        allTranslations.value[poem.id] = poem
+      })
+      
       // 重新选择随机诗歌
       selectRandomPoem()
       isLoading.value = false

@@ -1,19 +1,18 @@
-import { loadJsonFile } from './fileLoader'
-import { getDistractors } from './poem'
-import type { Poem, TranslatedPoem, PoemOption } from '@/types/poem'
+import type { Poem, TranslatedPoem, PoemLanguage, PoemOption } from '../types';
+import { loadJsonFile } from './fileLoader';
 
 // 支持的语言类型
-export type LanguageType = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish'
+export type LanguageType = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish';
 
 // 存储加载的诗歌数据
 interface PoemDataStore {
-  chinese: Poem[]
-  english: TranslatedPoem[]
-  french: TranslatedPoem[]
-  german: TranslatedPoem[]
-  japanese: TranslatedPoem[]
-  spanish: TranslatedPoem[]
-  [key: string]: any // 使用any来避免类型限制，但在具体函数中进行类型安全处理
+  chinese: Poem[];
+  english: TranslatedPoem[];
+  french: TranslatedPoem[];
+  german: TranslatedPoem[];
+  japanese: TranslatedPoem[];
+  spanish: TranslatedPoem[];
+  [key: string]: any; // 使用any来避免类型限制，但在具体函数中进行类型安全处理
 }
 
 // 诗歌数据存储
@@ -24,13 +23,13 @@ let poemData: PoemDataStore = {
   german: [],
   japanese: [],
   spanish: []
-}
+};
 
 // 缓存记录，记录已加载的语言
-const loadedLanguages: Set<LanguageType> = new Set()
+const loadedLanguages: Set<LanguageType> = new Set();
 
 // 是否已初始化
-let isInitialized = false
+let isInitialized = false;
 
 /**
  * 清除诗歌数据缓存
@@ -43,9 +42,9 @@ export function clearPoemCache(): void {
     german: [],
     japanese: [],
     spanish: []
-  }
-  loadedLanguages.clear()
-  isInitialized = false
+  };
+  loadedLanguages.clear();
+  isInitialized = false;
 }
 
 /**
@@ -56,30 +55,30 @@ export function clearPoemCache(): void {
 export async function loadPoemData(languages: LanguageType[] = ['chinese']): Promise<PoemDataStore> {
   try {
     // 过滤出未加载的语言
-    const languagesToLoad = languages.filter(lang => !loadedLanguages.has(lang))
+    const languagesToLoad = languages.filter(lang => !loadedLanguages.has(lang));
     
     if (languagesToLoad.length > 0) {
       const loadPromises = languagesToLoad.map(async (lang) => {
-        const filePath = `/resource/poem_${lang}.json`
+        const filePath = `/resource/data/poem_${lang}.json`;
         if (lang === 'chinese') {
-          const data = await loadJsonFile<Poem[]>(filePath)
-          poemData[lang] = data
+          const data = await loadJsonFile<Poem[]>(filePath);
+          poemData[lang] = data;
         } else {
-          const data = await loadJsonFile<TranslatedPoem[]>(filePath)
-          poemData[lang] = data
+          const data = await loadJsonFile<TranslatedPoem[]>(filePath);
+          poemData[lang] = data;
         }
         // 记录该语言已加载
-        loadedLanguages.add(lang)
-      })
+        loadedLanguages.add(lang);
+      });
 
-      await Promise.all(loadPromises)
+      await Promise.all(loadPromises);
     }
     
-    isInitialized = true
-    return poemData
+    isInitialized = true;
+    return poemData;
   } catch (error) {
-    console.error('加载诗歌数据失败:', error)
-    throw error
+    console.error('加载诗歌数据失败:', error);
+    throw error;
   }
 }
 
@@ -88,7 +87,7 @@ export async function loadPoemData(languages: LanguageType[] = ['chinese']): Pro
  */
 function ensureInitialized() {
   if (!isInitialized) {
-    throw new Error('诗歌数据未初始化，请先调用 loadPoemData')
+    throw new Error('诗歌数据未初始化，请先调用 loadPoemData');
   }
 }
 
@@ -98,8 +97,8 @@ function ensureInitialized() {
  * @returns 诗歌对象，如果未找到返回undefined
  */
 export function getPoemById(id: string): Poem | undefined {
-  ensureInitialized()
-  return poemData.chinese.find(poem => poem.id === id) as Poem | undefined
+  ensureInitialized();
+  return poemData.chinese.find(poem => poem.id === id) as Poem | undefined;
 }
 
 /**
@@ -109,8 +108,8 @@ export function getPoemById(id: string): Poem | undefined {
  * @returns 翻译的诗歌对象，如果未找到返回undefined
  */
 export function getTranslatedPoemById(id: string, language: Exclude<LanguageType, 'chinese'>): TranslatedPoem | undefined {
-  ensureInitialized()
-  return poemData[language].find(poem => poem.id === id) as TranslatedPoem | undefined
+  ensureInitialized();
+  return poemData[language].find(poem => poem.id === id) as TranslatedPoem | undefined;
 }
 
 /**
@@ -119,22 +118,22 @@ export function getTranslatedPoemById(id: string, language: Exclude<LanguageType
  * @returns 包含原诗和翻译的对象
  */
 export function getRandomPoemWithTranslation(language: Exclude<LanguageType, 'chinese'>) {
-  ensureInitialized()
+  ensureInitialized();
   
   // 获取随机索引
-  const randomIndex = Math.floor(Math.random() * poemData.chinese.length)
+  const randomIndex = Math.floor(Math.random() * poemData.chinese.length);
   
   // 获取原诗
-  const poem = poemData.chinese[randomIndex] as Poem
+  const poem = poemData.chinese[randomIndex] as Poem;
   
   // 获取翻译
-  const translated = poemData[language].find(p => p.id === poem.id) as TranslatedPoem
+  const translated = poemData[language].find(p => p.id === poem.id) as TranslatedPoem;
   
   if (!translated) {
-    throw new Error(`未找到ID为 ${poem.id} 的 ${language} 翻译`)
+    throw new Error(`未找到ID为 ${poem.id} 的 ${language} 翻译`);
   }
   
-  return { poem, translated }
+  return { poem, translated };
 }
 
 /**
@@ -142,8 +141,8 @@ export function getRandomPoemWithTranslation(language: Exclude<LanguageType, 'ch
  * @returns 所有加载的中文诗歌
  */
 export function getAllPoems(): Poem[] {
-  ensureInitialized()
-  return [...poemData.chinese] as Poem[]
+  ensureInitialized();
+  return [...poemData.chinese] as Poem[];
 }
 
 /**
@@ -151,10 +150,10 @@ export function getAllPoems(): Poem[] {
  * @returns 所有诗句内容组成的数组
  */
 export function getAllSentences(): string[] {
-  ensureInitialized()
+  ensureInitialized();
   return (poemData.chinese as Poem[]).flatMap(poem => 
     poem.sentence.map(s => s.content)
-  )
+  );
 }
 
 /**
@@ -164,26 +163,33 @@ export function getAllSentences(): string[] {
  * @returns 选项列表
  */
 export function generateOptions(correctSentence: string, count: number): PoemOption[] {
-  ensureInitialized()
+  ensureInitialized();
   
   // 获取所有可能的诗句
-  const allSentences = getAllSentences()
+  const allSentences = getAllSentences();
   
-  // 获取干扰选项
-  const distractorSentences = getDistractors(correctSentence, count - 1, allSentences)
+  // 获取干扰选项（长度相近的句子）
+  const correctLength = correctSentence.length;
+  const similarSentences = allSentences
+    .filter(sentence => 
+      sentence !== correctSentence && 
+      Math.abs(sentence.length - correctLength) <= 2
+    )
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count - 1);
   
   // 创建选项对象
   const options: PoemOption[] = [
     { value: correctSentence, label: correctSentence, isCorrect: true },
-    ...distractorSentences.map(sentence => ({
+    ...similarSentences.map(sentence => ({
       value: sentence,
       label: sentence,
       isCorrect: false
     }))
-  ]
+  ];
   
   // 随机打乱选项顺序
-  return shuffleArray(options)
+  return shuffleArray(options);
 }
 
 /**
@@ -192,10 +198,10 @@ export function generateOptions(correctSentence: string, count: number): PoemOpt
  * @returns 打乱后的数组
  */
 function shuffleArray<T>(array: T[]): T[] {
-  const result = [...array]
+  const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
-  return result
+  return result;
 } 
