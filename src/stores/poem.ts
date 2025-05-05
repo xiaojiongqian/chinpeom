@@ -29,6 +29,7 @@ export const usePoemStore = defineStore('poem', () => {
   const loadError = ref<string | null>(null)
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem>>({})
+  const currentDifficulty = ref<DifficultyLevel>('normal')
   
   // 计算属性
   const hasImage = computed(() => {
@@ -40,12 +41,13 @@ export const usePoemStore = defineStore('poem', () => {
     return getPoemImageUrl(currentPoem.value!.id)
   })
   
-  // 获取当前显示的诗句（包含替换的外语）
+  // 获取当前显示的诗句（包含替换的外语或原始中文，取决于难度）
   const displayContent = computed(() => {
     return createDisplayContent(
       currentPoem.value,
       currentTranslation.value,
-      currentSentenceIndex.value
+      currentSentenceIndex.value,
+      currentDifficulty.value
     )
   })
   
@@ -78,12 +80,15 @@ export const usePoemStore = defineStore('poem', () => {
     }
   }
   
-  // 随机选择一首诗
+  // 随机选择一首诗，可以指定难度
   function selectRandomPoem(difficulty: DifficultyLevel = 'normal') {
     try {
       if (allPoems.value.length === 0) {
         throw new Error('诗歌数据尚未加载')
       }
+      
+      // 更新当前难度
+      currentDifficulty.value = difficulty
       
       // 使用新的随机诗歌选择器
       const { 
@@ -152,12 +157,21 @@ export const usePoemStore = defineStore('poem', () => {
       })
       
       // 重新选择随机诗歌
-      selectRandomPoem()
+      selectRandomPoem(currentDifficulty.value)
       isLoading.value = false
     } catch (error) {
       console.error(`加载${language}翻译失败`, error)
       loadError.value = `加载${language}翻译失败，请重试`
       isLoading.value = false
+    }
+  }
+  
+  // 设置难度
+  function setDifficulty(difficulty: DifficultyLevel) {
+    if (currentDifficulty.value !== difficulty) {
+      currentDifficulty.value = difficulty
+      // 以新的难度重新选择诗歌
+      selectRandomPoem(difficulty)
     }
   }
   
@@ -172,10 +186,12 @@ export const usePoemStore = defineStore('poem', () => {
     options,
     isLoading,
     loadError,
+    currentDifficulty,
     initialize,
     selectRandomPoem,
     checkAnswer,
     setDisplayLanguage,
-    generateOptionsWithDifficulty
+    generateOptionsWithDifficulty,
+    setDifficulty
   }
 }) 

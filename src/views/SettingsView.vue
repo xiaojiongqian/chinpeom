@@ -5,11 +5,11 @@
         <h1 class="text-2xl font-bold">设置</h1>
       </div>
       
-      <div class="p-6">
+      <div class="p-6 space-y-8">
         <!-- 语言设置 -->
-        <div class="mb-8">
+        <div>
           <h2 class="text-xl font-bold mb-4">提示语言</h2>
-          <p class="text-gray-600 mb-4">选择您希望看到的提示语言</p>
+          <p class="text-gray-600 mb-4">选择您希望看到的提示语言（仅在简单和普通模式下有效）</p>
           
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <button 
@@ -22,6 +22,62 @@
               <span class="text-2xl mb-2">{{ language.emoji }}</span>
               <span>{{ language.label }}</span>
             </button>
+          </div>
+        </div>
+        
+        <!-- 难度设置 -->
+        <div class="border-t pt-6">
+          <h2 class="text-xl font-bold mb-4">难度设置</h2>
+          <p class="text-gray-600 mb-4">选择答题的难度级别</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div 
+              @click="setDifficulty('easy')" 
+              class="border rounded-lg p-4 cursor-pointer transition-all"
+              :class="{'bg-green-50 border-green-500': difficulty === 'easy'}"
+            >
+              <div class="flex items-center mb-2">
+                <span class="text-lg font-bold text-green-600">简单模式</span>
+                <span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">推荐新手</span>
+              </div>
+              <ul class="text-sm space-y-1 text-gray-600">
+                <li>• 显示外语提示</li>
+                <li>• 答对+1分，答错-1分</li>
+                <li>• 选项差异较大</li>
+              </ul>
+            </div>
+            
+            <div 
+              @click="setDifficulty('normal')" 
+              class="border rounded-lg p-4 cursor-pointer transition-all"
+              :class="{'bg-blue-50 border-blue-500': difficulty === 'normal'}"
+            >
+              <div class="flex items-center mb-2">
+                <span class="text-lg font-bold text-blue-600">普通模式</span>
+                <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">标准难度</span>
+              </div>
+              <ul class="text-sm space-y-1 text-gray-600">
+                <li>• 显示外语提示</li>
+                <li>• 答对+2分，答错-1分</li>
+                <li>• 选项难度适中</li>
+              </ul>
+            </div>
+            
+            <div 
+              @click="setDifficulty('hard')" 
+              class="border rounded-lg p-4 cursor-pointer transition-all"
+              :class="{'bg-red-50 border-red-500': difficulty === 'hard'}"
+            >
+              <div class="flex items-center mb-2">
+                <span class="text-lg font-bold text-red-600">困难模式</span>
+                <span class="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">高级挑战</span>
+              </div>
+              <ul class="text-sm space-y-1 text-gray-600">
+                <li>• 不显示外语提示</li>
+                <li>• 答对+3分，答错-2分</li>
+                <li>• 选项极为相似</li>
+              </ul>
+            </div>
           </div>
         </div>
         
@@ -42,6 +98,27 @@
             >
               重置得分
             </button>
+          </div>
+        </div>
+        
+        <!-- 学级说明 -->
+        <div class="border-t pt-6">
+          <h2 class="text-xl font-bold mb-4">学级称号说明</h2>
+          
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              <li><span class="font-medium">白丁：</span>0-10分</li>
+              <li><span class="font-medium">学童：</span>11-25分</li>
+              <li><span class="font-medium">秀才：</span>26-45分</li>
+              <li><span class="font-medium">廪生：</span>46-70分</li>
+              <li><span class="font-medium">贡生：</span>71-100分</li>
+              <li><span class="font-medium">举人：</span>101-135分</li>
+              <li><span class="font-medium">贡士：</span>136-175分</li>
+              <li><span class="font-medium">进士：</span>176-220分</li>
+              <li><span class="font-medium">探花：</span>221-280分</li>
+              <li><span class="font-medium">榜眼：</span>281-340分</li>
+              <li><span class="font-medium">状元：</span>341分以上</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -74,9 +151,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '../stores/user'
+import { usePoemStore } from '../stores/poem'
+import type { DifficultyLevel } from '../utils/optionsGenerator'
 
 const userStore = useUserStore()
+const poemStore = usePoemStore()
 const showConfirmDialog = ref(false)
+const difficulty = ref<DifficultyLevel>(poemStore.currentDifficulty || 'normal')
 
 // 可用的提示语言
 const languages = [
@@ -90,6 +171,13 @@ const languages = [
 // 设置语言
 const setLanguage = (language: string) => {
   userStore.setLanguage(language)
+}
+
+// 设置难度
+const setDifficulty = (newDifficulty: DifficultyLevel) => {
+  difficulty.value = newDifficulty
+  // 同步到poemStore中
+  poemStore.setDifficulty(newDifficulty)
 }
 
 // 打开确认对话框
@@ -107,4 +195,10 @@ const resetScore = () => {
   
   showConfirmDialog.value = false
 }
-</script> 
+</script>
+
+<style scoped>
+.transition-all {
+  transition: all 0.3s ease;
+}
+</style> 

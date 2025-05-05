@@ -1,4 +1,5 @@
 import type { Poem, TranslatedPoem } from '@/types'
+import { type DifficultyLevel } from './optionsGenerator'
 
 /**
  * 在翻译中查找指定索引的句子
@@ -23,19 +24,26 @@ export function findTranslatedSentence(
  * @param poem 原诗
  * @param translation 翻译
  * @param sentenceIndex 要替换的句子索引
+ * @param difficulty 难度级别
  * @returns 包含原句和替换后句子的数组
  */
 export function createDisplayContent(
   poem: Poem | null,
   translation: TranslatedPoem | null,
-  sentenceIndex: number
+  sentenceIndex: number,
+  difficulty: DifficultyLevel = 'normal'
 ): string[] {
   if (!poem) {
     return []
   }
   
   return poem.sentence.map(sen => {
-    // 如果该句是要替换的句子，尝试查找其翻译
+    // 在困难模式下不替换为外语，只显示中文原句
+    if (difficulty === 'hard') {
+      return sen.content
+    }
+    
+    // 如果该句是要替换的句子，尝试查找其翻译（适用于简单和普通模式）
     if (sen.senid === sentenceIndex) {
       const translatedContent = findTranslatedSentence(translation, sentenceIndex)
       return translatedContent || sen.content

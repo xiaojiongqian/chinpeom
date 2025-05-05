@@ -22,6 +22,13 @@
     
     <!-- 诗歌显示组件 -->
     <PoemDisplay :targetLanguage="currentLanguage" />
+    
+    <!-- 进入答题挑战按钮 -->
+    <div class="mt-8 text-center">
+      <router-link to="/quiz" class="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-md transition-colors">
+        进入答题挑战
+      </router-link>
+    </div>
   </main>
 </template>
 
