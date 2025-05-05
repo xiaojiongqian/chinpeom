@@ -7,12 +7,14 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AnswerOptions: typeof import('./src/components/AnswerOptions.vue')['default']
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
     AppHeader: typeof import('./src/components/layout/AppHeader.vue')['default']
     BaseButton: typeof import('./src/components/common/BaseButton.vue')['default']
     BaseCard: typeof import('./src/components/common/BaseCard.vue')['default']
     BaseInput: typeof import('./src/components/common/BaseInput.vue')['default']
     ExampleButton: typeof import('./src/components/common/ExampleButton.vue')['default']
+    FeedbackDialog: typeof import('./src/components/FeedbackDialog.vue')['default']
     MainLayout: typeof import('./src/components/layout/MainLayout.vue')['default']
     PoemDisplay: typeof import('./src/components/PoemDisplay.vue')['default']
     PoemImage: typeof import('./src/components/PoemImage.vue')['default']

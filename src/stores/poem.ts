@@ -4,6 +4,7 @@ import type { Poem, TranslatedPoem, PoemOption } from '@/types'
 import { 
   loadPoemData as loadPoemDataUtil, 
   generateOptions as generatePoemOptions,
+  getAllSentences,
   LanguageType
 } from '@/utils/poemData'
 import { getPoemImageUrl } from '@/utils/api'
@@ -12,6 +13,10 @@ import {
   type TranslatedSentenceResult 
 } from '@/utils/randomPoemSelector'
 import { createDisplayContent } from '@/utils/sentenceTranslation'
+import { 
+  generateOptionsWithDifficulty as generateOptionsByDifficulty, 
+  type DifficultyLevel 
+} from '@/utils/optionsGenerator'
 
 export const usePoemStore = defineStore('poem', () => {
   // 状态
@@ -74,7 +79,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
   
   // 随机选择一首诗
-  function selectRandomPoem() {
+  function selectRandomPoem(difficulty: DifficultyLevel = 'normal') {
     try {
       if (allPoems.value.length === 0) {
         throw new Error('诗歌数据尚未加载')
@@ -96,23 +101,31 @@ export const usePoemStore = defineStore('poem', () => {
       currentSentenceIndex.value = sentenceResult.sentenceIndex
       
       // 生成选项
-      generateOptions()
+      generateOptionsWithDifficulty(difficulty)
     } catch (error) {
       console.error('选择随机诗歌失败', error)
       loadError.value = '选择诗歌失败，请重试'
     }
   }
   
-  // 生成备选答案
-  function generateOptions() {
+  // 生成备选答案，支持难度调整
+  function generateOptionsWithDifficulty(difficulty: DifficultyLevel = 'normal') {
     if (!currentPoem.value) return
     
     // 获取当前选中的句子
     const currentSentence = currentPoem.value.sentence.find(s => s.senid === currentSentenceIndex.value)
     if (!currentSentence) return
     
-    // 生成选项（包含正确答案和干扰项）
-    options.value = generatePoemOptions(currentSentence.content, 4)
+    // 获取所有诗句用于生成选项
+    const allSentences = getAllSentences()
+    
+    // 使用带难度级别的选项生成器
+    options.value = generateOptionsByDifficulty(
+      currentSentence.content, 
+      4, // 生成4个选项
+      allSentences,
+      difficulty
+    )
   }
   
   // 检查答案
@@ -162,6 +175,7 @@ export const usePoemStore = defineStore('poem', () => {
     initialize,
     selectRandomPoem,
     checkAnswer,
-    setDisplayLanguage
+    setDisplayLanguage,
+    generateOptionsWithDifficulty
   }
 }) 
