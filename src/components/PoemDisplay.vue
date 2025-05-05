@@ -1,132 +1,127 @@
 <template>
-  <div class="poem-display" v-if="!isLoading && !loadError">
-    <div class="poem-header">
-      <h2 data-test="poem-title" class="poem-title">{{ currentPoem?.title }}</h2>
-      <p data-test="poem-author" class="poem-author">{{ currentPoem?.author }}</p>
+  <div class="poem-display">
+    <div v-if="isLoading" class="flex justify-center items-center py-8">
+      <div class="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
     </div>
     
-    <div class="poem-content">
-      <div class="poem-text">
-        <p
-          v-for="(line, index) in displayContent"
-          :key="index"
-          data-test="poem-line"
+    <div v-else-if="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <p>{{ error }}</p>
+      <button 
+        @click="getRandomPoem" 
+        class="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+      >
+        重试
+      </button>
+    </div>
+    
+    <div v-else-if="poemData" class="poem-content bg-amber-50 rounded-lg shadow-md p-6 max-w-xl mx-auto">
+      <!-- 诗歌标题和作者 -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">{{ poemData.title }}</h2>
+        <p class="text-gray-600 mt-1">{{ poemData.author }}</p>
+      </div>
+      
+      <!-- 诗歌图片 -->
+      <div class="mb-6">
+        <img :src="poemImageUrl" :alt="poemData.title" class="w-full h-48 object-cover rounded-md shadow" />
+      </div>
+      
+      <!-- 诗歌内容 -->
+      <div class="space-y-2 text-lg">
+        <p 
+          v-for="sentence in poemData.sentence" 
+          :key="sentence.senid"
           class="poem-line"
-          :class="{ 'translated-line': index === currentSentenceIndex }"
+          :class="{
+            'text-gray-800': sentence.senid !== translatedSentenceId,
+            'text-blue-600 font-medium': sentence.senid === translatedSentenceId
+          }"
         >
-          {{ line }}
+          <template v-if="sentence.senid === translatedSentenceId">
+            {{ translatedText }}
+          </template>
+          <template v-else>
+            {{ sentence.content }}
+          </template>
         </p>
       </div>
       
-      <div class="poem-image-wrapper">
-        <PoemImage
-          :imagePath="imagePath"
-          :poemTitle="currentPoem?.title"
-          :poemAuthor="currentPoem?.author"
-          :hasImage="hasImage"
-        />
+      <!-- 下一首按钮 -->
+      <div class="mt-6 text-center">
+        <button 
+          @click="getRandomPoem" 
+          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors"
+        >
+          下一首
+        </button>
       </div>
     </div>
-  </div>
-  
-  <div v-else-if="isLoading" class="loading-state">
-    <div data-test="loading-indicator" class="loading-indicator">
-      <div class="spinner"></div>
-      <p>正在加载诗歌...</p>
-    </div>
-  </div>
-  
-  <div v-else-if="loadError" class="error-state">
-    <p data-test="error-message" class="error-message">{{ loadError }}</p>
-    <button @click="initialize" class="retry-button">重试</button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { usePoemStore } from '@/stores/poem'
-import PoemImage from './PoemImage.vue'
+import { ref, computed, onMounted } from 'vue';
+import { Poem, LanguageCode, loadPoemData, preparePoemWithTranslation } from '../utils/poemTranslation';
 
-// 获取诗歌状态管理
-const poemStore = usePoemStore()
+interface Props {
+  targetLanguage?: LanguageCode;
+}
 
-// 从 poemStore 解构出需要的状态和方法
-const {
-  currentPoem,
-  currentSentenceIndex,
-  displayContent,
-  hasImage,
-  imagePath,
-  isLoading,
-  loadError,
-  initialize,
-  selectRandomPoem
-} = poemStore
+const props = withDefaults(defineProps<Props>(), {
+  targetLanguage: 'english'
+});
 
-// 组件挂载时初始化诗歌数据
+// 状态
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+const poemData = ref<Poem | null>(null);
+const translatedSentenceId = ref<number | null>(null);
+const translatedText = ref<string | null>(null);
+
+// 获取一首随机诗
+const getRandomPoem = async () => {
+  try {
+    isLoading.value = true;
+    error.value = null;
+    
+    // 加载中文诗歌数据
+    const poems = await loadPoemData('chinese');
+    
+    // 随机选择一首诗
+    const randomIndex = Math.floor(Math.random() * poems.length);
+    const selectedPoem = poems[randomIndex];
+    
+    // 处理翻译
+    const result = await preparePoemWithTranslation(selectedPoem, props.targetLanguage);
+    
+    // 更新状态
+    poemData.value = result.poem;
+    translatedSentenceId.value = result.translatedSentence.sentenceId;
+    translatedText.value = result.translatedSentence.translated;
+    
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '加载诗歌时出错';
+    console.error('加载诗歌时出错:', err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 诗歌图片URL
+const poemImageUrl = computed(() => {
+  if (!poemData.value) return '';
+  return `/resource/poem_images/${poemData.value.id}.webp`;
+});
+
+// 初始加载
 onMounted(() => {
-  initialize()
-})
+  getRandomPoem();
+});
 </script>
 
 <style scoped>
-.poem-display {
-  @apply max-w-4xl mx-auto p-6 rounded-lg shadow-md bg-white dark:bg-gray-800;
-}
-
-.poem-header {
-  @apply text-center mb-6;
-}
-
-.poem-title {
-  @apply text-2xl font-bold text-gray-800 dark:text-white;
-}
-
-.poem-author {
-  @apply text-lg text-gray-600 dark:text-gray-300 mt-2;
-}
-
-.poem-content {
-  @apply flex flex-col md:flex-row gap-6 items-center;
-}
-
-.poem-text {
-  @apply flex-1 w-full;
-}
-
 .poem-line {
-  @apply text-lg text-gray-700 dark:text-gray-200 my-2 text-center;
-}
-
-.translated-line {
-  @apply font-semibold text-indigo-600 dark:text-indigo-400;
-}
-
-.poem-image-wrapper {
-  @apply w-full md:w-1/3;
-}
-
-.loading-state {
-  @apply flex justify-center items-center min-h-[300px];
-}
-
-.loading-indicator {
-  @apply flex flex-col items-center;
-}
-
-.spinner {
-  @apply w-12 h-12 border-4 border-gray-300 border-t-indigo-600 rounded-full animate-spin mb-4;
-}
-
-.error-state {
-  @apply flex flex-col items-center justify-center min-h-[300px] p-6;
-}
-
-.error-message {
-  @apply text-red-500 text-lg mb-4;
-}
-
-.retry-button {
-  @apply px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors;
+  text-align: center;
+  line-height: 1.8;
 }
 </style> 
