@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath, URL } from 'url'
+import { fileURLToPath, URL } from 'node:url'
 import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import Components from 'unplugin-vue-components/vite'
@@ -10,11 +10,7 @@ export default defineConfig({
   plugins: [
     vue(),
     Components({
-      resolvers: [
-        IconsResolver({
-          prefix: 'i'
-        })
-      ]
+      resolvers: [IconsResolver({ prefix: 'i' })]
     }),
     Icons({
       compiler: 'vue3',
@@ -41,15 +37,15 @@ export default defineConfig({
     }
   },
   test: {
-    // Vitest 配置
     globals: true,
     environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'src/locales/', 'tests/']
     },
-    include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    include: ['tests/**/*.{test,spec}.ts', 'src/**/*.{test,spec}.ts'],
     deps: {
       inline: ['@vue', '@vueuse']
     }

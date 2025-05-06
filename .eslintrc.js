@@ -10,7 +10,6 @@ module.exports = {
     'eslint:recommended',
     '@vue/typescript/recommended',
     '@vue/prettier',
-    '@vue/prettier/@typescript-eslint',
   ],
   parserOptions: {
     ecmaVersion: 2021,
@@ -21,14 +20,6 @@ module.exports = {
     'vue/multi-word-component-names': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    'prettier/prettier': [
-      'error',
-      {
-        singleQuote: true,
-        semi: false,
-        trailingComma: 'none',
-      },
-    ],
   },
   overrides: [
     {
@@ -40,6 +31,7 @@ module.exports = {
       ],
       env: {
         jest: true,
+        vitest: true
       },
     },
   ],
