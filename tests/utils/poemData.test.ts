@@ -7,8 +7,8 @@ import {
   getAllPoems,
   generateOptions,
   clearPoemCache
-} from '@/utils/poemData'
-import type { Poem, TranslatedPoem, PoemOption } from '@/types/poem'
+} from '../../src/utils/poemData'
+import type { Poem, TranslatedPoem, PoemOption } from '../../src/types'
 
 // 模拟诗歌数据
 const mockChinesePoems: Poem[] = [
@@ -65,7 +65,7 @@ const loadJsonFileMock = vi.fn().mockImplementation((path: string) => {
 })
 
 // 模拟文件加载函数
-vi.mock('@/utils/fileLoader', () => ({
+vi.mock('../../src/utils/resourceLoader', () => ({
   loadJsonFile: (path: string) => loadJsonFileMock(path)
 }))
 

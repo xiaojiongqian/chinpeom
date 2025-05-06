@@ -7,7 +7,7 @@ import {
   getAllSentences,
   LanguageType
 } from '@/utils/poemData'
-import { getPoemImageUrl } from '@/utils/api'
+import { getPoemImageUrl } from '@/utils/resourceLoader'
 import { 
   selectRandomPoemAndPrepareTranslation,
   type TranslatedSentenceResult 

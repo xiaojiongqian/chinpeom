@@ -1,5 +1,13 @@
-import { User, Poem, TranslatedPoem, SupportedLanguage } from '../types'
-import { getLocalStorage, setLocalStorage } from './helpers'
+/**
+ * 模拟API服务 - 仅用于单元测试和开发环境
+ * 
+ * 警告: 此文件仅用于开发和测试目的，请勿在生产环境中使用
+ * 真实API实现请参考 src/services/api.ts
+ */
+
+import { User, Poem, TranslatedPoem, SupportedLanguage } from '../../src/types'
+import { getLocalStorage, setLocalStorage } from '../../src/utils/helpers'
+import { getChinesePoems, getTranslations } from '../../src/utils/resourceLoader'
 
 /**
  * 模拟API响应延迟
@@ -10,7 +18,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 /**
  * 模拟API用户接口
  */
-export const userApi = {
+export const mockUserApi = {
   /**
    * 用户登录
    * @param username 用户名
@@ -121,23 +129,16 @@ export const userApi = {
 }
 
 /**
- * 模拟API诗歌接口
+ * 模拟API诗歌接口 - 从静态资源获取数据
  */
-export const poemApi = {
+export const mockPoemApi = {
   /**
    * 获取所有中文诗歌
    * @returns 中文诗歌列表
    */
   async getChinesePoems(): Promise<Poem[]> {
     await delay(500)
-    
-    try {
-      const response = await fetch('/resource/poem_chinese.json')
-      return await response.json()
-    } catch (error) {
-      console.error('获取中文诗歌失败', error)
-      return []
-    }
+    return getChinesePoems()
   },
   
   /**
@@ -147,14 +148,7 @@ export const poemApi = {
    */
   async getTranslations(language: SupportedLanguage): Promise<TranslatedPoem[]> {
     await delay(500)
-    
-    try {
-      const response = await fetch(`/resource/poem_${language}.json`)
-      return await response.json()
-    } catch (error) {
-      console.error(`获取${language}翻译失败`, error)
-      return []
-    }
+    return getTranslations(language)
   },
   
   /**
@@ -182,36 +176,4 @@ export const poemApi = {
     const translations = await this.getTranslations(language)
     return translations.find(t => t.id === poemId) || null
   }
-}
-
-/**
- * 支持的语言类型
- */
-export type LanguageType = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish'
-
-/**
- * 加载诗歌数据
- * @param language 语言类型
- * @returns 诗歌数据Promise
- */
-export async function loadPoemData(language: LanguageType = 'chinese'): Promise<Poem[] | TranslatedPoem[]> {
-  try {
-    const response = await fetch(`/resource/data/poem_${language}.json`)
-    if (!response.ok) {
-      throw new Error(`Failed to load ${language} poem data`)
-    }
-    return await response.json()
-  } catch (error) {
-    console.error(`Error loading poem data: ${error}`)
-    throw error
-  }
-}
-
-/**
- * 获取诗歌配图URL
- * @param poemId 诗歌ID
- * @returns 配图URL
- */
-export function getPoemImageUrl(poemId: string): string {
-  return `/resource/poem_images/${poemId}.webp`
 } 

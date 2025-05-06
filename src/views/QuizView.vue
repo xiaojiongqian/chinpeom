@@ -49,7 +49,7 @@
       <p>{{ loadError }}</p>
       <button 
         @click="initialize" 
-        class="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+        class="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded retry-button"
       >
         重试
       </button>
@@ -226,24 +226,27 @@ function calculateScoreChange(isCorrect: boolean): number {
 // 处理选项选择
 function handleSelect(index: number) {
   selectedOptionIndex.value = index;
-  const selectedOption = options.value[index];
-  selectedAnswer.value = selectedOption.value;
-  
-  // 检查答案是否正确
-  isCorrect.value = poemStore.checkAnswer(selectedOption.value);
-  answered.value = true;
-  
-  // 更新得分
-  if (userStore.isLoggedIn) {
-    // 根据难度计算得分变化
-    scoreChange.value = calculateScoreChange(isCorrect.value);
-    userStore.updateScore(scoreChange.value);
+  // 确保索引在有效范围内
+  if (index >= 0 && index < options.value.length) {
+    const selectedOption = options.value[index];
+    selectedAnswer.value = selectedOption.value;
+    
+    // 检查答案是否正确
+    isCorrect.value = poemStore.checkAnswer(selectedOption.value);
+    answered.value = true;
+    
+    // 更新得分
+    if (userStore.isLoggedIn) {
+      // 根据难度计算得分变化
+      scoreChange.value = calculateScoreChange(isCorrect.value);
+      userStore.updateScore(scoreChange.value);
+    }
+    
+    // 显示反馈对话框
+    setTimeout(() => {
+      showFeedback.value = true;
+    }, 1000);
   }
-  
-  // 显示反馈对话框
-  setTimeout(() => {
-    showFeedback.value = true;
-  }, 1000);
 }
 
 // 关闭反馈对话框

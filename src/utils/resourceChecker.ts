@@ -1,4 +1,4 @@
-import { LanguageType } from './api'
+import { LanguageType } from './resourceLoader'
 
 /**
  * 检查资源文件是否存在
