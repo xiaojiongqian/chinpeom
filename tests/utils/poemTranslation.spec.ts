@@ -27,11 +27,14 @@ const mockEnglishPoem = {
 }
 
 // 模拟fetch API
-global.fetch = vi.fn()
+// global.fetch = vi.fn()
+const mockedFetch = vi.fn();
+global.fetch = mockedFetch; // 全局覆盖 fetch
 
 describe('诗歌翻译功能', () => {
   beforeEach(() => {
-    vi.resetAllMocks()
+    // vi.resetAllMocks()
+    mockedFetch.mockClear(); // 清除 mockedFetch 的记录
   })
 
   describe('loadPoemData', () => {
@@ -41,18 +44,21 @@ describe('诗歌翻译功能', () => {
         json: vi.fn().mockResolvedValue([mockChinesePoem]),
         ok: true
       }
-      global.fetch.mockResolvedValue(mockResponse)
+      // global.fetch.mockResolvedValue(mockResponse) // 使用 mockedFetch
+      mockedFetch.mockResolvedValue(mockResponse as any) // 使用 as any 避免类型错误
 
       const poems = await loadPoemData('chinese')
       
       // 测试环境中应该使用绝对URL
-      expect(fetch).toHaveBeenCalledWith('http://localhost/resource/data/poem_chinese.json')
+      // expect(fetch).toHaveBeenCalledWith('/resource/data/poem_chinese.json') // 使用 mockedFetch
+      expect(mockedFetch).toHaveBeenCalledWith('/resource/data/poem_chinese.json')
       expect(poems).toEqual([mockChinesePoem])
     })
 
     it('当请求失败时应该抛出错误', async () => {
       // 模拟fetch失败
-      global.fetch.mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found' })
+      // global.fetch.mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found' })
+      mockedFetch.mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found' } as any)
       
       await expect(loadPoemData('english')).rejects.toThrow('无法加载诗歌数据')
     })

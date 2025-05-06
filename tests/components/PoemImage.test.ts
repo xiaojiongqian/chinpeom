@@ -1,12 +1,17 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import PoemImage from '@/components/PoemImage.vue'
 
-// 模拟vue中的ref和computed
-vi.mock('vue', () => ({
-  ref: vi.fn((val) => ({ value: val })),
-  computed: vi.fn((fn) => fn()),
-}))
+// 正确模拟Vue模块，包含defineComponent
+vi.mock('vue', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // 确保defineComponent被正确模拟
+    defineComponent: (options) => options
+  }
+})
+
+import PoemImage from '@/components/PoemImage.vue'
 
 describe('PoemImage', () => {
   it('当hasImage为false时不应该渲染', () => {
@@ -19,7 +24,7 @@ describe('PoemImage', () => {
       }
     })
     
-    expect(wrapper.html()).toBe('')
+    expect(wrapper.find('.poem-image-component').exists()).toBe(false)
   })
   
   it('当hasImage为true时应该渲染组件', () => {

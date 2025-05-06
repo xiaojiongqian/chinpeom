@@ -41,7 +41,6 @@ describe('QuizView组件', () => {
                 ]
               },
               currentSentenceIndex: 1,
-              displayContent: ['第一句诗', 'Second line'],
               options: [
                 { value: '第二句诗', label: '第二句诗', isCorrect: true },
                 { value: '其他选项1', label: '其他选项1', isCorrect: false },
@@ -68,7 +67,7 @@ describe('QuizView组件', () => {
     
     // 检查诗句是否显示
     expect(wrapper.text()).toContain('第一句诗');
-    expect(wrapper.text()).toContain('Second line');
+    expect(wrapper.text()).toContain('第二句诗');
     
     // 检查答案选项组件是否存在
     expect(wrapper.findComponent('[data-testid="answer-options"]').exists()).toBe(true);
@@ -107,14 +106,18 @@ describe('QuizView组件', () => {
     });
     
     expect(wrapper.text()).toContain('加载失败');
-    expect(wrapper.find('button').text()).toBe('重试');
+    // expect(wrapper.find('button').text()).toBe('重试'); // 不够精确
+    // 假设重试按钮有特定的 class 或 data-testid
+    const retryButton = wrapper.find('button.retry-button'); // 尝试使用 class 选择器
+    expect(retryButton.exists()).toBe(true);
+    expect(retryButton.text()).toBe('重试');
   });
 
   it('当回答问题时应该调用相应的方法', async () => {
     const wrapper = mount(QuizView, {
       global: {
         plugins: [createTestingPinia({
-          createSpy: vi.fn,
+          createSpy: vi.fn, // Pinia 会自动 spy actions
           initialState: {
             poem: {
               currentPoem: {
@@ -127,7 +130,6 @@ describe('QuizView组件', () => {
                 ]
               },
               currentSentenceIndex: 1,
-              displayContent: ['第一句诗', 'Second line'],
               options: [
                 { value: '第二句诗', label: '第二句诗', isCorrect: true },
                 { value: '其他选项1', label: '其他选项1', isCorrect: false },
@@ -137,26 +139,34 @@ describe('QuizView组件', () => {
               hasImage: true,
               imagePath: '/resource/poem_images/test-1.webp',
               isLoading: false,
-              loadError: null,
-              checkAnswer: vi.fn().mockReturnValue(true)
+              loadError: null
             },
             user: {
               isLoggedIn: true,
               user: { username: 'testuser', score: 10 },
-              updateScore: vi.fn()
+              updateScore: vi.fn() // spy updateScore action
             }
           }
         })]
       }
     });
     
-    // 模拟选择答案
-    await wrapper.vm.handleSelect(0);
+    // Pinia testing spy setup
+    const vm = wrapper.vm as any; // 类型断言
+    const poemStore = vm.poemStore;
+    const userStore = vm.userStore;
+    // Manually setup spy if createSpy doesn't work as expected for checkAnswer
+    vi.spyOn(poemStore, 'checkAnswer').mockReturnValue(true);
+
+    // 模拟选择第一个（正确）答案
+    await vm.handleSelect(poemStore.options[0].value);
     
     // 验证checkAnswer方法被调用
-    expect(wrapper.vm.poemStore.checkAnswer).toHaveBeenCalled();
+    // expect(wrapper.vm.poemStore.checkAnswer).toHaveBeenCalled();
+    expect(poemStore.checkAnswer).toHaveBeenCalledWith(poemStore.options[0].value);
     
-    // 验证updateScore方法被调用
-    expect(wrapper.vm.userStore.updateScore).toHaveBeenCalledWith(1);
+    // 验证updateScore方法被调用，期望参数为 1 （正确答案加分）
+    // expect(wrapper.vm.userStore.updateScore).toHaveBeenCalledWith(1);
+    expect(userStore.updateScore).toHaveBeenCalledWith(1);
   });
 }); 

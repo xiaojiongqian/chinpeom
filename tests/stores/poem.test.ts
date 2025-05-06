@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { usePoemStore } from '@/stores/poem'
 
-// 先声明模拟数据
-// 模拟数据
+// 确保所有模拟在导入被测试的模块之前完成
+// 模拟数据必须在模拟函数前定义
+
+// 恢复 mock 数据到顶层
 const mockPoem = {
   id: '1',
   title: '静夜思',
@@ -26,35 +27,8 @@ const mockTranslation = {
   ]
 }
 
-// 模拟sentenceTranslation模块
-vi.mock('@/utils/sentenceTranslation', () => ({
-  createDisplayContent: vi.fn().mockReturnValue([
-    '床前明月光',
-    'I thought it was frost on the ground',
-    '举头望明月',
-    '低头思故乡'
-  ])
-}))
-
-// 模拟randomPoemSelector模块
-vi.mock('@/utils/randomPoemSelector', () => {
-  const sentenceResult = {
-    original: '疑是地上霜',
-    translated: 'I thought it was frost on the ground',
-    sentenceIndex: 1
-  }
-  
-  return {
-    selectRandomPoemAndPrepareTranslation: vi.fn().mockReturnValue({
-      poem: mockPoem,
-      translation: mockTranslation,
-      sentenceResult
-    })
-  }
-})
-
-// 模拟poemData模块
-vi.mock('@/utils/poemData', () => {
+// 使用 vi.doMock 替代 vi.mock
+await vi.doMock('@/utils/poemData', () => {
   const optionsResult = [
     { value: '疑是地上霜', label: '疑是地上霜', isCorrect: true },
     { value: '春眠不觉晓', label: '春眠不觉晓', isCorrect: false },
@@ -71,10 +45,37 @@ vi.mock('@/utils/poemData', () => {
   }
 })
 
-// 模拟API模块
-vi.mock('@/utils/api', () => ({
+await vi.doMock('@/utils/sentenceTranslation', () => ({
+  createDisplayContent: vi.fn().mockReturnValue([
+    '床前明月光',
+    'I thought it was frost on the ground',
+    '举头望明月',
+    '低头思故乡'
+  ])
+}))
+
+await vi.doMock('@/utils/randomPoemSelector', () => {
+  const sentenceResult = {
+    original: '疑是地上霜',
+    translated: 'I thought it was frost on the ground',
+    sentenceIndex: 1
+  }
+  
+  return {
+    selectRandomPoemAndPrepareTranslation: vi.fn().mockReturnValue({
+      poem: mockPoem,
+      translation: mockTranslation,
+      sentenceResult
+    })
+  }
+})
+
+await vi.doMock('@/utils/api', () => ({
   getPoemImageUrl: vi.fn().mockReturnValue('/resource/poem_images/1.jpg')
 }))
+
+// 将 import 移到 doMock 之后
+import { usePoemStore } from '@/stores/poem'
 
 describe('诗歌状态管理测试', () => {
   beforeEach(() => {

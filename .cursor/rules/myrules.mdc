@@ -3,4 +3,5 @@ description:
 globs: 
 alwaysApply: true
 ---
-1.增加新文件的时候，请提示用户确认，并说明这个文件的作用。
+1.增加新文件的时候，请提示用户确认，并说明这个文件的作用
+2.请统一使用文件 [package.json](mdc:package.json) 定义的组件版本，避免版本错乱
