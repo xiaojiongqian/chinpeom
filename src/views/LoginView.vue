@@ -1,127 +1,104 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div class="text-center">
-        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">登录</h2>
-        <p class="mt-2 text-sm text-gray-600">
-          登录后可记录学习得分
-        </p>
+  <div
+    class="min-h-screen flex flex-col items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8"
+  >
+    <div class="max-w-xs w-full bg-white rounded-lg shadow-md p-6">
+      <!-- Logo部分 -->
+      <div class="flex justify-center mb-8">
+        <img
+          src="@/assets/login_floatwater.webp"
+          alt="唐诗译境"
+          class="w-40 h-40 rounded-full object-cover shadow-lg"
+        />
       </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label for="username" class="sr-only">用户名</label>
-            <input
-              id="username"
-              v-model="form.username"
-              name="username"
-              type="text"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="用户名"
-            />
-          </div>
-          <div>
-            <label for="password" class="sr-only">密码</label>
-            <input
-              id="password"
-              v-model="form.password"
-              name="password"
-              type="password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="密码"
-            />
-          </div>
-        </div>
 
-        <div class="text-sm text-center">
-          <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500">
-            还没有账号？点击注册
-          </router-link>
-        </div>
+      <!-- 标题和描述 -->
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">唐诗译境</h1>
+        <p class="mt-3 text-base text-gray-600">配合其它语言来学习唐诗的游戏</p>
+      </div>
 
-        <div>
-          <button
-            type="submit"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            :disabled="loading"
-          >
-            <span v-if="loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <!-- 加载图标 -->
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            登录
-          </button>
-        </div>
-        
-        <div v-if="errorMessage" class="text-red-500 text-center">
-          {{ errorMessage }}
-        </div>
-      </form>
-      
-      <!-- 游客模式提示 -->
-      <div class="text-center mt-6">
-        <button @click="skipLogin" class="text-sm text-gray-500 hover:text-gray-700">
-          跳过登录，以游客身份使用
+      <!-- 特点列表 -->
+      <div class="mb-10 text-sm text-gray-700 space-y-1">
+        <p class="text-left">— 欣赏诗歌</p>
+        <p class="text-left">— 中文母语者可以用来学外语</p>
+        <p class="text-left">— 非中文母语者可用来学唐诗</p>
+      </div>
+
+      <!-- 登录按钮区域 -->
+      <div class="space-y-4">
+        <button
+          class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#95c866] hover:bg-[#85b758] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#95c866]"
+          @click="handleLogin('wechat')"
+        >
+          微信登录
         </button>
+
+        <button
+          class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#95c866] hover:bg-[#85b758] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#95c866]"
+          @click="handleLogin('google')"
+        >
+          Google 账号登录
+        </button>
+
+        <button
+          class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#95c866] hover:bg-[#85b758] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#95c866]"
+          @click="handleLogin('apple')"
+        >
+          Apple 账号登录
+        </button>
+
+        <button
+          class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#95c866] hover:bg-[#85b758] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#95c866]"
+          @click="handleLogin('x')"
+        >
+          X 账号登录
+        </button>
+      </div>
+
+      <div v-if="errorMessage" class="text-red-500 text-center mt-6 text-sm">
+        {{ errorMessage }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
+  import { ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  // import { useUserStore } from '@/stores/user' // 暂时注释掉，因为我们直接跳转
 
-const router = useRouter()
-const userStore = useUserStore()
+  const router = useRouter()
+  // const userStore = useUserStore() // 暂时注释掉
 
-// 表单数据
-const form = reactive({
-  username: '',
-  password: ''
-})
+  // 状态
+  const loading = ref(false)
+  const errorMessage = ref('')
 
-// 状态
-const loading = ref(false)
-const errorMessage = ref('')
+  // 处理登录
+  const handleLogin = async (_provider: string) => {
+    try {
+      loading.value = true
+      errorMessage.value = ''
 
-// 处理登录
-const handleLogin = async () => {
-  try {
-    loading.value = true
-    errorMessage.value = ''
-    
-    // 在这里添加实际的API调用
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 登录成功，更新用户状态
-    const userData = {
-      id: 1,
-      username: form.username,
-      score: 0,
-      language: 'english'
+      // 模拟登录过程
+      await new Promise(resolve => setTimeout(resolve, 100)) // 缩短延迟
+
+      // // 登录成功，更新用户状态 (暂时注释掉用户状态更新逻辑)
+      // const userData = {
+      //   id: Date.now(), // 使用时间戳作为临时ID
+      //   username: `user_${provider}`,
+      //   score: 0,
+      //   language: 'english'
+      // }
+      // userStore.login(userData, 'mock-token')
+
+      // 直接跳转到 QuizView 页面
+      router.push('/quizview') // 修改跳转路径
+    } catch (error: any) {
+      errorMessage.value = error.message || '登录跳转失败，请重试'
+    } finally {
+      loading.value = false
     }
-    
-    userStore.login(userData, 'mock-token')
-    
-    // 跳转到首页
-    router.push('/')
-  } catch (error: any) {
-    errorMessage.value = error.message || '登录失败，请重试'
-  } finally {
-    loading.value = false
   }
-}
-
-// 跳过登录
-const skipLogin = () => {
-  router.push('/')
-}
-</script> 
+</script>

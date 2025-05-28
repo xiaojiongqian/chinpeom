@@ -6,154 +6,154 @@
  * 用户信息
  */
 export interface User {
-  id: number;
-  username: string;
-  score: number;
-  language: string;
+  id: number
+  username: string
+  score: number
+  language: string
 }
 
 /**
  * 诗句信息
  */
 export interface Sentence {
-  senid: number;
-  content: string;
+  senid: number
+  content: string
 }
 
 /**
  * 诗歌信息
  */
 export interface PoemSentence {
-  senid: number;
-  content: string;
+  senid: number
+  content: string
 }
 
 export interface Poem {
-  id: string;
-  title: string;
-  author: string;
-  sentence: PoemSentence[];
+  id: string
+  title: string
+  author: string
+  sentence: PoemSentence[]
 }
 
 /**
  * 诗歌翻译
  */
 export interface TranslatedPoem {
-  id: string;
-  title?: string;
-  author?: string;
-  sentence: PoemSentence[];
+  id: string
+  title?: string
+  author?: string
+  sentence: PoemSentence[]
 }
 
 /**
  * 支持的语言类型
  */
-export type SupportedLanguage = 'english' | 'french' | 'spanish' | 'german' | 'japanese';
+export type SupportedLanguage = 'english' | 'french' | 'spanish' | 'german' | 'japanese'
 
 /**
  * 古代学级称号
  */
-export type AcademicRank = 
-  | '白丁' 
-  | '学童' 
-  | '秀才' 
-  | '廪生' 
-  | '贡生' 
-  | '举人' 
-  | '贡士' 
-  | '进士' 
-  | '探花' 
-  | '榜眼' 
-  | '状元';
+export type AcademicRank =
+  | '白丁'
+  | '学童'
+  | '秀才'
+  | '廪生'
+  | '贡生'
+  | '举人'
+  | '贡士'
+  | '进士'
+  | '探花'
+  | '榜眼'
+  | '状元'
 
 /**
  * 得分与学级称号映射
  */
-export const RANK_SCORE_MAPPING: Record<AcademicRank, {min: number, max: number}> = {
-  '白丁': {min: 0, max: 10},
-  '学童': {min: 11, max: 25},
-  '秀才': {min: 26, max: 45},
-  '廪生': {min: 46, max: 70},
-  '贡生': {min: 71, max: 100},
-  '举人': {min: 101, max: 135},
-  '贡士': {min: 136, max: 175},
-  '进士': {min: 176, max: 220},
-  '探花': {min: 221, max: 280},
-  '榜眼': {min: 281, max: 340},
-  '状元': {min: 341, max: Infinity}
-};
+export const RANK_SCORE_MAPPING: Record<AcademicRank, { min: number; max: number }> = {
+  白丁: { min: 0, max: 10 },
+  学童: { min: 11, max: 25 },
+  秀才: { min: 26, max: 45 },
+  廪生: { min: 46, max: 70 },
+  贡生: { min: 71, max: 100 },
+  举人: { min: 101, max: 135 },
+  贡士: { min: 136, max: 175 },
+  进士: { min: 176, max: 220 },
+  探花: { min: 221, max: 280 },
+  榜眼: { min: 281, max: 340 },
+  状元: { min: 341, max: Infinity }
+}
 
 /**
  * 语言设置选项
  */
 export interface LanguageOption {
-  value: SupportedLanguage;
-  label: string;
+  value: SupportedLanguage
+  label: string
 }
 
 /**
  * 答题结果
  */
 export interface AnswerResult {
-  correct: boolean;
-  correctLine: string;
-  selectedLine: string;
-  poem: Poem;
-  sentenceIndex: number;
+  correct: boolean
+  correctLine: string
+  selectedLine: string
+  poem: Poem
+  sentenceIndex: number
 }
 
 /**
  * 路由元数据
  */
 export interface RouteMetadata {
-  requiresAuth?: boolean;
-  title?: string;
+  requiresAuth?: boolean
+  title?: string
 }
 
 /**
  * 应用设置
  */
 export interface AppSettings {
-  language: SupportedLanguage;
-  theme?: 'light' | 'dark';
-  soundEffects?: boolean;
+  language: SupportedLanguage
+  theme?: 'light' | 'dark'
+  soundEffects?: boolean
 }
 
 /**
  * 历史记录项
  */
 export interface HistoryItem {
-  date: string;
-  poem: Poem;
-  correct: boolean;
-  score: number;
-  sentenceIndex: number;
+  date: string
+  poem: Poem
+  correct: boolean
+  score: number
+  sentenceIndex: number
 }
 
-export type PoemLanguage = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish';
+export type PoemLanguage = 'chinese' | 'english' | 'french' | 'german' | 'japanese' | 'spanish'
 
 export interface UserData {
-  username: string;
-  score: number;
-  level: string;
-  language: PoemLanguage;
+  username: string
+  score: number
+  level: string
+  language: PoemLanguage
 }
 
 export interface GameState {
-  currentPoem: Poem | null;
-  currentTranslation: TranslatedPoem | null;
-  selectedSentenceIndex: number;
-  options: string[];
-  correctAnswer: string;
-  userAnswer: string | null;
-  isCorrect: boolean | null;
+  currentPoem: Poem | null
+  currentTranslation: TranslatedPoem | null
+  selectedSentenceIndex: number
+  options: string[]
+  correctAnswer: string
+  userAnswer: string | null
+  isCorrect: boolean | null
 }
 
 /**
  * 诗句选项
  */
 export interface PoemOption {
-  value: string;
-  label: string;
-  isCorrect: boolean;
-} 
+  value: string
+  label: string
+  isCorrect: boolean
+}

@@ -10,12 +10,12 @@ export function getRandomPoem(poems: Poem[]): Poem {
   if (poems.length === 0) {
     throw new Error('没有可用的诗歌数据')
   }
-  
+
   // 如果只有一首诗，直接返回
   if (poems.length === 1) {
     return poems[0]
   }
-  
+
   // 随机选择一首诗
   const randomIndex = Math.floor(Math.random() * poems.length)
   return poems[randomIndex]
@@ -31,7 +31,7 @@ export function chooseRandomSentence(poem: Poem): number {
   if (!poem.sentence || poem.sentence.length === 0) {
     throw new Error('诗歌没有句子')
   }
-  
+
   // 随机选择一句
   const randomIndex = Math.floor(Math.random() * poem.sentence.length)
   return poem.sentence[randomIndex].senid
@@ -41,9 +41,9 @@ export function chooseRandomSentence(poem: Poem): number {
  * 翻译句子结果接口
  */
 export interface TranslatedSentenceResult {
-  original: string;  // 原句
-  translated: string;  // 翻译句
-  sentenceIndex: number;  // 句子索引
+  original: string // 原句
+  translated: string // 翻译句
+  sentenceIndex: number // 句子索引
 }
 
 /**
@@ -64,13 +64,13 @@ export function prepareTranslatedSentence(
   if (!originalSentence) {
     throw new Error('无效的句子索引')
   }
-  
+
   // 查找翻译的句子
   const translatedSentence = translation.sentence.find(s => s.senid === sentenceIndex)
   if (!translatedSentence) {
     throw new Error('找不到该句的翻译')
   }
-  
+
   return {
     original: originalSentence.content,
     translated: translatedSentence.content,
@@ -88,28 +88,28 @@ export function selectRandomPoemAndPrepareTranslation(
   poems: Poem[],
   translations: Record<string, TranslatedPoem>
 ): {
-  poem: Poem;
-  translation: TranslatedPoem;
-  sentenceResult: TranslatedSentenceResult;
+  poem: Poem
+  translation: TranslatedPoem
+  sentenceResult: TranslatedSentenceResult
 } {
   // 随机选择一首诗
   const poem = getRandomPoem(poems)
-  
+
   // 获取该诗的翻译
   const translation = translations[poem.id]
   if (!translation) {
     throw new Error(`找不到诗歌 ${poem.id} 的翻译`)
   }
-  
+
   // 随机选择一句
   const sentenceIndex = chooseRandomSentence(poem)
-  
+
   // 准备翻译结果
   const sentenceResult = prepareTranslatedSentence(poem, translation, sentenceIndex)
-  
+
   return {
     poem,
     translation,
     sentenceResult
   }
-} 
+}

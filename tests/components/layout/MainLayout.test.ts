@@ -40,12 +40,12 @@ describe('MainLayout', () => {
         default: '<div class="test-content">内容区域</div>'
       }
     })
-    
+
     // 检查结构
     expect(wrapper.find('.mocked-header').exists()).toBe(true)
     expect(wrapper.find('main').exists()).toBe(true)
     expect(wrapper.find('.mocked-footer').exists()).toBe(true)
-    
+
     // 检查内容
     expect(wrapper.find('.test-content').exists()).toBe(true)
     expect(wrapper.find('.test-content').text()).toBe('内容区域')
@@ -55,7 +55,7 @@ describe('MainLayout', () => {
     const wrapper = mount(MainLayout, {
       props: defaultProps
     })
-    
+
     // 检查传递给AppHeader的props
     const headerProps = wrapper.findComponent({ name: 'AppHeader' }).props()
     expect(headerProps.title).toBe('诗歌学习')
@@ -63,7 +63,7 @@ describe('MainLayout', () => {
       { name: '首页', path: '/', active: true },
       { name: '学习', path: '/learn', active: false }
     ])
-    
+
     // 检查传递给AppFooter的props
     const footerProps = wrapper.findComponent({ name: 'AppFooter' }).props()
     expect(footerProps.copyright).toBe('© 2023 唐诗译境')
@@ -77,10 +77,10 @@ describe('MainLayout', () => {
     const wrapper = mount(MainLayout, {
       props: defaultProps
     })
-    
+
     const main = wrapper.find('main')
     expect(main.classes()).toContain('container')
     expect(main.classes()).toContain('mx-auto')
     expect(main.classes()).toContain('flex-grow')
   })
-}) 
+})

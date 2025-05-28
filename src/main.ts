@@ -26,11 +26,11 @@ const i18n = createI18n({
   locale: 'zh-CN',
   messages: {
     'zh-CN': zhCN,
-    'en': en,
-    'es': es,
-    'ja': ja,
-    'fr': fr,
-    'de': de
+    en: en,
+    es: es,
+    ja: ja,
+    fr: fr,
+    de: de
   }
 })
 
@@ -40,4 +40,4 @@ app.use(createPinia())
 app.use(router)
 app.use(i18n)
 
-app.mount('#app') 
+app.mount('#app')

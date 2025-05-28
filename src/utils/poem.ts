@@ -20,20 +20,20 @@ export function getRandomPoem(poems: Poem[]): Poem {
 export function getDistractors(correctLine: string, count: number, allLines: string[]): string[] {
   // 筛选所有可能的诗句行，排除正确答案
   const possibleLines = allLines.filter(line => line !== correctLine)
-  
+
   // 如果可选行数不足，则返回所有可用行
   if (possibleLines.length <= count) {
     return [...possibleLines]
   }
-  
+
   // 获取正确答案的长度
   const correctLength = correctLine.length
-  
+
   // 按照长度差异排序
   const sortedLines = [...possibleLines].sort((a, b) => {
     return Math.abs(a.length - correctLength) - Math.abs(b.length - correctLength)
   })
-  
+
   // 返回最相近的几行
   return sortedLines.slice(0, count)
-} 
+}

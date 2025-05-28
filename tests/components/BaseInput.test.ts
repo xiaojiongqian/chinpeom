@@ -89,9 +89,9 @@ describe('BaseInput', () => {
         modelValue: ''
       }
     })
-    
+
     await wrapper.find('input').setValue('新值')
-    
+
     expect(wrapper.emitted('update:modelValue')).toBeTruthy()
     expect(wrapper.emitted('update:modelValue')![0]).toEqual(['新值'])
   })
@@ -121,4 +121,4 @@ describe('BaseInput', () => {
     expect(wrapper.find('.test-suffix').exists()).toBe(true)
     expect(wrapper.find('.test-suffix').text()).toBe('后缀')
   })
-}) 
+})

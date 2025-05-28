@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getRandomPoem, chooseRandomSentence, prepareTranslatedSentence } from '@/utils/randomPoemSelector'
+import {
+  getRandomPoem,
+  chooseRandomSentence,
+  prepareTranslatedSentence
+} from '@/utils/randomPoemSelector'
 import type { Poem, TranslatedPoem } from '@/types'
 
 // 模拟诗歌数据
@@ -108,7 +112,7 @@ describe('随机诗歌选择算法', () => {
       const sentenceIndex = 1
 
       const result = prepareTranslatedSentence(poem, translation, sentenceIndex)
-      
+
       expect(result.original).toBe('诗歌一第二句')
       expect(result.translated).toBe('Second line of poem one')
     })
@@ -118,8 +122,9 @@ describe('随机诗歌选择算法', () => {
       const translation = mockTranslations['poem-1']
       const invalidIndex = 5
 
-      expect(() => prepareTranslatedSentence(poem, translation, invalidIndex))
-        .toThrowError('无效的句子索引')
+      expect(() => prepareTranslatedSentence(poem, translation, invalidIndex)).toThrowError(
+        '无效的句子索引'
+      )
     })
 
     it('当翻译中找不到对应句子时应抛出错误', () => {
@@ -134,8 +139,9 @@ describe('随机诗歌选择算法', () => {
       }
       const sentenceIndex = 1
 
-      expect(() => prepareTranslatedSentence(poem, incompleteTranslation, sentenceIndex))
-        .toThrowError('找不到该句的翻译')
+      expect(() =>
+        prepareTranslatedSentence(poem, incompleteTranslation, sentenceIndex)
+      ).toThrowError('找不到该句的翻译')
     })
   })
-}) 
+})

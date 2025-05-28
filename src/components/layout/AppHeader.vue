@@ -7,8 +7,8 @@
       <nav>
         <ul class="flex space-x-4">
           <li v-for="item in navItems" :key="item.path">
-            <a 
-              :href="item.path" 
+            <a
+              :href="item.path"
               class="hover:text-accent transition-colors"
               :class="{ 'text-accent': item.active }"
             >
@@ -22,17 +22,17 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string
-  navItems: Array<{
-    name: string
-    path: string
-    active: boolean
-  }>
-}>()
+  defineProps<{
+    title: string
+    navItems: Array<{
+      name: string
+      path: string
+      active: boolean
+    }>
+  }>()
 
-// Add default export
-defineOptions({
-  name: 'AppHeader'
-})
-</script> 
+  // Add default export
+  defineOptions({
+    name: 'AppHeader'
+  })
+</script>

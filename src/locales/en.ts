@@ -50,7 +50,8 @@ export default {
     rank: 'Scholar Rank',
     resetScore: 'Reset Score',
     confirmReset: 'Confirm Reset',
-    resetConfirmText: 'After resetting, your score will be zero and your rank will restart. Are you sure you want to reset?'
+    resetConfirmText:
+      'After resetting, your score will be zero and your rank will restart. Are you sure you want to reset?'
   },
   ranks: {
     baiDing: 'Bai Ding',
@@ -72,4 +73,4 @@ export default {
     german: 'German',
     japanese: 'Japanese'
   }
-} 
+}

@@ -6,7 +6,12 @@
           <p>{{ copyright }}</p>
         </div>
         <div class="flex space-x-4">
-          <a v-for="link in links" :key="link.name" :href="link.url" class="hover:text-accent transition-colors">
+          <a
+            v-for="link in links"
+            :key="link.name"
+            :href="link.url"
+            class="hover:text-accent transition-colors"
+          >
             {{ link.name }}
           </a>
         </div>
@@ -16,16 +21,16 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  copyright: string
-  links: Array<{
-    name: string
-    url: string
-  }>
-}>()
+  defineProps<{
+    copyright: string
+    links: Array<{
+      name: string
+      url: string
+    }>
+  }>()
 
-// Add default export
-defineOptions({
-  name: 'AppFooter'
-})
-</script> 
+  // Add default export
+  defineOptions({
+    name: 'AppFooter'
+  })
+</script>

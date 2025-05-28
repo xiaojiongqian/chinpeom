@@ -1,21 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Poem, TranslatedPoem, PoemOption } from '@/types'
-import { 
-  loadPoemData as loadPoemDataUtil, 
-  generateOptions as generatePoemOptions,
-  getAllSentences,
-  LanguageType
-} from '@/utils/poemData'
+import { loadPoemData as loadPoemDataUtil, getAllSentences, LanguageType } from '@/utils/poemData'
 import { getPoemImageUrl } from '@/utils/resourceLoader'
-import { 
-  selectRandomPoemAndPrepareTranslation,
-  type TranslatedSentenceResult 
-} from '@/utils/randomPoemSelector'
+import { selectRandomPoemAndPrepareTranslation } from '@/utils/randomPoemSelector'
 import { createDisplayContent } from '@/utils/sentenceTranslation'
-import { 
-  generateOptionsWithDifficulty as generateOptionsByDifficulty, 
-  type DifficultyLevel 
+import {
+  generateOptionsWithDifficulty as generateOptionsByDifficulty,
+  type DifficultyLevel
 } from '@/utils/optionsGenerator'
 
 export const usePoemStore = defineStore('poem', () => {
@@ -30,17 +22,17 @@ export const usePoemStore = defineStore('poem', () => {
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem>>({})
   const currentDifficulty = ref<DifficultyLevel>('normal')
-  
+
   // 计算属性
   const hasImage = computed(() => {
     return currentPoem.value !== null && currentPoem.value.id !== ''
   })
-  
+
   const imagePath = computed(() => {
     if (!hasImage.value) return ''
     return getPoemImageUrl(currentPoem.value!.id)
   })
-  
+
   // 获取当前显示的诗句（包含替换的外语或原始中文，取决于难度）
   const displayContent = computed(() => {
     return createDisplayContent(
@@ -50,61 +42,65 @@ export const usePoemStore = defineStore('poem', () => {
       currentDifficulty.value
     )
   })
-  
+
   // 方法
   // 初始化诗歌数据
   async function initialize() {
+    console.log('[PoemStore] Initialize: START, current isLoading state:', isLoading.value) // Store日志1
     isLoading.value = true
     loadError.value = null
-    
+
     try {
-      // 加载中文和当前显示语言的诗歌数据
+      console.log('[PoemStore] Calling loadPoemDataUtil...') // Store日志2
       const poemData = await loadPoemDataUtil(['chinese', displayLanguage.value])
-      
+      console.log('[PoemStore] loadPoemDataUtil returned. poemData exists:', !!poemData) // Store日志3
+
       // 保存所有诗歌数据
       allPoems.value = [...poemData.chinese]
-      
+
       // 构建翻译字典
       allTranslations.value = {}
       poemData[displayLanguage.value].forEach((poem: TranslatedPoem) => {
         allTranslations.value[poem.id] = poem
       })
-      
-      // 初始化后选择一首随机诗
+
+      console.log('[PoemStore] Calling selectRandomPoem...') // Store日志4
       selectRandomPoem()
+      console.log('[PoemStore] selectRandomPoem finished.') // Store日志5
       isLoading.value = false
+      console.log('[PoemStore] Initialize: SUCCESS, isLoading set to:', isLoading.value) // Store日志6
     } catch (error) {
-      console.error('初始化诗歌数据失败', error)
+      console.error('[PoemStore] Initialize: FAILED with error:', error) // Store日志7
       loadError.value = '加载诗歌数据失败，请刷新页面重试'
       isLoading.value = false
+      console.log(
+        '[PoemStore] Initialize: FAILED (error caught), isLoading set to:',
+        isLoading.value
+      ) // Store日志8
     }
   }
-  
+
   // 随机选择一首诗，可以指定难度
   function selectRandomPoem(difficulty: DifficultyLevel = 'normal') {
     try {
       if (allPoems.value.length === 0) {
         throw new Error('诗歌数据尚未加载')
       }
-      
+
       // 更新当前难度
       currentDifficulty.value = difficulty
-      
+
       // 使用新的随机诗歌选择器
-      const { 
-        poem, 
-        translation, 
-        sentenceResult 
-      } = selectRandomPoemAndPrepareTranslation(
-        allPoems.value, 
+      const { poem, translation, sentenceResult } = selectRandomPoemAndPrepareTranslation(
+        allPoems.value,
         allTranslations.value
       )
-      
+
       // 更新状态
       currentPoem.value = poem
       currentTranslation.value = translation
       currentSentenceIndex.value = sentenceResult.sentenceIndex
-      
+
       // 生成选项
       generateOptionsWithDifficulty(difficulty)
     } catch (error) {
@@ -112,50 +108,52 @@ export const usePoemStore = defineStore('poem', () => {
       loadError.value = '选择诗歌失败，请重试'
     }
   }
-  
+
   // 生成备选答案，支持难度调整
   function generateOptionsWithDifficulty(difficulty: DifficultyLevel = 'normal') {
     if (!currentPoem.value) return
-    
+
     // 获取当前选中的句子
-    const currentSentence = currentPoem.value.sentence.find(s => s.senid === currentSentenceIndex.value)
+    const currentSentence = currentPoem.value.sentence.find(
+      s => s.senid === currentSentenceIndex.value
+    )
     if (!currentSentence) return
-    
+
     // 获取所有诗句用于生成选项
     const allSentences = getAllSentences()
-    
+
     // 使用带难度级别的选项生成器
     options.value = generateOptionsByDifficulty(
-      currentSentence.content, 
+      currentSentence.content,
       4, // 生成4个选项
       allSentences,
       difficulty
     )
   }
-  
+
   // 检查答案
   function checkAnswer(selectedLine: string): boolean {
     const correctOption = options.value.find(opt => opt.isCorrect)
     return selectedLine === correctOption?.value
   }
-  
+
   // 设置显示语言
   async function setDisplayLanguage(language: Exclude<LanguageType, 'chinese'>) {
     if (displayLanguage.value === language) return
-    
+
     displayLanguage.value = language
     isLoading.value = true
-    
+
     try {
       // 加载新语言的诗歌数据
       const poemData = await loadPoemDataUtil(['chinese', language])
-      
+
       // 更新翻译字典
       allTranslations.value = {}
       poemData[language].forEach((poem: TranslatedPoem) => {
         allTranslations.value[poem.id] = poem
       })
-      
+
       // 重新选择随机诗歌
       selectRandomPoem(currentDifficulty.value)
       isLoading.value = false
@@ -165,7 +163,7 @@ export const usePoemStore = defineStore('poem', () => {
       isLoading.value = false
     }
   }
-  
+
   // 设置难度
   function setDifficulty(difficulty: DifficultyLevel) {
     if (currentDifficulty.value !== difficulty) {
@@ -174,7 +172,7 @@ export const usePoemStore = defineStore('poem', () => {
       selectRandomPoem(difficulty)
     }
   }
-  
+
   return {
     currentPoem,
     currentTranslation,
@@ -194,4 +192,4 @@ export const usePoemStore = defineStore('poem', () => {
     generateOptionsWithDifficulty,
     setDifficulty
   }
-}) 
+})

@@ -50,7 +50,8 @@ export default {
     rank: '学問的ランク',
     resetScore: 'スコアのリセット',
     confirmReset: 'リセットの確認',
-    resetConfirmText: 'リセット後、スコアはゼロになり、ランクも再開します。リセットしてもよろしいですか？'
+    resetConfirmText:
+      'リセット後、スコアはゼロになり、ランクも再開します。リセットしてもよろしいですか？'
   },
   ranks: {
     baiDing: '白丁',
@@ -72,4 +73,4 @@ export default {
     german: 'ドイツ語',
     japanese: '日本語'
   }
-} 
+}

@@ -8,8 +8,8 @@
  */
 export function shuffleArray<T>(array: T[]): void {
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
   }
 }
 
@@ -19,10 +19,10 @@ export function shuffleArray<T>(array: T[]): void {
  * @returns 格式化后的日期字符串
  */
 export function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /**
@@ -32,26 +32,26 @@ export function formatDate(date: Date): string {
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
-    return obj;
+    return obj
   }
-  
+
   if (obj instanceof Date) {
-    return new Date(obj.getTime()) as unknown as T;
+    return new Date(obj.getTime()) as unknown as T
   }
-  
+
   if (obj instanceof Array) {
-    return obj.map(item => deepClone(item)) as unknown as T;
+    return obj.map(item => deepClone(item)) as unknown as T
   }
-  
+
   if (obj instanceof Object) {
-    const copy = {} as Record<string, any>;
+    const copy = {} as Record<string, any>
     Object.keys(obj).forEach(key => {
-      copy[key] = deepClone((obj as Record<string, any>)[key]);
-    });
-    return copy as T;
+      copy[key] = deepClone((obj as Record<string, any>)[key])
+    })
+    return copy as T
   }
-  
-  return obj;
+
+  return obj
 }
 
 /**
@@ -64,14 +64,14 @@ export function throttle<T extends (...args: any[]) => any>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let lastCall = 0;
-  return function(...args: Parameters<T>) {
-    const now = Date.now();
+  let lastCall = 0
+  return function (...args: Parameters<T>) {
+    const now = Date.now()
     if (now - lastCall >= delay) {
-      lastCall = now;
-      fn(...args);
+      lastCall = now
+      fn(...args)
     }
-  };
+  }
 }
 
 /**
@@ -84,16 +84,16 @@ export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timer: number | null = null;
-  return function(...args: Parameters<T>) {
+  let timer: number | null = null
+  return function (...args: Parameters<T>) {
     if (timer) {
-      clearTimeout(timer);
+      clearTimeout(timer)
     }
     timer = setTimeout(() => {
-      fn(...args);
-      timer = null;
-    }, delay) as unknown as number;
-  };
+      fn(...args)
+      timer = null
+    }, delay) as unknown as number
+  }
 }
 
 /**
@@ -103,15 +103,15 @@ export function debounce<T extends (...args: any[]) => any>(
  * @returns 解析后的数据
  */
 export function getLocalStorage<T>(key: string, defaultValue: T): T {
-  const value = localStorage.getItem(key);
+  const value = localStorage.getItem(key)
   if (value === null) {
-    return defaultValue;
+    return defaultValue
   }
   try {
-    return JSON.parse(value) as T;
+    return JSON.parse(value) as T
   } catch (error) {
-    console.error(`从本地存储解析数据失败: ${error}`);
-    return defaultValue;
+    console.error(`从本地存储解析数据失败: ${error}`)
+    return defaultValue
   }
 }
 
@@ -122,8 +122,8 @@ export function getLocalStorage<T>(key: string, defaultValue: T): T {
  */
 export function setLocalStorage<T>(key: string, value: T): void {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value))
   } catch (error) {
-    console.error(`保存数据到本地存储失败: ${error}`);
+    console.error(`保存数据到本地存储失败: ${error}`)
   }
-} 
+}

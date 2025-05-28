@@ -9,16 +9,16 @@ describe('用户数据模型测试', () => {
       score: 50,
       language: 'english'
     }
-    
+
     expect(user.id).toBe(1)
     expect(user.username).toBe('测试用户')
     expect(user.score).toBe(50)
     expect(user.language).toBe('english')
   })
-  
+
   it('学级称号映射应覆盖所有得分范围', () => {
     const ranks = Object.keys(RANK_SCORE_MAPPING) as AcademicRank[]
-    
+
     // 检查是否包含所有学级称号
     expect(ranks).toContain('白丁')
     expect(ranks).toContain('学童')
@@ -31,18 +31,18 @@ describe('用户数据模型测试', () => {
     expect(ranks).toContain('探花')
     expect(ranks).toContain('榜眼')
     expect(ranks).toContain('状元')
-    
+
     // 检查得分范围是否正确
     expect(RANK_SCORE_MAPPING['白丁'].min).toBe(0)
     expect(RANK_SCORE_MAPPING['白丁'].max).toBe(10)
-    
+
     expect(RANK_SCORE_MAPPING['学童'].min).toBe(11)
     expect(RANK_SCORE_MAPPING['学童'].max).toBe(25)
-    
+
     expect(RANK_SCORE_MAPPING['状元'].min).toBe(341)
     expect(RANK_SCORE_MAPPING['状元'].max).toBe(Infinity)
   })
-  
+
   it('根据得分应能正确判断学级称号', () => {
     const getRank = (score: number): AcademicRank => {
       for (const [rank, range] of Object.entries(RANK_SCORE_MAPPING)) {
@@ -52,7 +52,7 @@ describe('用户数据模型测试', () => {
       }
       return '白丁' // 默认值
     }
-    
+
     expect(getRank(0)).toBe('白丁')
     expect(getRank(10)).toBe('白丁')
     expect(getRank(11)).toBe('学童')
@@ -63,4 +63,4 @@ describe('用户数据模型测试', () => {
     expect(getRank(300)).toBe('榜眼')
     expect(getRank(500)).toBe('状元')
   })
-}) 
+})

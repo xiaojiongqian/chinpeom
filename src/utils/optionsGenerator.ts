@@ -21,7 +21,7 @@ export function generateOptionsWithDifficulty(
 ): PoemOption[] {
   // 筛选所有可能的诗句行，排除正确答案
   const possibleLines = allSentences.filter(line => line !== correctSentence)
-  
+
   // 如果可选行数不足，则返回所有可用行加上正确答案
   if (possibleLines.length <= count - 1) {
     const options: PoemOption[] = [
@@ -34,13 +34,13 @@ export function generateOptionsWithDifficulty(
     ]
     return shuffleArray(options)
   }
-  
+
   // 获取正确答案的长度
   const correctLength = correctSentence.length
-  
+
   // 根据难度设置长度差异的范围
   let maxLengthDiff: number
-  
+
   switch (difficulty) {
     case 'easy':
       maxLengthDiff = 3 // 简单模式：长度差异较大
@@ -54,11 +54,11 @@ export function generateOptionsWithDifficulty(
     default:
       maxLengthDiff = 2 // 默认为普通模式
   }
-  
+
   // 按照长度差异和其他特征进行筛选和排序
   const getSimilarityScore = (sentence: string): number => {
     const lengthDiff = Math.abs(sentence.length - correctLength)
-    
+
     // 计算共同字符数量（困难模式下更看重内容相似度）
     let commonChars = 0
     if (difficulty === 'hard') {
@@ -68,7 +68,7 @@ export function generateOptionsWithDifficulty(
         }
       }
     }
-    
+
     // 综合相似度分数（数字越小越相似）
     switch (difficulty) {
       case 'easy':
@@ -83,28 +83,28 @@ export function generateOptionsWithDifficulty(
         return lengthDiff
     }
   }
-  
+
   // 过滤并排序干扰项
   let filteredLines = [...possibleLines]
-  
+
   // 特定难度的额外过滤
   if (difficulty !== 'easy') {
     // 对于普通和困难难度，过滤出长度相近的诗句
     filteredLines = filteredLines.filter(line => {
       return Math.abs(line.length - correctLength) <= maxLengthDiff
     })
-    
+
     // 如果过滤后的选项不足，则放宽过滤条件
     if (filteredLines.length < count - 1) {
       filteredLines = [...possibleLines]
     }
   }
-  
+
   // 按相似度排序
   filteredLines.sort((a, b) => {
     return getSimilarityScore(a) - getSimilarityScore(b)
   })
-  
+
   // 困难模式下选择最相似的，简单模式选择最不相似的
   let selectedLines: string[]
   if (difficulty === 'easy') {
@@ -114,7 +114,7 @@ export function generateOptionsWithDifficulty(
     // 普通和困难模式：选择最相似的
     selectedLines = filteredLines.slice(0, count - 1)
   }
-  
+
   // 创建选项数组
   const options: PoemOption[] = [
     { value: correctSentence, label: correctSentence, isCorrect: true },
@@ -124,7 +124,7 @@ export function generateOptionsWithDifficulty(
       isCorrect: false
     }))
   ]
-  
+
   // 随机打乱选项顺序
   return shuffleArray(options)
 }
@@ -144,4 +144,4 @@ function shuffleArray<T>(array: T[]): T[] {
     result[j] = temp
   }
   return result
-} 
+}

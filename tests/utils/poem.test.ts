@@ -28,15 +28,15 @@ describe('诗歌工具函数测试', () => {
     const correctLine = '床前明月光，'
     const count = 3
     const allLines = mockPoems.flatMap(poem => poem.content)
-    
+
     const distractors = getDistractors(correctLine, count, allLines)
-    
+
     expect(distractors).toHaveLength(count)
     expect(distractors).not.toContain(correctLine)
-    
+
     // 检查是否所有干扰项都来自原始诗句
     distractors.forEach(line => {
       expect(allLines).toContain(line)
     })
   })
-}) 
+})

@@ -10,34 +10,34 @@ describe('用户API测试', () => {
 
   it('login应能获取用户信息和令牌', async () => {
     const result = await userApi.login('test@example.com', 'password')
-    
+
     expect(result.user).toBeDefined()
     expect(result.token).toBeDefined()
   })
-  
+
   it('register应能创建新用户并返回令牌', async () => {
     const result = await userApi.register('testuser', 'test@example.com', 'password')
-    
+
     expect(result.user).toBeDefined()
     expect(result.user.username).toBe('testuser')
     expect(result.user.email).toBe('test@example.com')
     expect(result.token).toBeDefined()
   })
-  
+
   it('updateScore应能正确更新用户分数', async () => {
     const scoreDelta = 5
     const result = await userApi.updateScore(scoreDelta)
-    
+
     expect(result).toBeDefined()
     expect(result.score).toBe(15 + scoreDelta) // 根据模拟实现, 初始分数15 + 5
   })
 
   it('updateLanguage应能正确更新用户语言设置', async () => {
-    const language = 'english';
-    const result = await userApi.updateLanguage(language);
-    
-    expect(result).toBeDefined();
-    expect(result.preferredLanguage).toBe(language);
+    const language = 'english'
+    const result = await userApi.updateLanguage(language)
+
+    expect(result).toBeDefined()
+    expect(result.preferredLanguage).toBe(language)
   })
 })
 
@@ -49,8 +49,8 @@ describe('诗歌工具函数', () => {
     it('应返回正确的诗歌图像URL', () => {
       const poemId = '927908c0-999f-4d3f-8192-d67d28f93576'
       const result = getPoemImageUrl(poemId)
-      
+
       expect(result).toBe(`/resource/poem_images/${poemId}.webp`)
     })
   })
-}) 
+})

@@ -1,20 +1,20 @@
 export interface User {
-  id: number;
-  username: string;
-  score: number;
-  language: string;
+  id: number
+  username: string
+  score: number
+  language: string
 }
 
 export interface UserLoginForm {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
 export interface UserRegisterForm extends UserLoginForm {
-  confirmPassword: string;
+  confirmPassword: string
 }
 
-export type RankType = 
+export type RankType =
   | '白丁'
   | '学童'
   | '秀才'
@@ -25,4 +25,4 @@ export type RankType =
   | '进士'
   | '探花'
   | '榜眼'
-  | '状元'; 
+  | '状元'

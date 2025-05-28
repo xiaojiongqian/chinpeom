@@ -23,21 +23,21 @@ export default {
   },
   login: {
     title: 'Connexion',
-    subtitle: 'Connectez-vous pour suivre votre score d\'apprentissage',
-    username: 'Nom d\'utilisateur',
+    subtitle: "Connectez-vous pour suivre votre score d'apprentissage",
+    username: "Nom d'utilisateur",
     password: 'Mot de passe',
     noAccount: 'Pas de compte? Inscrivez-vous ici',
     loginFailed: 'Échec de la connexion, veuillez réessayer',
-    skipLogin: 'Ignorer la connexion, utiliser en tant qu\'invité'
+    skipLogin: "Ignorer la connexion, utiliser en tant qu'invité"
   },
   register: {
     title: 'Inscription',
     subtitle: 'Créer un nouveau compte',
-    username: 'Nom d\'utilisateur',
+    username: "Nom d'utilisateur",
     password: 'Mot de passe',
     confirmPassword: 'Confirmer le mot de passe',
     hasAccount: 'Vous avez déjà un compte? Connectez-vous ici',
-    registerFailed: 'L\'inscription a échoué, veuillez réessayer',
+    registerFailed: "L'inscription a échoué, veuillez réessayer",
     passwordMismatch: 'Les mots de passe ne correspondent pas'
   },
   settings: {
@@ -45,12 +45,13 @@ export default {
     language: 'Langue des indices',
     languageHint: 'Choisissez la langue pour les indices',
     userInfo: 'Informations utilisateur',
-    username: 'Nom d\'utilisateur',
+    username: "Nom d'utilisateur",
     currentScore: 'Score actuel',
     rank: 'Rang académique',
     resetScore: 'Réinitialiser le score',
     confirmReset: 'Confirmer la réinitialisation',
-    resetConfirmText: 'Après la réinitialisation, votre score sera remis à zéro et votre rang redémarrera. Êtes-vous sûr de vouloir réinitialiser?'
+    resetConfirmText:
+      'Après la réinitialisation, votre score sera remis à zéro et votre rang redémarrera. Êtes-vous sûr de vouloir réinitialiser?'
   },
   ranks: {
     baiDing: 'Bai Ding',
@@ -72,4 +73,4 @@ export default {
     german: 'Allemand',
     japanese: 'Japonais'
   }
-} 
+}

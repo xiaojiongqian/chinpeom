@@ -72,4 +72,4 @@ export default {
     german: '德语',
     japanese: '日语'
   }
-} 
+}

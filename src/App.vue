@@ -5,9 +5,9 @@
 </template>
 
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
+  import { RouterView } from 'vue-router'
 </script>
 
 <style>
-@import './assets/main.css';
-</style> 
+  @import './assets/main.css';
+</style>

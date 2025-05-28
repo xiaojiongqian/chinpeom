@@ -18,28 +18,28 @@ export default {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
-          950: '#082f49',
+          950: '#082f49'
         },
         secondary: {
           DEFAULT: '#4f46e5',
           light: '#818cf8',
-          dark: '#3730a3',
+          dark: '#3730a3'
         },
         accent: {
           DEFAULT: '#f59e0b',
           light: '#fbbf24',
-          dark: '#d97706',
+          dark: '#d97706'
         },
         background: {
           DEFAULT: '#f9fafb',
-          dark: '#f3f4f6',
-        },
+          dark: '#f3f4f6'
+        }
       },
       fontFamily: {
         sans: ['Inter var', 'sans-serif'],
-        serif: ['"Noto Serif SC"', 'serif'],
-      },
-    },
+        serif: ['"Noto Serif SC"', 'serif']
+      }
+    }
   },
-  plugins: [],
-} 
+  plugins: []
+}

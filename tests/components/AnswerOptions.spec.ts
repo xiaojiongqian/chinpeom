@@ -102,4 +102,4 @@ describe('AnswerOptions组件', () => {
     expect(correctButton.classes()).toContain('bg-green-50')
     expect(correctButton.classes()).toContain('border-green-300')
   })
-}) 
+})

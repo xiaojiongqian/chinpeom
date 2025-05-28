@@ -4,7 +4,7 @@ import { Poem, TranslatedPoem, Sentence } from '../../src/types'
 describe('诗歌数据模型测试', () => {
   it('诗歌对象应符合类型定义', () => {
     const poem: Poem = {
-      id: "927908c0-999f-4d3f-8192-d67d28f93576",
+      id: '927908c0-999f-4d3f-8192-d67d28f93576',
       title: '静夜思',
       author: '李白',
       sentence: [
@@ -26,18 +26,18 @@ describe('诗歌数据模型测试', () => {
         }
       ]
     }
-    
-    expect(poem.id).toBe("927908c0-999f-4d3f-8192-d67d28f93576")
+
+    expect(poem.id).toBe('927908c0-999f-4d3f-8192-d67d28f93576')
     expect(poem.title).toBe('静夜思')
     expect(poem.author).toBe('李白')
     expect(poem.sentence).toHaveLength(4)
     expect(poem.sentence[0].content).toBe('床前明月光，')
     expect(poem.sentence[0].senid).toBe(0)
   })
-  
+
   it('翻译对象应符合类型定义', () => {
     const translation: TranslatedPoem = {
-      id: "927908c0-999f-4d3f-8192-d67d28f93576",
+      id: '927908c0-999f-4d3f-8192-d67d28f93576',
       sentence: [
         {
           senid: 0,
@@ -57,16 +57,16 @@ describe('诗歌数据模型测试', () => {
         }
       ]
     }
-    
-    expect(translation.id).toBe("927908c0-999f-4d3f-8192-d67d28f93576")
+
+    expect(translation.id).toBe('927908c0-999f-4d3f-8192-d67d28f93576')
     expect(translation.sentence).toHaveLength(4)
     expect(translation.sentence[0].content).toBe('Moonlight before my bed,')
     expect(translation.sentence[0].senid).toBe(0)
   })
-  
+
   it('诗歌和翻译应能正确关联', () => {
     const poem: Poem = {
-      id: "927908c0-999f-4d3f-8192-d67d28f93576",
+      id: '927908c0-999f-4d3f-8192-d67d28f93576',
       title: '静夜思',
       author: '李白',
       sentence: [
@@ -88,9 +88,9 @@ describe('诗歌数据模型测试', () => {
         }
       ]
     }
-    
+
     const translation: TranslatedPoem = {
-      id: "927908c0-999f-4d3f-8192-d67d28f93576",
+      id: '927908c0-999f-4d3f-8192-d67d28f93576',
       sentence: [
         {
           senid: 0,
@@ -110,16 +110,16 @@ describe('诗歌数据模型测试', () => {
         }
       ]
     }
-    
+
     // 测试ID匹配
     expect(poem.id).toBe(translation.id)
-    
+
     // 测试内容与翻译行数匹配
     expect(poem.sentence.length).toBe(translation.sentence.length)
-    
+
     // 测试senid是否匹配
     poem.sentence.forEach((sen, index) => {
       expect(sen.senid).toBe(translation.sentence[index].senid)
     })
   })
-}) 
+})

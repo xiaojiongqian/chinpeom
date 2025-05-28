@@ -5,7 +5,10 @@
       <span v-if="required" class="text-red-500">*</span>
     </label>
     <div class="relative">
-      <div v-if="$slots['prefix']" class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <div
+        v-if="$slots['prefix']"
+        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+      >
         <slot name="prefix"></slot>
       </div>
       <input
@@ -22,7 +25,10 @@
         ]"
         @input="handleInput"
       />
-      <div v-if="$slots['suffix']" class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+      <div
+        v-if="$slots['suffix']"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+      >
         <slot name="suffix"></slot>
       </div>
     </div>
@@ -32,31 +38,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+  defineProps<{
+    id?: string
+    label?: string
+    modelValue: string
+    type?: string
+    placeholder?: string
+    helpText?: string
+    error?: string
+    disabled?: boolean
+    required?: boolean
+    inputClasses?: string
+  }>()
 
-const props = defineProps<{
-  id?: string
-  label?: string
-  modelValue: string
-  type?: string
-  placeholder?: string
-  helpText?: string
-  error?: string
-  disabled?: boolean
-  required?: boolean
-  inputClasses?: string
-}>()
+  const emit = defineEmits<{
+    (e: 'update:modelValue', value: string): void
+  }>()
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-}>()
+  defineOptions({
+    name: 'BaseInput'
+  })
 
-defineOptions({
-  name: 'BaseInput'
-})
-
-const handleInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
-}
-</script> 
+  const handleInput = (event: Event) => {
+    const target = event.target as HTMLInputElement
+    emit('update:modelValue', target.value)
+  }
+</script>

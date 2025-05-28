@@ -1,9 +1,6 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-import { 
-  loadPoemData, 
-  getPoemById, 
-} from '../../src/utils/poemData';
-import type { Poem, PoemLanguage } from '../../src/types';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
+import { loadPoemData, getPoemById } from '../../src/utils/poemData'
+import type { Poem, PoemLanguage } from '../../src/types'
 
 // 模拟JSON数据
 const mockChinesePoem = {
@@ -29,54 +26,54 @@ const mockEnglishTranslation = {
 }
 
 // 完全模拟fetch请求
-global.fetch = vi.fn();
+global.fetch = vi.fn()
 
 describe('诗歌数据处理测试', () => {
   beforeAll(() => {
     // 模拟成功的fetch响应
-    vi.mocked(fetch).mockImplementation((url) => {
+    vi.mocked(fetch).mockImplementation(url => {
       if (typeof url === 'string' && url.includes('poem_chinese.json')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockChinesePoem])
-        }) as unknown as Promise<Response>;
+        }) as unknown as Promise<Response>
       } else if (typeof url === 'string' && url.includes('poem_english.json')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockEnglishTranslation])
-        }) as unknown as Promise<Response>;
+        }) as unknown as Promise<Response>
       }
-      
-      return Promise.reject(new Error(`Unknown URL: ${url}`));
-    });
-  });
-  
+
+      return Promise.reject(new Error(`Unknown URL: ${url}`))
+    })
+  })
+
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
-  
+    vi.clearAllMocks()
+  })
+
   afterAll(() => {
-    vi.restoreAllMocks();
-  });
+    vi.restoreAllMocks()
+  })
 
   it('应该能够成功加载中文诗歌数据', async () => {
-    const dataStore = await loadPoemData(['chinese']); 
-    expect(fetch).toHaveBeenCalled();
-    expect(dataStore.chinese).toEqual([mockChinesePoem]); // 假设 loadPoemData 返回整个 store
-  });
+    const dataStore = await loadPoemData(['chinese'])
+    expect(fetch).toHaveBeenCalled()
+    expect(dataStore.chinese).toEqual([mockChinesePoem]) // 假设 loadPoemData 返回整个 store
+  })
 
   it('应该能够成功加载翻译数据', async () => {
-    const dataStore = await loadPoemData(['english']); 
-    expect(fetch).toHaveBeenCalled();
-    expect(dataStore.english).toEqual([mockEnglishTranslation]); // 假设 loadPoemData 返回整个 store
-  });
+    const dataStore = await loadPoemData(['english'])
+    expect(fetch).toHaveBeenCalled()
+    expect(dataStore.english).toEqual([mockEnglishTranslation]) // 假设 loadPoemData 返回整个 store
+  })
 
   it('应该能够根据ID获取特定诗歌', async () => {
-    await loadPoemData(['chinese']); // 预加载数据
-    const poem = getPoemById('poem-1'); // 正确调用
-    
-    expect(poem).toEqual(mockChinesePoem);
-  });
+    await loadPoemData(['chinese']) // 预加载数据
+    const poem = getPoemById('poem-1') // 正确调用
+
+    expect(poem).toEqual(mockChinesePoem)
+  })
 
   /* // 暂时注释掉，因为 getRandomPoem 未导出
   it('应该能够获取随机诗歌', async () => {
@@ -110,4 +107,4 @@ describe('诗歌数据处理测试', () => {
     expect(dataStore.chinese).toEqual([mockChinesePoem]);
   });
   */
-}); 
+})

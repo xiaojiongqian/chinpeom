@@ -40,12 +40,12 @@ describe('BaseButton', () => {
 
   it('渲染不同的按钮变体样式', () => {
     const variants = ['primary', 'secondary', 'success', 'danger', 'warning', 'info']
-    
+
     variants.forEach(variant => {
       const wrapper = mount(BaseButton, {
         props: { variant }
       })
-      
+
       // 检查按钮类名包含对应变体的类
       if (variant === 'primary') {
         expect(wrapper.classes()).toContain('bg-primary')
@@ -59,12 +59,12 @@ describe('BaseButton', () => {
 
   it('渲染不同的按钮尺寸', () => {
     const sizes = ['sm', 'md', 'lg']
-    
+
     sizes.forEach(size => {
       const wrapper = mount(BaseButton, {
         props: { size }
       })
-      
+
       if (size === 'sm') {
         expect(wrapper.classes()).toContain('text-sm')
       } else if (size === 'md') {
@@ -105,4 +105,4 @@ describe('BaseButton', () => {
     expect(wrapper.find('.right-icon').exists()).toBe(true)
     expect(wrapper.find('.right-icon').text()).toBe('图标')
   })
-}) 
+})

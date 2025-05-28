@@ -14,7 +14,7 @@ export function findTranslatedSentence(
   if (!translation) {
     return null
   }
-  
+
   const sentence = translation.sentence.find(s => s.senid === sentenceIndex)
   return sentence ? sentence.content : null
 }
@@ -36,13 +36,13 @@ export function createDisplayContent(
   if (!poem) {
     return []
   }
-  
+
   return poem.sentence.map(sen => {
     // 在困难模式下不替换为外语，只显示中文原句
     if (difficulty === 'hard') {
       return sen.content
     }
-    
+
     // 如果该句是要替换的句子，尝试查找其翻译（适用于简单和普通模式）
     if (sen.senid === sentenceIndex) {
       const translatedContent = findTranslatedSentence(translation, sentenceIndex)
@@ -65,15 +65,13 @@ export function createBilingualContent(
   if (!poem) {
     return []
   }
-  
+
   return poem.sentence.map(sen => {
-    const translatedContent = translation
-      ? findTranslatedSentence(translation, sen.senid)
-      : null
-      
+    const translatedContent = translation ? findTranslatedSentence(translation, sen.senid) : null
+
     return {
       original: sen.content,
       translated: translatedContent
     }
   })
-} 
+}

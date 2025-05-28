@@ -1,12 +1,12 @@
 // 测试环境fetch验证脚本
 // 用于确认测试环境中全局fetch模拟是否正常工作
 
-import { spawnSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+import { spawnSync } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 
 // 创建临时测试文件
-const tempTestFile = path.join(process.cwd(), 'temp-fetch-test.js');
+const tempTestFile = path.join(process.cwd(), 'temp-fetch-test.js')
 
 // 测试文件内容
 const testFileContent = `
@@ -47,16 +47,16 @@ describe('fetch模拟验证', () => {
     expect(Array.isArray(data)).toBe(true);
   });
 });
-`;
+`
 
 try {
   // 写入临时测试文件
-  fs.writeFileSync(tempTestFile, testFileContent);
-  console.log(`临时测试文件已创建: ${tempTestFile}`);
+  fs.writeFileSync(tempTestFile, testFileContent)
+  console.log(`临时测试文件已创建: ${tempTestFile}`)
 
   // 运行测试
-  console.log('开始运行fetch验证测试...');
-  console.log('============================================================');
+  console.log('开始运行fetch验证测试...')
+  console.log('============================================================')
 
   const testProcess = spawnSync('npx', ['vitest', 'run', '--no-threads', tempTestFile], {
     stdio: 'inherit',
@@ -64,29 +64,29 @@ try {
       ...process.env,
       NODE_ENV: 'test'
     }
-  });
+  })
 
-  console.log('============================================================');
-  console.log(`测试完成，退出代码: ${testProcess.status}`);
+  console.log('============================================================')
+  console.log(`测试完成，退出代码: ${testProcess.status}`)
 
   // 清理临时文件
-  fs.unlinkSync(tempTestFile);
-  console.log(`临时测试文件已删除: ${tempTestFile}`);
+  fs.unlinkSync(tempTestFile)
+  console.log(`临时测试文件已删除: ${tempTestFile}`)
 
   // 返回测试结果
-  process.exit(testProcess.status || 0);
+  process.exit(testProcess.status || 0)
 } catch (error) {
-  console.error('运行验证测试出错:', error);
-  
+  console.error('运行验证测试出错:', error)
+
   // 尝试清理
   try {
     if (fs.existsSync(tempTestFile)) {
-      fs.unlinkSync(tempTestFile);
-      console.log(`临时测试文件已删除: ${tempTestFile}`);
+      fs.unlinkSync(tempTestFile)
+      console.log(`临时测试文件已删除: ${tempTestFile}`)
     }
   } catch (cleanupError) {
-    console.error('清理时出错:', cleanupError);
+    console.error('清理时出错:', cleanupError)
   }
-  
-  process.exit(1);
-} 
+
+  process.exit(1)
+}

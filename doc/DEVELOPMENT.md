@@ -12,54 +12,83 @@
 │   │   ├── data/           # 诗歌数据目录
 │   │   │   ├── poem_chinese.json   # 中文诗歌数据
 │   │   │   ├── poem_english.json   # 英文翻译数据
-│   │   │   └── ...                 # 其他语言翻译数据
-│   │   └── poem_images/    # 诗歌配图目录
+│   │   │   ├── poem_french.json    # 法文翻译数据
+│   │   │   ├── poem_german.json    # 德文翻译数据
+│   │   │   ├── poem_japanese.json  # 日文翻译数据
+│   │   │   ├── poem_spanish.json   # 西班牙文翻译数据
+│   │   ├── poem_images/    # 诗歌配图目录
+│   │   └── sound/          # 诗歌音频目录
 │
 ├── src/                    # 源代码
 │   ├── assets/             # 项目资源文件
-│   │   └── main.css        # 全局样式
-│   │
+│   │   ├── main.css        # 全局样式
+│   │   └── theme.css       # 主题样式
 │   ├── components/         # UI组件
 │   │   ├── common/         # 通用组件
 │   │   │   ├── BaseButton.vue
-│   │   │   └── ...
+│   │   │   ├── BaseCard.vue
+│   │   │   ├── BaseInput.vue
 │   │   └── layout/         # 布局组件
 │   │       ├── AppHeader.vue
-│   │       └── ...
-│   │
+│   │       ├── AppFooter.vue
+│   │       ├── MainLayout.vue
+│   │   ├── PoemDisplay.vue # 业务组件示例
+│   │   ├── PoemImage.vue
+│   │   ├── AnswerOptions.vue
+│   │   ├── FeedbackDialog.vue
 │   ├── locales/            # 国际化文件
 │   │   ├── zh-CN.ts        # 中文翻译
 │   │   ├── en.ts           # 英文翻译
-│   │   └── ...             # 其他语言
-│   │
+│   │   ├── fr.ts           # 法文翻译
+│   │   ├── de.ts           # 德文翻译
+│   │   ├── ja.ts           # 日文翻译
+│   │   ├── es.ts           # 西班牙文翻译
 │   ├── router/             # 路由配置
 │   │   └── index.ts        # 路由定义
-│   │
 │   ├── stores/             # 状态管理
 │   │   ├── user.ts         # 用户状态
 │   │   └── poem.ts         # 诗歌状态
-│   │
 │   ├── types/              # TypeScript类型定义
-│   │   └── index.ts        # 全局类型定义
-│   │
+│   │   ├── index.ts        # 全局类型定义
+│   │   ├── poem.d.ts       # 诗歌类型
+│   │   └── user.d.ts       # 用户类型
 │   ├── utils/              # 工具函数
-│   │   ├── api.ts          # API请求
-│   │   └── helpers.ts      # 辅助函数
-│   │
+│   │   ├── helpers.ts      # 辅助函数
+│   │   ├── poemData.ts     # 诗歌数据工具
+│   │   ├── resourceChecker.ts
+│   │   ├── resourceLoader.ts
+│   │   ├── poemTranslation.ts
+│   │   ├── sentenceTranslation.ts
+│   │   ├── optionsGenerator.ts
+│   │   ├── randomPoemSelector.ts
+│   │   └── poem.ts
+│   ├── services/           # 服务层
 │   ├── views/              # 页面组件
 │   │   ├── HomeView.vue    # 首页
 │   │   ├── LoginView.vue   # 登录页
-│   │   └── ...             # 其他页面
-│   │
+│   │   ├── RegisterView.vue
+│   │   ├── QuizView.vue
+│   │   ├── SettingsView.vue
+│   │   └── ComponentsView.vue
 │   ├── App.vue             # 根组件
 │   └── main.ts             # 入口文件
 │
 ├── tests/                  # 测试文件
 │   ├── components/         # 组件测试
-│   │   └── ...
 │   ├── utils/              # 工具函数测试
-│   │   └── ...
+│   ├── views/              # 页面测试
+│   ├── stores/             # 状态管理测试
+│   ├── services/           # 服务测试
+│   ├── mocks/              # mock数据
+│   ├── models/             # 测试模型
 │   └── setup.ts            # 测试配置
+│
+├── server/                 # 后端服务（简要）
+│   ├── server.js           # 服务入口
+│   ├── api/                # 接口实现
+│   ├── data/               # 数据文件
+│   ├── config/             # 配置文件
+│   └── middleware/         # 中间件
 │
 ├── .eslintrc.js            # ESLint配置
 ├── .prettierrc             # Prettier配置
@@ -67,7 +96,10 @@
 ├── package.json            # 项目依赖
 ├── tailwind.config.js      # TailwindCSS配置
 ├── tsconfig.json           # TypeScript配置
-└── vite.config.ts          # Vite配置
+├── vite.config.ts          # Vite配置
+├── capacitor.config.ts     # Capacitor配置
+├── tsconfig.node.json      # Node专用TS配置
+└── components.d.ts         # 组件自动导入类型
 ```
 
 ## 命名规范

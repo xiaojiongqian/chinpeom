@@ -1,6 +1,6 @@
 <template>
-  <div 
-    class="bg-white rounded-lg overflow-hidden" 
+  <div
+    class="bg-white rounded-lg overflow-hidden"
     :class="[
       elevationClass,
       { 'shadow-md': elevation !== 'none' },
@@ -20,27 +20,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+  import { computed } from 'vue'
 
-const props = defineProps<{
-  elevation?: 'none' | 'sm' | 'md' | 'lg'
-  bordered?: boolean
-}>()
+  const props = defineProps<{
+    elevation?: 'none' | 'sm' | 'md' | 'lg'
+    bordered?: boolean
+  }>()
 
-defineOptions({
-  name: 'BaseCard'
-})
+  defineOptions({
+    name: 'BaseCard'
+  })
 
-const elevationClass = computed(() => {
-  if (props.elevation === 'none') {
-    return ''
-  }
-  
-  const classes = {
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg'
-  }
-  return classes[props.elevation || 'md']
-})
-</script> 
+  const elevationClass = computed(() => {
+    if (props.elevation === 'none') {
+      return ''
+    }
+
+    const classes = {
+      sm: 'shadow-sm',
+      md: 'shadow-md',
+      lg: 'shadow-lg'
+    }
+    return classes[props.elevation || 'md']
+  })
+</script>

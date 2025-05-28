@@ -50,7 +50,8 @@ export default {
     rank: 'Akademischer Rang',
     resetScore: 'Punktzahl zurücksetzen',
     confirmReset: 'Zurücksetzen bestätigen',
-    resetConfirmText: 'Nach dem Zurücksetzen wird Ihre Punktzahl auf Null gesetzt und Ihr Rang neu gestartet. Sind Sie sicher, dass Sie zurücksetzen möchten?'
+    resetConfirmText:
+      'Nach dem Zurücksetzen wird Ihre Punktzahl auf Null gesetzt und Ihr Rang neu gestartet. Sind Sie sicher, dass Sie zurücksetzen möchten?'
   },
   ranks: {
     baiDing: 'Bai Ding',
@@ -72,4 +73,4 @@ export default {
     german: 'Deutsch',
     japanese: 'Japanisch'
   }
-} 
+}

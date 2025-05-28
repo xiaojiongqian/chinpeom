@@ -1,300 +1,351 @@
 <template>
-  <main class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-center mb-4">唐诗译境 - 答题挑战</h1>
-    
-    <!-- 难度模式切换 -->
-    <div class="flex justify-center space-x-4 mb-6">
-      <button 
-        @click="setDifficulty('easy')" 
-        class="py-2 px-4 rounded-full transition-colors"
-        :class="[
-          currentDifficulty === 'easy' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-        ]"
+  <!-- 测验页面 -->
+  <div class="flex flex-col min-h-screen bg-gray-100 px-4 pb-16">
+    <!-- 加载指示器 -->
+    <div v-if="poemStore.isLoading" class="flex-1 flex items-center justify-center">
+      <svg
+        class="animate-spin h-10 w-10 text-blue-500"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
       >
-        简单模式
-      </button>
-      <button 
-        @click="setDifficulty('normal')" 
-        class="py-2 px-4 rounded-full transition-colors"
-        :class="[
-          currentDifficulty === 'normal' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-        ]"
-      >
-        普通模式
-      </button>
-      <button 
-        @click="setDifficulty('hard')" 
-        class="py-2 px-4 rounded-full transition-colors"
-        :class="[
-          currentDifficulty === 'hard' 
-            ? 'bg-red-500 text-white' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-        ]"
-      >
-        困难模式
-      </button>
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
     </div>
-    
-    <!-- 加载状态 -->
-    <div v-if="isLoading" class="flex justify-center items-center py-8">
-      <div class="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-    </div>
-    
-    <!-- 错误提示 -->
-    <div v-else-if="loadError" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-xl mx-auto">
-      <p>{{ loadError }}</p>
-      <button 
-        @click="initialize" 
-        class="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded retry-button"
+
+    <!-- 错误信息显示 -->
+    <div
+      v-else-if="poemStore.loadError"
+      class="flex-1 flex flex-col items-center justify-center text-center"
+    >
+      <p class="text-red-500 text-xl mb-4">{{ poemStore.loadError }}</p>
+      <button
+        class="retry-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        @click="retryLoadPoem"
       >
         重试
       </button>
     </div>
-    
-    <div v-else class="max-w-3xl mx-auto">
-      <!-- 诗歌内容区 -->
-      <div class="poem-content bg-amber-50 rounded-lg shadow-md p-6 mb-8">
-        <!-- 诗歌标题和作者 -->
-        <div class="text-center mb-6">
-          <h2 v-if="currentPoem" class="text-2xl font-bold text-gray-800">{{ currentPoem.title }}</h2>
-          <p v-if="currentPoem" class="text-gray-600 mt-1">{{ currentPoem.author }}</p>
+
+    <!-- 实际内容，仅在非加载且无错误状态下显示 -->
+    <template v-else>
+      <!-- 顶部操作栏 -->
+      <div class="flex items-center justify-between pt-6 pb-3">
+        <div class="flex items-center space-x-2">
+          <!-- 音效开关 -->
+          <button class="p-1.5 rounded-full hover:bg-gray-200" @click="toggleSound">
+            <img :src="soundOn ? soundOnIcon : soundOffIcon" alt="音效开关" class="w-6 h-6" />
+          </button>
         </div>
-        
-        <!-- 诗歌图片 -->
-        <div v-if="hasImage" class="mb-6">
-          <img :src="imagePath" :alt="currentPoem?.title" class="w-full h-48 object-cover rounded-md shadow" />
+        <!-- 当前学级与得分 -->
+        <div class="flex items-center space-x-1">
+          <span class="text-base font-medium text-gray-700">{{ userStore.rank }}</span>
+          <span class="text-sm text-gray-500">({{ userStore.score }}分)</span>
         </div>
-        
+        <div>
+          <!-- 空占位，保持布局平衡 -->
+        </div>
+      </div>
+
+      <!-- 诗歌展示卡片 -->
+      <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-4">
+        <!-- 配图 -->
+        <div class="relative w-full">
+          <img
+            v-if="hasImage"
+            :src="imagePath"
+            :alt="currentPoem?.title"
+            class="w-full h-56 object-cover"
+          />
+          <div v-else class="w-full h-56 flex items-center justify-center bg-gray-200">
+            <img
+              src="@/assets/icons/feature/icon_star.svg"
+              alt="配图占位"
+              class="w-16 h-16 opacity-40"
+            />
+          </div>
+        </div>
+
         <!-- 诗歌内容 -->
-        <div v-if="displayContent" class="space-y-2 text-lg">
-          <p 
-            v-for="(line, index) in displayContent" 
-            :key="index"
-            class="poem-line"
-            :class="{
-              'text-gray-800': index !== currentSentenceIndex,
-              'text-blue-600 font-medium': index === currentSentenceIndex && currentDifficulty !== 'hard',
-              'text-red-600 font-medium': index === currentSentenceIndex && currentDifficulty === 'hard'
-            }"
-          >
-            {{ line }}
-          </p>
-        </div>
-        
-        <!-- 困难模式提示 -->
-        <div v-if="currentDifficulty === 'hard'" class="mt-4 text-center text-sm text-red-500">
-          困难模式：根据上下文猜测缺失的诗句
-        </div>
-      </div>
-      
-      <!-- 答题区域 -->
-      <div class="mb-6">
-        <h3 class="text-lg font-bold mb-3 text-gray-700">请选择正确的中文诗句:</h3>
-        <AnswerOptions 
-          v-if="options.length > 0"
-          :options="options" 
-          :answered="answered" 
-          :selectedIndex="selectedOptionIndex" 
-          :isCorrect="isCorrect" 
-          @select="handleSelect"
-        />
-      </div>
-      
-      <!-- 分数显示（仅登录用户可见） -->
-      <div v-if="userStore.isLoggedIn" class="text-center mb-6">
-        <div class="inline-block bg-blue-50 rounded-lg py-2 px-4 border border-blue-100">
-          <span class="font-medium">当前得分: </span>
-          <span class="text-blue-600 font-bold">{{ userStore.score }}</span>
-          <span class="ml-3 font-medium">学级称号: </span>
-          <span class="text-indigo-600 font-bold">{{ userStore.rank }}</span>
+        <div class="p-5">
+          <!-- 标题与作者 -->
+          <div class="mb-3">
+            <h2 class="text-2xl font-bold text-gray-800 text-center">{{ currentPoem?.title }}</h2>
+            <p class="text-gray-600 text-center mt-1">{{ currentPoem?.author }}</p>
+          </div>
+
+          <!-- 诗句内容 -->
+          <div v-if="displayContent" class="space-y-2 text-lg">
+            <p
+              v-for="(line, index) in displayContent"
+              :key="index"
+              class="poem-line"
+              :class="{
+                'text-gray-800': index !== currentSentenceIndex,
+                'text-blue-600 font-medium':
+                  index === currentSentenceIndex && currentDifficulty !== 'hard',
+                'text-red-600 font-medium':
+                  index === currentSentenceIndex && currentDifficulty === 'hard'
+              }"
+            >
+              {{ line }}
+            </p>
+          </div>
         </div>
       </div>
-      
-      <!-- 操作按钮 -->
-      <div class="flex justify-center mt-8">
-        <button 
-          @click="getNextPoem" 
-          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors mr-4"
+
+      <!-- 答题选项区 -->
+      <div class="space-y-2 mt-2 mb-4">
+        <button
+          v-for="(option, index) in options"
+          :key="index"
+          :disabled="answered"
+          class="w-full text-left p-4 rounded-xl transition-colors text-gray-700 font-medium quiz-option-button"
+          :class="getOptionClass(index)"
+          @click="() => !answered && handleSelect(index)"
         >
-          下一首
+          <span class="mr-2">{{ index + 1 }}.</span>{{ option.label }}
         </button>
-        <router-link to="/" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-full transition-colors">
-          返回首页
-        </router-link>
       </div>
-      
-      <!-- 反馈对话框 -->
-      <FeedbackDialog
-        v-if="showFeedback"
-        :show="showFeedback"
-        :isCorrect="isCorrect === true"
-        :correctAnswer="correctAnswer"
-        :selectedAnswer="selectedAnswer"
-        :poemTitle="currentPoem?.title || ''"
-        :poemAuthor="currentPoem?.author || ''"
-        :scoreChange="scoreChange"
-        @close="closeFeedback"
-        @next="getNextPoem"
-      />
-    </div>
-  </main>
+
+      <!-- 操作按钮区 -->
+      <div class="flex justify-between space-x-4 mb-4">
+        <!-- 换音乐按钮 -->
+        <button 
+          class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors" 
+          @click="handlePrevMusic"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 14.142M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+          <span>换音乐</span>
+        </button>
+        
+        <!-- 下一首按钮 -->
+        <button 
+          class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors" 
+          @click="getNextPoem"
+        >
+          <span>下一首</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 简洁反馈提示 -->
+      <div
+        v-if="answered"
+        class="fixed bottom-32 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-xl shadow-lg z-30"
+        :class="isCorrect ? 'bg-green-500' : 'bg-red-500'"
+        style="transition: all 0.3s ease"
+      >
+        <div class="flex flex-col items-center text-white">
+          <span class="font-medium">{{ isCorrect ? '答对了!' : '答错了!' }}</span>
+          <span v-if="!isCorrect" class="text-white text-sm mt-1"
+            >正确答案: {{ correctAnswer }}</span
+          >
+        </div>
+      </div>
+
+      <!-- 底部tab导航 -->
+      <nav
+        class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
+      >
+        <!-- 成就页面 -->
+        <router-link 
+          to="/achievement" 
+          class="flex flex-col items-center transition-colors"
+          :class="route.name === 'achievement' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        >
+          <img 
+            src="@/assets/icons/nav/icon_achievement.svg" 
+            alt="成就" 
+            class="w-7 h-7 mb-0.5"
+            :class="route.name === 'achievement' ? 'filter-green' : 'filter-gray'"
+          />
+        </router-link>
+        
+        <!-- 主页 -->
+        <router-link 
+          to="/quizview" 
+          class="flex flex-col items-center transition-colors"
+          :class="route.name === 'home' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        >
+          <img 
+            src="@/assets/icons/nav/icon_home.svg" 
+            alt="主页" 
+            class="w-8 h-8 mb-0.5"
+            :class="route.name === 'home' ? 'filter-green' : 'filter-gray'"
+          />
+        </router-link>
+        
+        <!-- 设置页面 -->
+        <router-link
+          to="/settings"
+          class="flex flex-col items-center transition-colors"
+          :class="route.name === 'settings' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        >
+          <img 
+            src="@/assets/icons/nav/icon_usersetting.svg" 
+            alt="设置" 
+            class="w-7 h-7 mb-0.5"
+            :class="route.name === 'settings' ? 'filter-green' : 'filter-gray'"
+          />
+        </router-link>
+      </nav>
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { usePoemStore } from '../stores/poem';
-import { useUserStore } from '../stores/user';
-import AnswerOptions from '../components/AnswerOptions.vue';
-import FeedbackDialog from '../components/FeedbackDialog.vue';
-import type { PoemOption } from '../types';
-import type { DifficultyLevel } from '../utils/optionsGenerator';
+  import { ref, computed, onMounted } from 'vue'
+  import { usePoemStore } from '../stores/poem'
+  import { useUserStore } from '../stores/user'
+  import { useRoute } from 'vue-router'
+  import soundOnIcon from '@/assets/icons/feature/icon_sound_on.svg'
+  import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
-// 获取store
-const poemStore = usePoemStore();
-const userStore = useUserStore();
+  const poemStore = usePoemStore()
+  const userStore = useUserStore()
+  const route = useRoute()
 
-// 本地状态
-const answered = ref(false);
-const selectedOptionIndex = ref<number | null>(null);
-const isCorrect = ref<boolean | null>(null);
-const showFeedback = ref(false);
-const selectedAnswer = ref('');
-const scoreChange = ref(0);
+  const answered = ref(false)
+  const selectedOptionIndex = ref<number | null>(null)
+  const isCorrect = ref<boolean | null>(null)
+  const showFeedback = ref(false)
+  const selectedAnswer = ref('')
+  const scoreChange = ref(0)
+  const soundOn = ref(true)
 
-// 从store获取状态
-const currentPoem = computed(() => poemStore.currentPoem);
-const options = computed(() => poemStore.options);
-const currentSentenceIndex = computed(() => poemStore.currentSentenceIndex);
-const displayContent = computed(() => poemStore.displayContent);
-const hasImage = computed(() => poemStore.hasImage);
-const imagePath = computed(() => poemStore.imagePath);
-const isLoading = computed(() => poemStore.isLoading);
-const loadError = computed(() => poemStore.loadError);
-const currentDifficulty = computed(() => poemStore.currentDifficulty);
+  const currentPoem = computed(() => poemStore.currentPoem)
+  const options = computed(() => poemStore.options)
+  const currentSentenceIndex = computed(() => poemStore.currentSentenceIndex)
+  const displayContent = computed(() => poemStore.displayContent)
+  const hasImage = computed(() => poemStore.hasImage)
+  const imagePath = computed(() => poemStore.imagePath)
+  const currentDifficulty = computed(() => poemStore.currentDifficulty)
 
-// 获取正确答案
-const correctAnswer = computed(() => {
-  const correctOption = options.value.find(opt => opt.isCorrect);
-  return correctOption ? correctOption.value : '';
-});
+  const correctAnswer = computed(() => {
+    const correctOption = options.value.find((opt: any) => opt.isCorrect)
+    return correctOption ? correctOption.value : ''
+  })
 
-// 初始化
-async function initialize() {
-  // 重置本地状态
-  answered.value = false;
-  selectedOptionIndex.value = null;
-  isCorrect.value = null;
-  showFeedback.value = false;
-  
-  // 初始化诗歌数据
-  await poemStore.initialize();
-}
-
-// 设置难度
-function setDifficulty(difficulty: DifficultyLevel) {
-  if (poemStore.currentDifficulty !== difficulty) {
-    // 重置本地状态
-    answered.value = false;
-    selectedOptionIndex.value = null;
-    isCorrect.value = null;
-    showFeedback.value = false;
-    
-    // 设置难度并重新选择诗歌
-    poemStore.setDifficulty(difficulty);
-  }
-}
-
-// 根据难度计算得分
-function calculateScoreChange(isCorrect: boolean): number {
-  // 基于难度的得分计算
-  switch (currentDifficulty.value) {
-    case 'easy':
-      return isCorrect ? 1 : -1;
-    case 'normal':
-      return isCorrect ? 2 : -1;
-    case 'hard':
-      return isCorrect ? 3 : -2;
-    default:
-      return isCorrect ? 1 : -1;
-  }
-}
-
-// 处理选项选择
-function handleSelect(index: number) {
-  selectedOptionIndex.value = index;
-  // 确保索引在有效范围内
-  if (index >= 0 && index < options.value.length) {
-    const selectedOption = options.value[index];
-    selectedAnswer.value = selectedOption.value;
-    
-    // 检查答案是否正确
-    isCorrect.value = poemStore.checkAnswer(selectedOption.value);
-    answered.value = true;
-    
-    // 更新得分
-    if (userStore.isLoggedIn) {
-      // 根据难度计算得分变化
-      scoreChange.value = calculateScoreChange(isCorrect.value);
-      userStore.updateScore(scoreChange.value);
+  function getOptionClass(index: number) {
+    if (!answered.value) {
+      return 'bg-gray-200 hover:bg-gray-300'
     }
-    
-    // 显示反馈对话框
-    setTimeout(() => {
-      showFeedback.value = true;
-    }, 1000);
+
+    if (index === selectedOptionIndex.value) {
+      if (isCorrect.value) {
+        return 'bg-green-100 border-green-500 border'
+      }
+      return 'bg-red-100 border-red-500 border'
+    }
+
+    if (options.value[index].isCorrect && !isCorrect.value) {
+      return 'bg-green-50 border-green-500 border'
+    }
+
+    return 'bg-gray-200 opacity-70'
   }
-}
 
-// 关闭反馈对话框
-function closeFeedback() {
-  showFeedback.value = false;
-}
+  function handlePrevMusic() {
+    // TODO: 切换上一首背景音乐逻辑
+    // 可调用背景音乐管理模块
+  }
 
-// 获取下一首诗
-function getNextPoem() {
-  // 重置状态
-  answered.value = false;
-  selectedOptionIndex.value = null;
-  isCorrect.value = null;
-  showFeedback.value = false;
-  
-  // 选择下一首诗，保持当前难度
-  poemStore.selectRandomPoem(currentDifficulty.value);
-}
+  function toggleSound() {
+    soundOn.value = !soundOn.value
+    // TODO: 实际控制音效播放
+  }
 
-// 监听难度变化，更新界面提示
-watch(currentDifficulty, (newDifficulty) => {
-  console.log(`难度模式已更改为: ${newDifficulty}`);
-});
+  async function initialize() {
+    console.log('[QuizView] initialize called')
+    answered.value = false
+    selectedOptionIndex.value = null
+    isCorrect.value = null
+    showFeedback.value = false
+    await poemStore.initialize()
+    console.log('[QuizView] poemStore.initialize awaited')
+  }
 
-// 组件挂载时初始化
-onMounted(() => {
-  initialize();
-});
+  function handleSelect(index: number) {
+    selectedOptionIndex.value = index
+    if (index >= 0 && index < options.value.length) {
+      const selectedOption = options.value[index]
+      selectedAnswer.value = selectedOption.value
+      isCorrect.value = poemStore.checkAnswer(selectedOption.value)
+      answered.value = true
+      if (userStore.isLoggedIn) {
+        scoreChange.value = isCorrect.value ? 1 : -1
+        userStore.updateScore(scoreChange.value)
+      }
+    }
+  }
+
+  function getNextPoem() {
+    answered.value = false
+    selectedOptionIndex.value = null
+    isCorrect.value = null
+    showFeedback.value = false
+    poemStore.selectRandomPoem(currentDifficulty.value)
+  }
+
+  const retryLoadPoem = () => {
+    poemStore.loadError = null
+    poemStore.initialize()
+  }
+
+  onMounted(() => {
+    console.log(
+      '[QuizView] onMounted: currentPoem is null:',
+      !poemStore.currentPoem,
+      ', loadError is null:',
+      !poemStore.loadError,
+      ', poemStore.isLoading is:',
+      poemStore.isLoading
+    )
+
+    if (!poemStore.currentPoem && !poemStore.loadError) {
+      console.log('[QuizView] onMounted: Conditions met, calling initialize() to load poem data.')
+      initialize()
+    } else {
+      console.log(
+        '[QuizView] onMounted: Conditions NOT met or data already present/loading. currentPoem:',
+        poemStore.currentPoem,
+        ', loadError:',
+        poemStore.loadError,
+        ', isLoading:',
+        poemStore.isLoading
+      )
+    }
+  })
 </script>
 
 <style scoped>
-.poem-line {
-  text-align: center;
-  line-height: 1.8;
-}
+  .poem-line {
+    text-align: center;
+    line-height: 1.8;
+  }
 
-/* 难度模式按钮动画 */
-button {
-  transition: all 0.3s ease;
-}
+  .filter-green {
+    filter: brightness(0) saturate(100%) invert(42%) sepia(78%) saturate(1084%) hue-rotate(93deg) brightness(96%) contrast(86%);
+  }
 
-/* 诗歌内容卡片阴影增强 */
-.poem-content {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.poem-content:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-</style> 
+  .filter-gray {
+    filter: brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
+  }
+</style>

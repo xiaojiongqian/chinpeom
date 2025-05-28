@@ -79,4 +79,4 @@ describe('诗句翻译功能', () => {
       expect(result[0]).toBe('第一句中文')
     })
   })
-}) 
+})

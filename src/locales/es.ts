@@ -50,7 +50,8 @@ export default {
     rank: 'Rango académico',
     resetScore: 'Reiniciar puntuación',
     confirmReset: 'Confirmar reinicio',
-    resetConfirmText: 'Después de reiniciar, su puntuación será cero y su rango se reiniciará. ¿Está seguro de que desea reiniciar?'
+    resetConfirmText:
+      'Después de reiniciar, su puntuación será cero y su rango se reiniciará. ¿Está seguro de que desea reiniciar?'
   },
   ranks: {
     baiDing: 'Bai Ding',
@@ -72,4 +73,4 @@ export default {
     german: 'Alemán',
     japanese: 'Japonés'
   }
-} 
+}

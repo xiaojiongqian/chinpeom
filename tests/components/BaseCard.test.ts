@@ -37,12 +37,12 @@ describe('BaseCard', () => {
 
   it('设置不同的阴影级别', () => {
     const elevations = ['none', 'sm', 'md', 'lg']
-    
+
     elevations.forEach(elevation => {
       const wrapper = mount(BaseCard, {
         props: { elevation }
       })
-      
+
       if (elevation === 'none') {
         expect(wrapper.classes()).not.toContain('shadow-sm')
         expect(wrapper.classes()).not.toContain('shadow-md')
@@ -84,4 +84,4 @@ describe('BaseCard', () => {
     const footerContainer = wrapper.find('.px-4.py-3.bg-gray-50.border-t.border-gray-200')
     expect(footerContainer.exists()).toBe(false)
   })
-}) 
+})

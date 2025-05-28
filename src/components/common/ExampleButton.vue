@@ -12,12 +12,12 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  label?: string
-  disabled?: boolean
-}>()
+  defineProps<{
+    label?: string
+    disabled?: boolean
+  }>()
 
-defineEmits<{
-  (e: 'click'): void
-}>()
-</script> 
+  defineEmits<{
+    (e: 'click'): void
+  }>()
+</script>
