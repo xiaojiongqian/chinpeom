@@ -60,8 +60,8 @@
   }
 
   .image-container {
-    @apply relative overflow-hidden rounded-lg shadow-md max-w-xs;
-    aspect-ratio: 4/3;
+    @apply relative overflow-hidden rounded-lg shadow-md max-w-sm;
+    aspect-ratio: 1/1;
   }
 
   .poem-image {

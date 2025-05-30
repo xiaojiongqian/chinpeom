@@ -2,11 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 自定义样式 */
+/* 移动端优化基础样式 */
 html {
   font-family: 'Inter var', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* 防止在移动端缩放 */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  /* 确保在移动端没有水平滚动 */
+  overflow-x: hidden;
+  /* 优化触摸滚动 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 通用的移动端容器样式 */
+.mobile-container {
+  @apply w-full max-w-md mx-auto min-h-screen;
+}
+
+/* 移动端安全区域适配 */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 触摸友好的点击区域 */
+.touch-target {
+  @apply min-h-11 min-w-11; /* 44px 是推荐的最小触摸目标大小 */
 }
 
 /* 诗句样式 */
@@ -14,9 +43,9 @@ html {
   @apply font-serif leading-relaxed;
 }
 
-/* 按钮基础样式 */
+/* 按钮基础样式 - 适配移动端 */
 .btn {
-  @apply px-4 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply px-4 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 touch-target;
 }
 
 .btn-primary {
@@ -31,9 +60,9 @@ html {
   @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
 }
 
-/* 输入框基础样式 */
+/* 输入框基础样式 - 适配移动端 */
 .input {
-  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500;
+  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 touch-target;
 }
 
 /* 卡片基础样式 */
@@ -51,4 +80,37 @@ html {
 
 .card-footer {
   @apply bg-gray-100 p-4;
+}
+
+/* 移动端优化的工具类 */
+.text-mobile-sm {
+  @apply text-sm;
+}
+
+.text-mobile-base {
+  @apply text-base;
+}
+
+.text-mobile-lg {
+  @apply text-lg;
+}
+
+.text-mobile-xl {
+  @apply text-xl;
+}
+
+/* 移动端间距优化 */
+.mobile-padding {
+  @apply px-4 py-2;
+}
+
+.mobile-margin {
+  @apply mx-4 my-2;
+}
+
+/* 确保固定定位元素在移动端正确显示 */
+.fixed-mobile {
+  @apply fixed left-0 right-0;
+  max-width: 448px; /* max-w-md 的像素值 */
+  margin: 0 auto;
 } 

@@ -31,7 +31,7 @@
         <img
           :src="poemImageUrl"
           :alt="poemData.title"
-          class="w-full h-48 object-cover rounded-md shadow"
+          class="w-full h-64 object-cover rounded-md shadow"
         />
       </div>
 

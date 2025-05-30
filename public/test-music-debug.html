@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .control-group {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .log {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>音乐播放调试</h1>
+    
+    <div class="control-group">
+        <h3>基本控制</h3>
+        <button onclick="enableAudio()">启用音频</button>
+        <button onclick="playMusic()">播放</button>
+        <button onclick="pauseMusic()">暂停</button>
+        <button onclick="stopMusic()">停止</button>
+    </div>
+
+    <div class="control-group">
+        <h3>切换音乐</h3>
+        <button onclick="nextMusic()">下一首</button>
+        <button onclick="prevMusic()">上一首</button>
+        <button onclick="randomMusic()">随机</button>
+    </div>
+
+    <div class="control-group">
+        <h3>音乐信息</h3>
+        <div class="info">
+            <div>当前音乐: <span id="currentMusic">-</span></div>
+            <div>播放状态: <span id="playingStatus">-</span></div>
+            <div>音频启用: <span id="audioEnabled">-</span></div>
+            <div>静音状态: <span id="muteStatus">-</span></div>
+            <div>当前索引: <span id="currentIndex">-</span></div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <h3>调试日志</h3>
+        <button onclick="clearLog()">清除日志</button>
+        <div class="log" id="logContainer"></div>
+    </div>
+
+    <script>
+        // 音乐列表
+        const musicList = [
+            '1.古韵绵长.mp3',
+            '2.关山月.mp3',
+            '3.黄鹤归来.mp3',
+            '4.将进酒.mp3',
+            '5.The Moon\'s Whisper.mp3',
+            '6.The Winter\'s Embrace(白雪歌送武判官归京).mp3',
+            '7.The Winds of War(轮台歌奉送封大夫出师西征).mp3',
+            '8.Longing in Chang\'an.mp3'
+        ];
+
+        let currentIndex = 0;
+        let audio = null;
+        let isPlaying = false;
+        let isAudioEnabled = false;
+        let isMuted = false;
+
+        function log(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            logContainer.innerHTML += `[${timestamp}] ${message}\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function updateInfo() {
+            document.getElementById('currentMusic').textContent = musicList[currentIndex];
+            document.getElementById('playingStatus').textContent = isPlaying ? '播放中' : '已停止';
+            document.getElementById('audioEnabled').textContent = isAudioEnabled ? '是' : '否';
+            document.getElementById('muteStatus').textContent = isMuted ? '是' : '否';
+            document.getElementById('currentIndex').textContent = currentIndex;
+        }
+
+        function initAudio() {
+            if (!audio) {
+                audio = new Audio();
+                audio.volume = 0.3;
+                audio.loop = false;
+                audio.preload = 'metadata';
+
+                audio.addEventListener('ended', () => {
+                    log('音乐播放结束: ' + musicList[currentIndex]);
+                    isPlaying = false;
+                    autoPlayNext();
+                    updateInfo();
+                });
+
+                audio.addEventListener('error', (e) => {
+                    log('音频播放错误: ' + e.message + ', 音乐: ' + musicList[currentIndex]);
+                    isPlaying = false;
+                    updateInfo();
+                });
+
+                audio.addEventListener('play', () => {
+                    log('音频开始播放: ' + musicList[currentIndex]);
+                    isPlaying = true;
+                    updateInfo();
+                });
+
+                audio.addEventListener('pause', () => {
+                    log('音频暂停: ' + musicList[currentIndex]);
+                    isPlaying = false;
+                    updateInfo();
+                });
+
+                log('音频已初始化');
+            }
+        }
+
+        function enableAudio() {
+            if (!isAudioEnabled) {
+                isAudioEnabled = true;
+                initAudio();
+                log('音频已启用');
+                updateInfo();
+            }
+        }
+
+        function playMusic() {
+            if (!isAudioEnabled) {
+                enableAudio();
+            }
+
+            if (!audio) {
+                initAudio();
+            }
+
+            if (audio && !isMuted) {
+                const musicPath = `/backgroundmusic/${musicList[currentIndex]}`;
+                log('准备播放: ' + musicList[currentIndex] + ', 路径: ' + musicPath);
+                
+                if (!audio.paused) {
+                    audio.pause();
+                }
+                
+                audio.src = musicPath;
+                audio.currentTime = 0;
+
+                audio.play().then(() => {
+                    log('成功开始播放: ' + musicList[currentIndex]);
+                    isPlaying = true;
+                    updateInfo();
+                }).catch(error => {
+                    log('播放失败: ' + error.message + ', 音乐: ' + musicList[currentIndex]);
+                    isPlaying = false;
+                    updateInfo();
+                });
+            }
+        }
+
+        function pauseMusic() {
+            if (audio) {
+                audio.pause();
+                log('音乐已暂停');
+                updateInfo();
+            }
+        }
+
+        function stopMusic() {
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+                isPlaying = false;
+                log('音乐已停止');
+                updateInfo();
+            }
+        }
+
+        function nextMusic() {
+            const oldIndex = currentIndex;
+            currentIndex = (currentIndex + 1) % musicList.length;
+            log(`手动切换到下一首: ${musicList[oldIndex]} -> ${musicList[currentIndex]}`);
+            if (isAudioEnabled && !isMuted) {
+                playMusic();
+            }
+            updateInfo();
+        }
+
+        function prevMusic() {
+            const oldIndex = currentIndex;
+            currentIndex = currentIndex === 0 ? musicList.length - 1 : currentIndex - 1;
+            log(`手动切换到上一首: ${musicList[oldIndex]} -> ${musicList[currentIndex]}`);
+            if (isAudioEnabled && !isMuted) {
+                playMusic();
+            }
+            updateInfo();
+        }
+
+        function randomMusic() {
+            const oldIndex = currentIndex;
+            let newIndex = Math.floor(Math.random() * musicList.length);
+            if (musicList.length > 1) {
+                while (newIndex === oldIndex) {
+                    newIndex = Math.floor(Math.random() * musicList.length);
+                }
+            }
+            currentIndex = newIndex;
+            log(`随机切换: ${musicList[oldIndex]} -> ${musicList[currentIndex]}`);
+            if (isAudioEnabled && !isMuted) {
+                playMusic();
+            }
+            updateInfo();
+        }
+
+        function autoPlayNext() {
+            const oldIndex = currentIndex;
+            let nextIndex = Math.floor(Math.random() * musicList.length);
+            if (musicList.length > 1) {
+                while (nextIndex === oldIndex) {
+                    nextIndex = Math.floor(Math.random() * musicList.length);
+                }
+            }
+            currentIndex = nextIndex;
+            log(`自动切换: ${musicList[oldIndex]} -> ${musicList[currentIndex]}`);
+            if (isAudioEnabled && !isMuted) {
+                playMusic();
+            }
+            updateInfo();
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+        }
+
+        // 初始化显示
+        updateInfo();
+        log('调试页面已加载');
+    </script>
+</body>
+</html> 

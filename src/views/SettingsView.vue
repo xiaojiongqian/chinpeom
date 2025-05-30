@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-100 px-4 pb-16">
+  <div class="flex flex-col min-h-screen bg-gray-100 pb-16">
     <!-- 页面标题 -->
     <div class="pt-6 pb-3 text-center">
       <h1 class="text-2xl font-bold text-gray-800">唐诗译境设置</h1>
     </div>
 
     <!-- 设置内容 -->
-    <div class="flex-1">
+    <div class="flex-1 px-4">
       <!-- 翻译语言设置 -->
       <div class="bg-white rounded-xl shadow-md mb-4 p-6">
         <h2 class="text-lg font-bold mb-4">翻译语言</h2>
@@ -16,7 +16,7 @@
             v-for="language in languages"
             :key="language.value"
             class="flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors"
-            :class="{ 'bg-green-50 border-green-500': userStore.language === language.value }"
+            :class="{ 'bg-success-50 border-success-500': userStore.language === language.value }"
             @click="setLanguage(language.value)"
           >
             <div class="flex items-center space-x-3">
@@ -25,7 +25,7 @@
             </div>
             <div 
               v-if="userStore.language === language.value"
-              class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
+              class="w-5 h-5 bg-success-500 rounded-full flex items-center justify-center"
             >
               <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -42,7 +42,7 @@
         <div class="space-y-3">
           <div
             class="flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors"
-            :class="{ 'bg-green-50 border-green-500': difficulty === 'easy' }"
+            :class="{ 'bg-success-50 border-success-500': difficulty === 'easy' }"
             @click="setDifficulty('easy')"
           >
             <div>
@@ -51,7 +51,7 @@
             </div>
             <div 
               v-if="difficulty === 'easy'"
-              class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
+              class="w-5 h-5 bg-success-500 rounded-full flex items-center justify-center"
             >
               <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -61,7 +61,7 @@
 
           <div
             class="flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors"
-            :class="{ 'bg-green-50 border-green-500': difficulty === 'hard' }"
+            :class="{ 'bg-success-50 border-success-500': difficulty === 'hard' }"
             @click="setDifficulty('hard')"
           >
             <div>
@@ -70,12 +70,36 @@
             </div>
             <div 
               v-if="difficulty === 'hard'"
-              class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"
+              class="w-5 h-5 bg-success-500 rounded-full flex items-center justify-center"
             >
               <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
               </svg>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 音乐设置 -->
+      <div class="bg-white rounded-xl shadow-md mb-4 p-6">
+        <h2 class="text-lg font-bold mb-4">音乐</h2>
+        
+        <div class="space-y-3">
+          <div class="flex items-center justify-between p-3 border rounded-lg">
+            <div>
+              <div class="font-medium">背景音乐</div>
+              <div class="text-sm text-gray-500">开启或关闭游戏背景音乐</div>
+            </div>
+            <button
+              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+              :class="!musicStore.isMuted ? 'bg-success-500' : 'bg-gray-300'"
+              @click="musicStore.toggleMute()"
+            >
+              <span
+                class="inline-block h-4 w-4 transform rounded-full bg-white transition"
+                :class="!musicStore.isMuted ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -97,7 +121,7 @@
       <!-- 确定按钮 -->
       <div class="bg-white rounded-xl shadow-md mb-4 p-6">
         <button
-          class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+          class="w-full bg-success-500 hover:bg-success-600 text-white font-medium py-3 px-4 rounded-lg transition-colors"
           @click="confirmSettings"
         >
           确定
@@ -138,13 +162,13 @@
 
     <!-- 底部tab导航 -->
     <nav
-      class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
+      class="fixed-mobile bottom-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
     >
       <!-- 成就页面 -->
       <router-link 
         to="/achievement" 
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'achievement' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'achievement' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_achievement.svg" 
@@ -158,7 +182,7 @@
       <router-link 
         to="/quizview" 
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'home' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_home.svg" 
@@ -172,7 +196,7 @@
       <router-link
         to="/settings"
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'settings' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'settings' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_usersetting.svg" 
@@ -190,11 +214,13 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { usePoemStore } from '../stores/poem'
+import { useMusicStore } from '../stores/music'
 import type { DifficultyLevel } from '../utils/optionsGenerator'
 
 const router = useRouter()
 const userStore = useUserStore()
 const poemStore = usePoemStore()
+const musicStore = useMusicStore()
 const difficulty = ref<DifficultyLevel>(poemStore.currentDifficulty || 'easy')
 const showLogoutDialog = ref(false)
 

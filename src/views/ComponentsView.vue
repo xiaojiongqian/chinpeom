@@ -5,7 +5,7 @@
     :copyright="copyright"
     :footer-links="footerLinks"
   >
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-md mx-auto px-4">
       <h1 class="text-2xl font-bold mb-6">组件展示</h1>
 
       <!-- 按钮组件展示 -->

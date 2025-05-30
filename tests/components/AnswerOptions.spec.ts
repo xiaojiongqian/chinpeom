@@ -78,8 +78,8 @@ describe('AnswerOptions组件', () => {
 
     // 验证选中的按钮有正确的样式
     const selectedButton = wrapper.findAll('button')[0]
-    expect(selectedButton.classes()).toContain('bg-green-100')
-    expect(selectedButton.classes()).toContain('border-green-500')
+    expect(selectedButton.classes()).toContain('bg-success-100')
+    expect(selectedButton.classes()).toContain('border-success-500')
   })
 
   it('选择错误答案时应显示错误的反馈样式并标出正确答案', async () => {
@@ -99,7 +99,7 @@ describe('AnswerOptions组件', () => {
 
     // 验证正确答案按钮有提示样式
     const correctButton = wrapper.findAll('button')[0] // 第一个选项是正确的
-    expect(correctButton.classes()).toContain('bg-green-50')
-    expect(correctButton.classes()).toContain('border-green-300')
+    expect(correctButton.classes()).toContain('bg-success-50')
+    expect(correctButton.classes()).toContain('border-success-300')
   })
 })

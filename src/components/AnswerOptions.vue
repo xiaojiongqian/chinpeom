@@ -10,7 +10,7 @@
         @click="selectOption(index)"
       >
         {{ option.label }}
-        <span v-if="answered && option.isCorrect" class="ml-2 text-green-600">
+        <span v-if="answered && option.isCorrect" class="ml-2 text-success-600">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 inline"
@@ -31,9 +31,9 @@
     <div
       v-if="answered"
       class="mt-4 p-3 rounded-lg"
-      :class="isCorrect ? 'bg-green-50' : 'bg-red-50'"
+      :class="isCorrect ? 'bg-success-50' : 'bg-red-50'"
     >
-      <p v-if="isCorrect" class="text-green-700">
+      <p v-if="isCorrect" class="text-success-700">
         <span class="font-bold">正确!</span> 你选择了正确的诗句。
       </p>
       <p v-else class="text-red-700">
@@ -85,7 +85,7 @@
     if (index === props.selectedIndex) {
       // 选择正确
       if (props.isCorrect) {
-        return 'bg-green-100 border-green-500'
+        return 'bg-success-100 border-success-500'
       }
       // 选择错误
       return 'bg-red-100 border-red-500'
@@ -93,7 +93,7 @@
 
     // 非选中项但是正确答案（用户选错了，显示正确答案）
     if (option.isCorrect && !props.isCorrect) {
-      return 'bg-green-50 border-green-300'
+      return 'bg-success-50 border-success-300'
     }
 
     // 其他未选中项

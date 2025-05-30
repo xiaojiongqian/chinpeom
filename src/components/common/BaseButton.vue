@@ -43,7 +43,7 @@
     const classes = {
       primary: 'bg-primary hover:bg-primary-dark text-white',
       secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-      success: 'bg-green-500 hover:bg-green-600 text-white',
+      success: 'bg-success-500 hover:bg-success-600 text-white',
       danger: 'bg-red-500 hover:bg-red-600 text-white',
       warning: 'bg-yellow-500 hover:bg-yellow-600 text-white',
       info: 'bg-blue-500 hover:bg-blue-600 text-white'

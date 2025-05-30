@@ -52,7 +52,7 @@ describe('BaseButton', () => {
       } else if (variant === 'secondary') {
         expect(wrapper.classes()).toContain('bg-gray-200')
       } else if (variant === 'success') {
-        expect(wrapper.classes()).toContain('bg-green-500')
+        expect(wrapper.classes()).toContain('bg-success-500')
       }
     })
   })

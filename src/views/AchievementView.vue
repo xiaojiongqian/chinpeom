@@ -1,16 +1,16 @@
 <template>
-  <div class="flex flex-col min-h-screen bg-gray-100 px-4 pb-16">
+  <div class="flex flex-col min-h-screen bg-gray-100 pb-16">
     <!-- 页面标题 -->
     <div class="pt-6 pb-3 text-center">
       <h1 class="text-2xl font-bold text-gray-800">成绩</h1>
     </div>
 
-    <div class="flex-1 flex flex-col items-center">
+    <div class="flex-1 flex flex-col items-center px-4">
       <!-- 用户信息卡片 -->
       <div class="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden mb-8">
         <div class="flex items-center p-6">
           <div class="flex-shrink-0 mr-4">
-            <div class="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center">
+            <div class="h-16 w-16 rounded-full bg-success-500 flex items-center justify-center">
               <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
               </svg>
@@ -47,7 +47,7 @@
         <div class="flex items-center justify-between mb-2">
           <div>
             <span class="flex items-center">
-              <span class="text-green-500 mr-2">
+              <span class="text-success-500 mr-2">
                 <svg
                   class="w-5 h-5"
                   fill="currentColor"
@@ -66,7 +66,7 @@
         </div>
 
         <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
-          <div class="bg-green-500 h-3 rounded-full" :style="{ width: `${scoreProgress}%` }"></div>
+          <div class="bg-success-500 h-3 rounded-full" :style="{ width: `${scoreProgress}%` }"></div>
         </div>
 
         <div class="text-sm text-gray-500">
@@ -103,7 +103,7 @@
       <div class="w-full max-w-md mt-8">
         <router-link
           to="/quizview"
-          class="block w-full text-center p-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow transition-colors"
+          class="block w-full text-center p-4 bg-success-500 hover:bg-success-600 text-white font-semibold rounded-lg shadow transition-colors"
         >
           返回
         </router-link>
@@ -112,13 +112,13 @@
 
     <!-- 底部tab导航 -->
     <nav
-      class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
+      class="fixed-mobile bottom-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
     >
       <!-- 成就页面 -->
       <router-link 
         to="/achievement" 
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'achievement' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'achievement' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_achievement.svg" 
@@ -132,7 +132,7 @@
       <router-link 
         to="/quizview" 
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'home' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_home.svg" 
@@ -146,7 +146,7 @@
       <router-link
         to="/settings"
         class="flex flex-col items-center transition-colors"
-        :class="$route.name === 'settings' ? 'text-green-600' : 'text-gray-800 hover:text-green-600'"
+        :class="$route.name === 'settings' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
       >
         <img 
           src="@/assets/icons/nav/icon_usersetting.svg" 

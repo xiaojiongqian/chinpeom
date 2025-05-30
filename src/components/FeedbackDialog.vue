@@ -9,9 +9,9 @@
       :class="{ 'scale-100 opacity-100': show, 'scale-90 opacity-0': !show }"
     >
       <!-- 反馈头部 -->
-      <div class="p-5 border-b" :class="isCorrect ? 'bg-green-50' : 'bg-red-50'">
+      <div class="p-5 border-b" :class="isCorrect ? 'bg-success-50' : 'bg-red-50'">
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold" :class="isCorrect ? 'text-green-700' : 'text-red-700'">
+          <h3 class="text-lg font-bold" :class="isCorrect ? 'text-success-700' : 'text-red-700'">
             {{ isCorrect ? '答对了！' : '答错了！' }}
           </h3>
           <button class="text-gray-500 hover:text-gray-700" @click="close">
@@ -36,8 +36,8 @@
       <!-- 反馈内容 -->
       <div class="p-5">
         <div v-if="isCorrect" class="mb-4">
-          <p class="text-green-700 text-sm mb-2">太棒了！你选择了正确的诗句。</p>
-          <div v-if="scoreChange" class="flex items-center text-sm text-green-600">
+          <p class="text-success-700 text-sm mb-2">太棒了！你选择了正确的诗句。</p>
+          <div v-if="scoreChange" class="flex items-center text-sm text-success-600">
             <span>获得 +{{ scoreChange }} 分</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
