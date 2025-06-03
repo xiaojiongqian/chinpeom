@@ -21,7 +21,7 @@ export const usePoemStore = defineStore('poem', () => {
   const loadError = ref<string | null>(null)
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem>>({})
-  const currentDifficulty = ref<DifficultyLevel>('normal')
+  const currentDifficulty = ref<DifficultyLevel>('easy')
 
   // 计算属性
   const hasImage = computed(() => {
@@ -81,7 +81,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
 
   // 随机选择一首诗，可以指定难度
-  function selectRandomPoem(difficulty: DifficultyLevel = 'normal') {
+  function selectRandomPoem(difficulty: DifficultyLevel = 'easy') {
     try {
       if (allPoems.value.length === 0) {
         throw new Error('诗歌数据尚未加载')
@@ -110,7 +110,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
 
   // 生成备选答案，支持难度调整
-  function generateOptionsWithDifficulty(difficulty: DifficultyLevel = 'normal') {
+  function generateOptionsWithDifficulty(difficulty: DifficultyLevel = 'easy') {
     if (!currentPoem.value) return
 
     // 获取当前选中的句子

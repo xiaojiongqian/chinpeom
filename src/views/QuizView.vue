@@ -91,10 +91,7 @@
               class="poem-line font-medium"
               :class="{
                 'text-gray-800': index !== currentSentenceIndex,
-                'text-success-400 text-base font-normal':
-                  index === currentSentenceIndex && currentDifficulty !== 'hard',
-                'text-red-600 font-semibold':
-                  index === currentSentenceIndex && currentDifficulty === 'hard'
+                'text-success-400 text-base font-normal': index === currentSentenceIndex
               }"
             >
               {{ line }}
@@ -244,11 +241,6 @@
   const imagePath = computed(() => poemStore.imagePath)
   const currentDifficulty = computed(() => poemStore.currentDifficulty)
 
-  const correctAnswer = computed(() => {
-    const correctOption = options.value.find((opt: any) => opt.isCorrect)
-    return correctOption ? correctOption.value : ''
-  })
-
   // 滚动到页面顶部的函数
   function scrollToTop() {
     nextTick(() => {
@@ -327,9 +319,27 @@
       selectedAnswer.value = selectedOption.value
       isCorrect.value = poemStore.checkAnswer(selectedOption.value)
       answered.value = true
+      
       if (userStore.isLoggedIn) {
-        scoreChange.value = isCorrect.value ? 1 : -1
-        userStore.updateScore(scoreChange.value)
+        // 根据难度模式调整得分
+        const difficultyMultiplier = currentDifficulty.value === 'hard' ? 2 : 1
+        scoreChange.value = isCorrect.value ? difficultyMultiplier : -difficultyMultiplier
+        
+        // 尝试更新分数，如果被限制则显示升级提示
+        const updateSuccess = userStore.updateScore(scoreChange.value)
+        
+        // 如果分数更新被限制（免费用户达到上限）
+        if (!updateSuccess && isCorrect.value) {
+          // 重置scoreChange，因为实际没有增加分数
+          scoreChange.value = 0
+          // 显示升级提示
+          setTimeout(() => {
+            if (confirm('🎉 恭喜答对！\n\n您已达到免费用户的最高学级：秀才\n是否升级VIP继续挑战更高学级？')) {
+              // 跳转到成就页面，用户可以在那里购买升级
+              window.location.href = '/achievement'
+            }
+          }, 1000) // 延迟1秒显示，让用户看到答对的反馈
+        }
       }
       // 移除自动隐藏定时器，让用户手动点击下一首
     }

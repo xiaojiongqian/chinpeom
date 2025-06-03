@@ -1,245 +1,212 @@
 import express from 'express'
-import { v4 as uuidv4 } from 'uuid'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
-import jwt from 'jsonwebtoken'
+import mysql from 'mysql2/promise'
+import config from '../config/database.js'
 import { auth } from '../middleware/auth.js'
-import config from '../config/env/default.js'
 
 const router = express.Router()
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
-// 用户数据文件路径
-const DATA_FILE = join(__dirname, '../data/users.json')
+// 创建数据库连接池
+const pool = mysql.createPool(config.database)
 
-// 读取用户数据
-const readUsers = () => {
+/**
+ * 获取用户完整信息
+ * GET /api/user/profile
+ */
+router.get('/profile', auth, async (req, res) => {
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      // 如果文件不存在，创建一个空的用户数据文件
-      fs.writeFileSync(DATA_FILE, JSON.stringify({ users: [] }))
-      return { users: [] }
+    const userId = req.user.id
+    const connection = await pool.getConnection()
+
+    try {
+      const [users] = await connection.execute(
+        'SELECT * FROM v_user_profile WHERE id = ?',
+        [userId]
+      )
+
+      if (users.length === 0) {
+        return res.status(404).json({ message: '用户不存在' })
+      }
+
+      const user = users[0]
+
+      res.json({
+        user: {
+          id: user.id,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          total_score: user.total_score,
+          current_rank: user.current_rank,
+          rank_description: user.rank_description,
+          rank_min_score: user.rank_min_score,
+          rank_max_score: user.rank_max_score,
+          is_premium: user.is_premium_active,
+          premium_expire_at: user.premium_expire_at,
+          language_preference: user.language_preference,
+          difficulty_mode: user.difficulty_mode,
+          hint_language: user.hint_language,
+          sound_enabled: user.sound_enabled,
+          next_rank: user.next_rank,
+          next_rank_score: user.next_rank_score,
+          points_to_next_rank: user.points_to_next_rank,
+          last_login_at: user.last_login_at,
+          last_sync_at: user.last_sync_at
+        }
+      })
+
+    } finally {
+      connection.release()
     }
 
-    const data = fs.readFileSync(DATA_FILE, 'utf8')
-    return JSON.parse(data)
-  } catch (error) {
-    console.error('读取用户数据失败:', error)
-    return { users: [] }
-  }
-}
-
-// 写入用户数据
-const writeUsers = data => {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
-    return true
-  } catch (error) {
-    console.error('写入用户数据失败:', error)
-    return false
-  }
-}
-
-// 用户注册
-router.post('/register', async (req, res) => {
-  try {
-    const { username, email, password } = req.body
-
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: '用户名、邮箱和密码不能为空' })
-    }
-
-    const userData = readUsers()
-
-    // 检查用户是否已存在
-    if (userData.users.some(user => user.email === email)) {
-      return res.status(400).json({ message: '该邮箱已被注册' })
-    }
-
-    // 创建新用户
-    const newUser = {
-      id: uuidv4(),
-      username,
-      email,
-      password, // 注意：实际应用中应该对密码进行哈希处理
-      score: 0,
-      language: 'english',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    // 添加用户到数据
-    userData.users.push(newUser)
-    writeUsers(userData)
-
-    // 生成JWT
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, config.jwtSecret, {
-      expiresIn: config.jwtExpire
-    })
-
-    // 返回用户信息（不包含密码）
-    const { password: _, ...userWithoutPassword } = newUser
-
-    res.status(201).json({
-      message: '注册成功',
-      user: userWithoutPassword,
-      token
-    })
-  } catch (error) {
-    console.error('注册失败:', error)
-    res.status(500).json({ message: '服务器错误' })
-  }
-})
-
-// 用户登录
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body
-
-    if (!email || !password) {
-      return res.status(400).json({ message: '邮箱和密码不能为空' })
-    }
-
-    const userData = readUsers()
-
-    // 查找用户
-    const user = userData.users.find(user => user.email === email)
-
-    if (!user || user.password !== password) {
-      // 实际应用中应比较哈希值
-      return res.status(401).json({ message: '邮箱或密码错误' })
-    }
-
-    // 生成JWT
-    const token = jwt.sign({ id: user.id, email: user.email }, config.jwtSecret, {
-      expiresIn: config.jwtExpire
-    })
-
-    // 返回用户信息（不包含密码）
-    const { password: _, ...userWithoutPassword } = user
-
-    res.json({
-      message: '登录成功',
-      user: userWithoutPassword,
-      token
-    })
-  } catch (error) {
-    console.error('登录失败:', error)
-    res.status(500).json({ message: '服务器错误' })
-  }
-})
-
-// 获取用户信息
-router.get('/me', auth, async (req, res) => {
-  try {
-    const userData = readUsers()
-    const user = userData.users.find(user => user.id === req.user.id)
-
-    if (!user) {
-      return res.status(404).json({ message: '用户不存在' })
-    }
-
-    // 返回用户信息（不包含密码）
-    const { password, ...userWithoutPassword } = user
-
-    res.json({ user: userWithoutPassword })
   } catch (error) {
     console.error('获取用户信息失败:', error)
     res.status(500).json({ message: '服务器错误' })
   }
 })
 
-// 更新用户分数
+/**
+ * 同步用户积分
+ * PUT /api/user/score
+ */
 router.put('/score', auth, async (req, res) => {
   try {
-    const { scoreDelta } = req.body
+    const userId = req.user.id
+    const { total_score } = req.body
 
-    if (typeof scoreDelta !== 'number') {
-      return res.status(400).json({ message: '分数增量必须是数字' })
+    if (typeof total_score !== 'number' || total_score < 0) {
+      return res.status(400).json({ message: '积分必须是非负数' })
     }
 
-    const userData = readUsers()
-    const userIndex = userData.users.findIndex(user => user.id === req.user.id)
+    const connection = await pool.getConnection()
 
-    if (userIndex === -1) {
-      return res.status(404).json({ message: '用户不存在' })
-    }
+    try {
+      // 调用存储过程同步积分和等级
+      await connection.execute('CALL SyncUserScore(?, ?)', [userId, total_score])
 
-    // 更新用户分数
-    userData.users[userIndex].score += scoreDelta
-    userData.users[userIndex].updatedAt = new Date().toISOString()
+      // 获取更新后的用户信息
+      const [users] = await connection.execute(
+        'SELECT * FROM v_user_profile WHERE id = ?',
+        [userId]
+      )
 
-    // 保存更新
-    writeUsers(userData)
+      if (users.length === 0) {
+        return res.status(404).json({ message: '用户不存在' })
+      }
 
-    // 返回更新后的用户信息（不包含密码）
-    const { password, ...userWithoutPassword } = userData.users[userIndex]
+      const user = users[0]
 
-    res.json({
-      message: '分数更新成功',
-      user: userWithoutPassword
-    })
-  } catch (error) {
-    console.error('更新分数失败:', error)
-    res.status(500).json({ message: '服务器错误' })
-  }
-})
-
-// 更新用户语言设置
-router.put('/language', auth, async (req, res) => {
-  try {
-    const { language } = req.body
-
-    if (!language) {
-      return res.status(400).json({ message: '语言不能为空' })
-    }
-
-    const userData = readUsers()
-    const userIndex = userData.users.findIndex(user => user.id === req.user.id)
-
-    if (userIndex === -1) {
-      return res.status(404).json({ message: '用户不存在' })
-    }
-
-    // 更新用户语言设置
-    userData.users[userIndex].language = language
-    userData.users[userIndex].updatedAt = new Date().toISOString()
-
-    // 保存更新
-    writeUsers(userData)
-
-    // 返回更新后的用户信息（不包含密码）
-    const { password, ...userWithoutPassword } = userData.users[userIndex]
-
-    res.json({
-      message: '语言设置更新成功',
-      user: userWithoutPassword
-    })
-  } catch (error) {
-    console.error('更新语言设置失败:', error)
-    res.status(500).json({ message: '服务器错误' })
-  }
-})
-
-// 获取排行榜
-router.get('/leaderboard', async (req, res) => {
-  try {
-    const userData = readUsers()
-
-    // 获取排行榜（按分数降序排列，只返回前10名）
-    const leaderboard = userData.users
-      .map(user => {
-        const { id, username, score } = user
-        return { id, username, score }
+      res.json({
+        message: '积分同步成功',
+        user: {
+          id: user.id,
+          total_score: user.total_score,
+          current_rank: user.current_rank,
+          next_rank: user.next_rank,
+          next_rank_score: user.next_rank_score,
+          points_to_next_rank: user.points_to_next_rank,
+          last_sync_at: user.last_sync_at
+        }
       })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
 
-    res.json({ leaderboard })
+    } finally {
+      connection.release()
+    }
+
   } catch (error) {
-    console.error('获取排行榜失败:', error)
+    console.error('同步积分失败:', error)
+    res.status(500).json({ message: '服务器错误' })
+  }
+})
+
+/**
+ * 更新用户设置
+ * PUT /api/user/settings
+ */
+router.put('/settings', auth, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { language_preference, difficulty_mode, hint_language, sound_enabled } = req.body
+
+    // 验证参数
+    const validLanguages = ['zh-CN', 'en', 'es', 'ja', 'fr', 'de']
+    const validHintLanguages = ['en', 'es', 'ja', 'fr', 'de']
+    const validDifficultyModes = ['easy', 'hard']
+
+    if (language_preference && !validLanguages.includes(language_preference)) {
+      return res.status(400).json({ message: '不支持的语言偏好' })
+    }
+
+    if (difficulty_mode && !validDifficultyModes.includes(difficulty_mode)) {
+      return res.status(400).json({ message: '不支持的难度模式' })
+    }
+
+    if (hint_language && !validHintLanguages.includes(hint_language)) {
+      return res.status(400).json({ message: '不支持的提示语言' })
+    }
+
+    if (sound_enabled !== undefined && typeof sound_enabled !== 'boolean') {
+      return res.status(400).json({ message: '音效设置必须是布尔值' })
+    }
+
+    const connection = await pool.getConnection()
+
+    try {
+      // 构建更新SQL
+      const updateFields = []
+      const updateValues = []
+
+      if (language_preference !== undefined) {
+        updateFields.push('language_preference = ?')
+        updateValues.push(language_preference)
+      }
+      if (difficulty_mode !== undefined) {
+        updateFields.push('difficulty_mode = ?')
+        updateValues.push(difficulty_mode)
+      }
+      if (hint_language !== undefined) {
+        updateFields.push('hint_language = ?')
+        updateValues.push(hint_language)
+      }
+      if (sound_enabled !== undefined) {
+        updateFields.push('sound_enabled = ?')
+        updateValues.push(sound_enabled ? 1 : 0)
+      }
+
+      if (updateFields.length === 0) {
+        return res.status(400).json({ message: '没有提供要更新的设置' })
+      }
+
+      updateFields.push('updated_at = CURRENT_TIMESTAMP')
+      updateValues.push(userId)
+
+      const updateSQL = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`
+      await connection.execute(updateSQL, updateValues)
+
+      // 获取更新后的用户信息
+      const [users] = await connection.execute(
+        'SELECT language_preference, difficulty_mode, hint_language, sound_enabled FROM users WHERE id = ?',
+        [userId]
+      )
+
+      if (users.length === 0) {
+        return res.status(404).json({ message: '用户不存在' })
+      }
+
+      res.json({
+        message: '设置更新成功',
+        settings: {
+          language_preference: users[0].language_preference,
+          difficulty_mode: users[0].difficulty_mode,
+          hint_language: users[0].hint_language,
+          sound_enabled: Boolean(users[0].sound_enabled)
+        }
+      })
+
+    } finally {
+      connection.release()
+    }
+
+  } catch (error) {
+    console.error('更新设置失败:', error)
     res.status(500).json({ message: '服务器错误' })
   }
 })

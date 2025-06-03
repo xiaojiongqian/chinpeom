@@ -1,0 +1,263 @@
+{
+  "summary": {
+    "startTime": "2025-06-02T02:16:02.825Z",
+    "endTime": "2025-06-02T02:16:05.064Z",
+    "totalDuration": 2239,
+    "totalTests": 19,
+    "passed": 19,
+    "failed": 0,
+    "passRate": "100.0"
+  },
+  "categories": [
+    {
+      "name": "基础功能",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "avgDuration": 23
+    },
+    {
+      "name": "认证模块",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "avgDuration": 78.85714285714286
+    },
+    {
+      "name": "用户管理",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "avgDuration": 6.666666666666667
+    },
+    {
+      "name": "配置管理",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "avgDuration": 5
+    },
+    {
+      "name": "支付管理",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "avgDuration": 135
+    },
+    {
+      "name": "错误处理",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "avgDuration": 4
+    }
+  ],
+  "details": [
+    {
+      "category": "基础功能",
+      "name": "健康检查接口",
+      "status": "PASS",
+      "duration": 23,
+      "data": {
+        "uptime": 1.090402125
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "微信登录",
+      "status": "PASS",
+      "duration": 138,
+      "data": {
+        "userId": 26,
+        "displayName": "微信用户827",
+        "currentRank": "白丁"
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "Google登录",
+      "status": "PASS",
+      "duration": 163,
+      "data": {
+        "userId": 27,
+        "displayName": "Google User 78"
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "Apple登录",
+      "status": "PASS",
+      "duration": 132,
+      "data": {
+        "userId": 28,
+        "displayName": "Apple User 503"
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "无效平台拒绝",
+      "status": "PASS",
+      "duration": 2,
+      "data": {
+        "supportedProviders": [
+          "wechat",
+          "apple",
+          "google",
+          "twitter"
+        ]
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "无效令牌拒绝",
+      "status": "PASS",
+      "duration": 104
+    },
+    {
+      "category": "认证模块",
+      "name": "令牌验证",
+      "status": "PASS",
+      "duration": 7,
+      "data": {
+        "tokenValid": true,
+        "userId": 26
+      }
+    },
+    {
+      "category": "认证模块",
+      "name": "令牌刷新",
+      "status": "PASS",
+      "duration": 6,
+      "data": {
+        "newToken": "eyJhbGciOiJIUzI1NiIs..."
+      }
+    },
+    {
+      "category": "用户管理",
+      "name": "获取用户信息",
+      "status": "PASS",
+      "duration": 9,
+      "data": {
+        "userId": 26,
+        "currentRank": "白丁",
+        "totalScore": 0
+      }
+    },
+    {
+      "category": "用户管理",
+      "name": "更新用户设置",
+      "status": "PASS",
+      "duration": 6,
+      "data": {
+        "difficultyMode": "hard",
+        "soundEnabled": false
+      }
+    },
+    {
+      "category": "用户管理",
+      "name": "积分同步",
+      "status": "PASS",
+      "duration": 5,
+      "data": {
+        "totalScore": 30,
+        "currentRank": "秀才"
+      }
+    },
+    {
+      "category": "配置管理",
+      "name": "学级配置",
+      "status": "PASS",
+      "duration": 5,
+      "data": {
+        "totalRanks": 11,
+        "freeRanks": 3,
+        "premiumRanks": 8
+      }
+    },
+    {
+      "category": "支付管理",
+      "name": "产品列表",
+      "status": "PASS",
+      "duration": 1,
+      "data": {
+        "totalProducts": 3,
+        "paymentMethods": [
+          {
+            "code": "alipay",
+            "name": "支付宝",
+            "enabled": true
+          },
+          {
+            "code": "wechat",
+            "name": "微信支付",
+            "enabled": true
+          },
+          {
+            "code": "apple",
+            "name": "Apple Pay",
+            "enabled": true
+          },
+          {
+            "code": "google",
+            "name": "Google Pay",
+            "enabled": true
+          },
+          {
+            "code": "stripe",
+            "name": "Stripe",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "category": "支付管理",
+      "name": "创建订单",
+      "status": "PASS",
+      "duration": 211,
+      "data": {
+        "orderNo": "CP1748830564518OSEJO0PUS",
+        "amount": 9.9,
+        "paymentMethod": "alipay"
+      }
+    },
+    {
+      "category": "支付管理",
+      "name": "支付验证",
+      "status": "PASS",
+      "duration": 320,
+      "data": {
+        "success": true,
+        "orderNo": "CP1748830564518OSEJO0PUS"
+      }
+    },
+    {
+      "category": "支付管理",
+      "name": "支付历史",
+      "status": "PASS",
+      "duration": 8,
+      "data": {
+        "totalRecords": 1,
+        "hasTestOrder": true
+      }
+    },
+    {
+      "category": "错误处理",
+      "name": "无效JSON请求",
+      "status": "PASS",
+      "duration": 6
+    },
+    {
+      "category": "错误处理",
+      "name": "无效令牌访问",
+      "status": "PASS",
+      "duration": 5
+    },
+    {
+      "category": "错误处理",
+      "name": "不存在的路径",
+      "status": "PASS",
+      "duration": 1
+    }
+  ]
+}

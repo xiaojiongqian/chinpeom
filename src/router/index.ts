@@ -4,7 +4,7 @@ import { useUserStore } from '../stores/user'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   // 滚动行为配置
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, savedPosition) {
     // 如果有保存的位置（比如使用浏览器的前进后退按钮）
     if (savedPosition) {
       return savedPosition

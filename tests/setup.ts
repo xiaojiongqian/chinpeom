@@ -6,19 +6,49 @@ process.env.NODE_ENV = 'test'
 console.log(`[测试设置] 设置环境变量: NODE_ENV = ${process.env.NODE_ENV}`)
 console.log(`[测试设置] 当前平台: ${process.platform}, Node版本: ${process.version}`)
 
-// 模拟vue-router
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(() => ({
-    path: '/',
-    params: {},
-    query: {}
-  })),
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    go: vi.fn()
-  }))
-}))
+// 模拟Vue Router
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-router')>()
+  return {
+    ...actual,
+    createRouter: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      go: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      beforeEach: vi.fn(),
+      beforeResolve: vi.fn(),
+      afterEach: vi.fn(),
+      resolve: vi.fn(),
+      getRoutes: vi.fn(() => []),
+      hasRoute: vi.fn(() => false),
+      addRoute: vi.fn(),
+      removeRoute: vi.fn(),
+      currentRoute: { value: { name: 'home', path: '/', params: {}, query: {} } },
+      install: vi.fn()
+    })),
+    createWebHistory: vi.fn(() => ({})),
+    useRoute: vi.fn(() => ({
+      name: 'home',
+      path: '/',
+      params: {},
+      query: {},
+      hash: '',
+      fullPath: '/',
+      matched: [],
+      meta: {},
+      redirectedFrom: undefined
+    })),
+    useRouter: vi.fn(() => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      go: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn()
+    }))
+  }
+})
 
 // 全局组件和翻译模拟
 config.global.stubs = {
@@ -235,7 +265,12 @@ global.fetch = vi.fn().mockImplementation((url: string | Request) => {
 
 console.log('[测试设置] 全局fetch模拟函数设置完成')
 
-// 在异步测试中模拟计时器
+// 模拟window.scrollTo
+Object.defineProperty(window, 'scrollTo', {
+  value: vi.fn(),
+  writable: true
+})
+
 console.log('[测试设置] 设置模拟计时器')
 vi.useFakeTimers()
 

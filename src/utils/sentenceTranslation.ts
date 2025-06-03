@@ -20,7 +20,7 @@ export function findTranslatedSentence(
 }
 
 /**
- * 创建显示内容，将指定句子替换为翻译
+ * 创建显示内容，将指定句子替换为翻译或占位符
  * @param poem 原诗
  * @param translation 翻译
  * @param sentenceIndex 要替换的句子索引
@@ -38,16 +38,19 @@ export function createDisplayContent(
   }
 
   return poem.sentence.map(sen => {
-    // 在困难模式下不替换为外语，只显示中文原句
-    if (difficulty === 'hard') {
-      return sen.content
-    }
-
-    // 如果该句是要替换的句子，尝试查找其翻译（适用于简单和普通模式）
+    // 如果该句是要替换的句子
     if (sen.senid === sentenceIndex) {
-      const translatedContent = findTranslatedSentence(translation, sentenceIndex)
-      return translatedContent || sen.content
+      if (difficulty === 'hard') {
+        // 困难模式：显示 "***"
+        return '***'
+      } else {
+        // 简单模式：显示外语翻译，如果找不到翻译则显示 "***"
+        const translatedContent = findTranslatedSentence(translation, sentenceIndex)
+        return translatedContent || '***'
+      }
     }
+    
+    // 其他句子显示中文原句
     return sen.content
   })
 }

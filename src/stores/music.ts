@@ -16,7 +16,7 @@ export const useMusicStore = defineStore('music', () => {
 
   // 状态
   const isPlaying = ref(false)
-  const isMuted = ref(true) // 默认关闭音效，在主页面开启
+  const isMuted = ref(false) // 改为默认开启音效
   const currentMusicIndex = ref(0) // 默认从第一首开始（古韵绵长）
   const audio = ref<HTMLAudioElement | null>(null)
   const volume = ref(0.3) // 默认音量30%
@@ -252,7 +252,7 @@ export const useMusicStore = defineStore('music', () => {
 
   // 开始播放背景音乐（登录页面调用）
   function startBackgroundMusic() {
-    // 登录页面固定从第一首开始（古韵绵长.mp3），保持默认音效状态
+    // 登录页面固定从第一首开始（古韵绵长.mp3），可以保持音效开启状态
     currentMusicIndex.value = 0
     
     // 添加全局点击监听器，首次点击时启用音频
@@ -268,8 +268,7 @@ export const useMusicStore = defineStore('music', () => {
 
   // 主页面启动音乐（主页面调用）
   function startMainPageMusic() {
-    // 主页面默认开启音效
-    isMuted.value = false
+    // 主页面保持音效开启状态（已在初始化时设置为false）
     
     // 如果当前没有播放，随机选择一首音乐
     if (currentMusicIndex.value === 0) {

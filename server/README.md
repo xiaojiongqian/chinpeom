@@ -1,102 +1,190 @@
-# 唐诗译境(Chinpoem) 服务器
+# 唐诗译境(Chinpoem) 服务端
 
-这是唐诗译境(Chinpoem)应用的后端服务器，提供用户认证和排行榜等功能。
+## 概述
 
-## 技术架构
+唐诗译境应用的后端API服务器，基于Express.js和MySQL构建。
 
-- **Express.js**: 轻量级Web框架
-- **JWT**: 用户认证
-- **文件存储**: 使用JSON文件存储用户数据
+## 功能特性
 
-## 目录结构
+- 🔐 第三方登录支持（微信、苹果、Google、X）
+- 📊 用户积分同步和等级管理
+- 💰 付费功能和订单管理
+- ⚙️ 配置管理和学级称号系统
+- 🛡️ JWT认证和安全中间件
+
+## 技术栈
+
+- **框架**: Express.js
+- **数据库**: MySQL 8.0+
+- **认证**: JWT
+- **ORM**: mysql2
+- **开发工具**: nodemon
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+npm install
+```
+
+### 2. 环境配置
+
+复制环境变量示例文件并配置：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件，配置数据库连接信息：
+
+```bash
+# 数据库配置
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=poem2ndguess
+DB_CONNECTION_LIMIT=10
+
+# JWT配置
+JWT_SECRET=your-secret-key
+
+# 服务器配置
+PORT=3001
+NODE_ENV=development
+```
+
+### 3. 数据库准备
+
+确保MySQL服务运行，并且已经创建了 `poem2ndguess` 数据库：
+
+```sql
+CREATE DATABASE poem2ndguess CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 4. 启动服务
+
+开发模式启动（支持热重载）：
+
+```bash
+npm run dev
+```
+
+生产模式启动：
+
+```bash
+npm start
+```
+
+服务器将在 `http://localhost:3001` 启动。
+
+## API文档
+
+详细的API文档请参考 `../doc/API.md`
+
+### 主要端点
+
+- `POST /api/auth/login` - 第三方登录
+- `GET /api/user/profile` - 获取用户信息
+- `PUT /api/user/score` - 同步用户积分
+- `POST /api/payment/create` - 创建付费订单
+- `GET /api/config/ranks` - 获取学级配置
+
+### 健康检查
+
+```bash
+curl http://localhost:3001/api/health
+```
+
+## 项目结构
 
 ```
 server/
-├── api/            # API路由
-│   └── user.js     # 用户相关API
-├── config/         # 配置文件
-│   └── config.js   # 服务器配置
-├── data/           # 数据存储
-│   └── users.json  # 用户数据
-├── middleware/     # 中间件
-│   └── auth.js     # 认证中间件
-├── package.json    # 依赖配置
-├── README.md       # 说明文档
-└── server.js       # 主服务器文件
+├── api/              # API路由模块
+│   ├── auth.js       # 认证相关
+│   ├── user.js       # 用户相关
+│   ├── payment.js    # 付费相关
+│   └── config.js     # 配置相关
+├── config/           # 配置文件
+│   ├── database.js   # 数据库配置
+│   └── env/          # 环境配置
+├── middleware/       # 中间件
+│   └── auth.js       # JWT认证中间件
+├── data/            # 数据文件（如果使用）
+├── package.json     # 依赖配置
+├── server.js        # 服务器入口
+└── README.md        # 文档
 ```
 
-## API接口
+## 开发指南
 
-### 用户管理
+### 数据库操作
 
-- **POST /api/user/register**: 用户注册
-  - 请求体: `{ username, email, password }`
-  - 响应: `{ message, user, token }`
+使用 mysql2 连接池进行数据库操作：
 
-- **POST /api/user/login**: 用户登录
-  - 请求体: `{ email, password }`
-  - 响应: `{ message, user, token }`
+```javascript
+const connection = await pool.getConnection()
+try {
+  const [results] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId])
+  // 处理结果
+} finally {
+  connection.release()
+}
+```
 
-- **GET /api/user/me**: 获取当前用户信息 (需认证)
-  - 请求头: `Authorization: Bearer <token>`
-  - 响应: `{ user }`
+### 添加新的API
 
-- **PUT /api/user/score**: 更新用户分数 (需认证)
-  - 请求头: `Authorization: Bearer <token>`
-  - 请求体: `{ scoreDelta }`
-  - 响应: `{ message, user }`
+1. 在 `api/` 目录下创建新的路由文件
+2. 在 `server.js` 中注册路由
+3. 更新API文档
 
-- **PUT /api/user/language**: 更新用户语言设置 (需认证)
-  - 请求头: `Authorization: Bearer <token>`
-  - 请求体: `{ language }`
-  - 响应: `{ message, user }`
+### 错误处理
 
-### 排行榜
+所有API都应返回统一的错误格式：
 
-- **GET /api/user/leaderboard**: 获取用户排行榜
-  - 响应: `{ leaderboard }`
+```javascript
+res.status(400).json({ message: '错误描述' })
+```
 
-## 部署说明
+## 故障排除
 
-### 开发环境
+### 数据库连接失败
 
-1. 安装依赖:
-   ```
-   npm install
-   ```
+1. 检查MySQL服务是否运行
+2. 验证 `.env` 文件中的数据库配置
+3. 确保数据库用户有相应权限
 
-2. 启动开发服务器:
-   ```
-   npm run dev
-   ```
+### JWT认证失败
 
-### 生产环境
+1. 检查 `JWT_SECRET` 环境变量
+2. 验证请求头中的 `Authorization` 格式
 
-1. 设置环境变量:
-   ```
-   PORT=3001
-   JWT_SECRET=your-secret-key
-   NODE_ENV=production
-   ```
+### 端口占用
 
-2. 启动服务器:
-   ```
-   npm start
-   ```
+如果3001端口被占用，可以修改 `.env` 文件中的 `PORT` 配置。
 
-## 与前端集成
+## 部署
 
-在开发环境中，前端使用Vite的代理将API请求转发到此服务器。
+### 生产环境配置
 
-在生产环境中，此服务器可以直接提供前端静态文件和API服务，实现一体化部署。
+1. 设置安全的 `JWT_SECRET`
+2. 配置生产数据库连接
+3. 启用HTTPS
+4. 设置适当的CORS策略
 
-## 混合存储模式说明
+### Docker部署（可选）
 
-- 核心诗歌数据作为静态资源打包在前端应用中，确保离线状态下可使用主要功能
-- 用户账户、排行榜等社交功能通过本服务器的API实现，需要网络连接
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3001
+CMD ["npm", "start"]
+```
 
-## 移动应用说明
+## 许可证
 
-使用Capacitor打包的移动应用:
-- 本地存储所有诗歌数据
-- 通过网络请求连接远程API服务器实现用户功能 
+MIT License 

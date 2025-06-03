@@ -22,7 +22,11 @@
     "server": "node server/server.js",
     "server:dev": "nodemon server/server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server:dev\"",
-    "build:full": "npm run build && npm run server"
+    "build:full": "npm run build && npm run server",
+    "logs:cleanup": "node server/scripts/logCleanup.js cleanup",
+    "logs:stats": "node server/scripts/logCleanup.js stats",
+    "logs:test-cleanup": "node server/scripts/logCleanup.js test-cleanup",
+    "logs:help": "node server/scripts/logCleanup.js help"
   },
   "dependencies": {
     "@capacitor/android": "^5.2.0",

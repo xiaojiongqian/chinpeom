@@ -3,17 +3,16 @@
  */
 export default {
   // 服务器配置
-  port: 3001,
+  port: process.env.PORT || 3001,
   jwtSecret: 'chinpoem-secret-key',
   jwtExpire: '7d',
 
   // 跨域配置
   cors: {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true
   },
 
   // 环境
-  nodeEnv: 'development'
+  nodeEnv: process.env.NODE_ENV || 'development'
 }
