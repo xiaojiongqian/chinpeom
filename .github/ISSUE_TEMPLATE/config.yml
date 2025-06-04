@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 讨论和建议
+    url: https://github.com/your-username/poem2ndguess/discussions
+    about: 对项目的一般性讨论、建议或疑问，请使用Discussions功能
+  - name: 📚 文档问题
+    url: https://github.com/your-username/poem2ndguess/wiki
+    about: 查看项目文档或报告文档相关问题 
