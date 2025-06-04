@@ -181,10 +181,105 @@
 
 ### 3. 音乐管理系统
 **文件位置**: `src/stores/music.ts`
-- 背景音乐播放控制
-- 音效开关管理
-- 音乐文件动态加载
-- 播放状态持久化
+
+#### 功能概述
+为应用提供沉浸式的古典背景音乐体验，支持自动播放、手动切换和状态控制。
+
+#### 音乐文件
+位置：`public/backgroundmusic/` 目录，包含8首古典音乐：
+1. 古韵绵长.mp3
+2. 关山月.mp3  
+3. 黄鹤归来.mp3
+4. 将进酒.mp3
+5. The Moon's Whisper.mp3
+6. The Winter's Embrace(白雪歌送武判官归京).mp3
+7. The Winds of War(轮台歌奉送封大夫出师西征).mp3
+8. Longing in Chang'an.mp3
+
+#### 核心特性
+- **智能播放控制**：登录页默认静音，主页面默认开启
+- **连续播放**：音乐结束后自动随机选择下一首
+- **暂停恢复**：支持从暂停位置继续播放，而非重新开始
+- **浏览器兼容**：处理自动播放限制和用户交互要求
+- **错误处理**：音乐加载失败时自动切换到下一首
+
+#### 技术实现
+
+**状态管理 (`src/stores/music.ts`)**
+```typescript
+export const useMusicStore = defineStore('music', () => {
+  const isPlaying = ref(false)
+  const isMuted = ref(true)  // 默认静音
+  const currentMusicIndex = ref(0)
+  const volume = ref(0.5)
+  const isAudioEnabled = ref(false)
+  
+  // 启动登录页面音乐（固定第一首，默认静音）
+  const startBackgroundMusic = () => {
+    currentMusicIndex.value = 0
+    playMusic()
+  }
+  
+  // 启动主页面音乐（随机选择，默认开启）
+  const startMainPageMusic = () => {
+    isMuted.value = false
+    currentMusicIndex.value = Math.floor(Math.random() * musicFiles.length)
+    playMusic()
+  }
+  
+  // 暂停后恢复播放（保持播放位置）
+  const resumeMusic = () => {
+    if (audioElement.value && !audioElement.value.paused) return
+    if (audioElement.value) {
+      audioElement.value.play()
+      isPlaying.value = true
+    }
+  }
+  
+  // 切换静音状态（使用恢复播放）
+  const toggleMute = () => {
+    isMuted.value = !isMuted.value
+    if (!isMuted.value) {
+      resumeMusic()  // 恢复播放而非重新开始
+    } else {
+      pauseMusic()
+    }
+  }
+  
+  return {
+    startBackgroundMusic,
+    startMainPageMusic,
+    resumeMusic,
+    toggleMute,
+    nextMusic
+  }
+})
+```
+
+**使用方法**
+```typescript
+// 在登录页面
+const musicStore = useMusicStore()
+musicStore.startBackgroundMusic()  // 固定第一首，默认静音
+
+// 在主页面  
+musicStore.startMainPageMusic()    // 随机音乐，默认开启
+
+// 控制音乐
+musicStore.toggleMute()            // 切换播放/暂停（保持播放位置）
+musicStore.nextMusic()             // 手动切换下一首（立即切换）
+```
+
+#### 播放逻辑优化
+- **自动播放**：音乐自然结束时，随机选择下一首音乐无缝播放
+- **手动切换**：用户主动切换时立即响应，确保交互体验
+- **连续性保证**：避免音乐播放中的生硬中断，提供流畅的听觉体验
+- **暂停恢复优化**：音效开关实现真正的暂停/恢复，提升用户体验
+
+#### 用户交互设计
+1. **登录界面**：固定播放第一首音乐，默认静音，用户可手动开启
+2. **主页面**：随机选择音乐，默认开启，提供换音乐按钮
+3. **设置页面**：背景音乐开关控制
 
 ### 4. 游戏逻辑系统
 **文件位置**: `src/utils/optionsGenerator.ts`, `src/components/AnswerOptions.vue`
