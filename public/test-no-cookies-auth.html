@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无第三方Cookies Firebase认证测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .json-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .method-box {
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .method-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍪 无第三方Cookies Firebase认证测试</h1>
+    
+    <div class="warning">
+        <strong>⚠️ Chrome第三方Cookies问题:</strong>
+        <p>Chrome正在限制第三方cookies，这可能影响Firebase弹窗认证。本页面提供多种解决方案。</p>
+    </div>
+
+    <div id="status" class="status info">准备测试不同的认证方法...</div>
+
+    <!-- 方法1: Redirect认证 -->
+    <div class="method-box">
+        <div class="method-title">方法1: Redirect认证 (推荐)</div>
+        <p>完全避免第三方cookies问题，适合所有浏览器</p>
+        <button onclick="testRedirectAuth()">🔄 测试Redirect认证</button>
+        <button onclick="checkRedirectResult()">🔍 检查Redirect结果</button>
+    </div>
+
+    <!-- 方法2: Popup认证 + 宽松策略 -->
+    <div class="method-box">
+        <div class="method-title">方法2: Popup认证 + 宽松策略</div>
+        <p>配置Firebase使用更宽松的cookie策略</p>
+        <button onclick="testPopupAuthRelaxed()">🪟 测试宽松Popup认证</button>
+    </div>
+
+    <!-- 方法3: 内嵌iframe认证 -->
+    <div class="method-box">
+        <div class="method-title">方法3: 自定义认证流程</div>
+        <p>绕过Firebase默认流程，使用自定义Google OAuth2</p>
+        <button onclick="testCustomAuth()">🛠️ 测试自定义认证</button>
+    </div>
+
+    <!-- 状态显示 -->
+    <div style="margin: 20px 0;">
+        <button onclick="logout()">🚪 登出所有</button>
+        <button onclick="clearAllData()">🧹 清空所有数据</button>
+        <button onclick="checkCookieSupport()">🍪 检查Cookie支持</button>
+    </div>
+
+    <div id="userInfo" class="json-display"></div>
+    <div id="tokenInfo" class="json-display"></div>
+    <div id="backendResponse" class="json-display"></div>
+    <div id="debugInfo" class="json-display"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
+            signOut 
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "521053998371",
+            appId: "1:521053998371:web:5a8c5e7b8ec4d8f75f5e5d"
+        }
+
+        // 初始化Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        
+        // 配置Google Provider - 宽松策略
+        const googleProvider = new GoogleAuthProvider()
+        googleProvider.addScope('email')
+        googleProvider.addScope('profile')
+        
+        // 设置自定义参数，尝试解决cookies问题
+        googleProvider.setCustomParameters({
+            'prompt': 'select_account',
+            'include_granted_scopes': 'true',
+            'access_type': 'offline'
+        })
+
+        // 状态管理
+        let isLoading = false
+
+        // 更新状态显示
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status')
+            statusDiv.className = `status ${type}`
+            statusDiv.textContent = message
+        }
+
+        function updateUserInfo(userInfo) {
+            const userDiv = document.getElementById('userInfo')
+            userDiv.innerHTML = '<h3>👤 用户信息:</h3>' + JSON.stringify(userInfo, null, 2)
+        }
+
+        function updateTokenInfo(tokenInfo) {
+            const tokenDiv = document.getElementById('tokenInfo')
+            tokenDiv.innerHTML = '<h3>🔑 Token信息:</h3>' + JSON.stringify(tokenInfo, null, 2)
+        }
+
+        function updateBackendResponse(response) {
+            const backendDiv = document.getElementById('backendResponse')
+            backendDiv.innerHTML = '<h3>🔧 后端响应:</h3>' + JSON.stringify(response, null, 2)
+        }
+
+        function updateDebugInfo(info) {
+            const debugDiv = document.getElementById('debugInfo')
+            debugDiv.innerHTML = '<h3>🐛 调试信息:</h3>' + JSON.stringify(info, null, 2)
+        }
+
+        // 设置按钮状态
+        function setButtonsEnabled(enabled) {
+            const buttons = document.querySelectorAll('button')
+            buttons.forEach(btn => {
+                btn.disabled = !enabled
+            })
+        }
+
+        // 方法1: Redirect认证
+        window.testRedirectAuth = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('🔄 启动Redirect认证（完全避免cookies问题）...', 'info')
+                
+                await signInWithRedirect(auth, googleProvider)
+                
+            } catch (error) {
+                console.error('Redirect认证失败:', error)
+                updateStatus(`❌ Redirect认证失败: ${error.message}`, 'error')
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 检查redirect结果
+        window.checkRedirectResult = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('🔍 检查Redirect认证结果...', 'info')
+                
+                const result = await getRedirectResult(auth)
+                
+                if (result) {
+                    await handleAuthSuccess(result.user, '🔄 Redirect认证')
+                } else {
+                    updateStatus('ℹ️ 没有检测到Redirect认证结果', 'info')
+                }
+                
+            } catch (error) {
+                console.error('检查Redirect结果失败:', error)
+                updateStatus(`❌ 检查Redirect结果失败: ${error.message}`, 'error')
+            } finally {
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 方法2: 宽松策略Popup认证
+        window.testPopupAuthRelaxed = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('🪟 尝试宽松策略Popup认证...', 'info')
+                
+                // 尝试打开popup前先检查是否允许
+                const testWindow = window.open('', '_blank', 'width=1,height=1')
+                if (!testWindow) {
+                    throw new Error('浏览器阻止了弹窗，请允许弹窗后重试')
+                }
+                testWindow.close()
+                
+                const result = await signInWithPopup(auth, googleProvider)
+                await handleAuthSuccess(result.user, '🪟 宽松Popup认证')
+                
+            } catch (error) {
+                console.error('宽松Popup认证失败:', error)
+                let errorMessage = error.message
+                
+                if (error.code === 'auth/popup-blocked') {
+                    errorMessage = '弹窗被阻止，请允许此网站的弹窗'
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = '用户关闭了认证弹窗'
+                } else if (error.message.includes('Cross-Origin-Opener-Policy')) {
+                    errorMessage = '第三方Cookies被阻止，建议使用Redirect认证'
+                }
+                
+                updateStatus(`❌ 宽松Popup认证失败: ${errorMessage}`, 'error')
+                
+                // 如果是CORS问题，建议使用redirect
+                if (error.message.includes('Cross-Origin') || error.message.includes('cookies')) {
+                    updateStatus('💡 建议：遇到cookies问题，请使用"Redirect认证"方法', 'warning')
+                }
+                
+            } finally {
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 方法3: 自定义认证流程
+        window.testCustomAuth = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('🛠️ 尝试自定义Google OAuth2认证流程...', 'info')
+                
+                // 构建Google OAuth2 URL
+                const clientId = '521053998371-your-client-id-here.apps.googleusercontent.com' // 需要从Firebase Console获取
+                const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname)
+                const scope = encodeURIComponent('openid email profile')
+                const state = Math.random().toString(36).substring(2, 15)
+                
+                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                    `client_id=${clientId}&` +
+                    `redirect_uri=${redirectUri}&` +
+                    `scope=${scope}&` +
+                    `response_type=code&` +
+                    `state=${state}&` +
+                    `include_granted_scopes=true&` +
+                    `access_type=offline&` +
+                    `prompt=select_account`
+                
+                updateStatus('🚀 自定义认证功能开发中，需要配置OAuth2客户端ID', 'warning')
+                updateDebugInfo({
+                    message: '自定义认证需要以下步骤',
+                    steps: [
+                        '1. 在Google Cloud Console创建OAuth2客户端ID',
+                        '2. 配置授权的重定向URI',
+                        '3. 实现authorization code交换token的后端接口',
+                        '4. 使用获取的token验证用户身份'
+                    ],
+                    authUrl: authUrl
+                })
+                
+            } catch (error) {
+                console.error('自定义认证失败:', error)
+                updateStatus(`❌ 自定义认证失败: ${error.message}`, 'error')
+            } finally {
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 处理认证成功
+        async function handleAuthSuccess(user, method) {
+            try {
+                const idToken = await user.getIdToken()
+                
+                // 显示用户信息
+                const userInfo = {
+                    method: method,
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    emailVerified: user.emailVerified
+                }
+                updateUserInfo(userInfo)
+                
+                // 显示Token信息
+                const tokenInfo = {
+                    idToken: idToken.substring(0, 50) + '...',
+                    tokenLength: idToken.length,
+                    method: method
+                }
+                updateTokenInfo(tokenInfo)
+                
+                updateStatus(`✅ ${method}成功！正在发送到后端验证...`, 'success')
+                
+                // 发送到后端验证
+                await testBackendAuth(idToken, user.uid, method)
+                
+            } catch (error) {
+                console.error('处理认证成功失败:', error)
+                updateStatus(`❌ 处理认证结果失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 测试后端认证
+        async function testBackendAuth(idToken, firebaseUid, method) {
+            try {
+                updateStatus('🔧 正在验证后端认证...', 'info')
+                
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: idToken,
+                        firebase_uid: firebaseUid
+                    })
+                })
+
+                const data = await response.json()
+                
+                if (response.ok) {
+                    updateStatus(`✅ ${method} + 后端认证全部成功！🎉`, 'success')
+                    updateBackendResponse({
+                        method: method,
+                        success: true,
+                        ...data
+                    })
+                } else {
+                    updateStatus(`❌ ${method}成功，但后端认证失败: ${data.message}`, 'error')
+                    updateBackendResponse({
+                        method: method,
+                        success: false,
+                        ...data
+                    })
+                }
+                
+            } catch (error) {
+                console.error('后端认证测试失败:', error)
+                updateStatus(`❌ 后端认证测试失败: ${error.message}`, 'error')
+                updateBackendResponse({
+                    method: method,
+                    success: false,
+                    error: error.message
+                })
+            }
+        }
+
+        // 检查Cookie支持
+        window.checkCookieSupport = function() {
+            const testCookie = 'test_cookie=test_value; SameSite=None; Secure'
+            document.cookie = testCookie
+            
+            const hasCookie = document.cookie.includes('test_cookie=test_value')
+            
+            // 清理测试cookie
+            document.cookie = 'test_cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+            
+            const debugInfo = {
+                userAgent: navigator.userAgent,
+                cookieEnabled: navigator.cookieEnabled,
+                testCookieWorked: hasCookie,
+                currentCookies: document.cookie,
+                isSecureContext: window.isSecureContext,
+                location: window.location.protocol + '//' + window.location.host
+            }
+            
+            updateDebugInfo(debugInfo)
+            
+            if (!navigator.cookieEnabled) {
+                updateStatus('❌ 浏览器禁用了Cookies', 'error')
+            } else if (!window.isSecureContext) {
+                updateStatus('⚠️ 非HTTPS环境，可能影响某些认证功能', 'warning')
+            } else if (!hasCookie) {
+                updateStatus('⚠️ 第三方Cookies可能被阻止，建议使用Redirect认证', 'warning')
+            } else {
+                updateStatus('✅ Cookie支持正常', 'success')
+            }
+        }
+
+        // 登出所有
+        window.logout = async function() {
+            try {
+                await signOut(auth)
+                
+                // 清空显示信息
+                document.getElementById('userInfo').innerHTML = ''
+                document.getElementById('tokenInfo').innerHTML = ''
+                document.getElementById('backendResponse').innerHTML = ''
+                
+                updateStatus('✅ 已登出所有认证', 'success')
+                
+            } catch (error) {
+                console.error('登出失败:', error)
+                updateStatus(`❌ 登出失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 清空所有数据
+        window.clearAllData = function() {
+            // 清空localStorage
+            localStorage.clear()
+            
+            // 清空sessionStorage
+            sessionStorage.clear()
+            
+            // 清空显示内容
+            document.getElementById('userInfo').innerHTML = ''
+            document.getElementById('tokenInfo').innerHTML = ''
+            document.getElementById('backendResponse').innerHTML = ''
+            document.getElementById('debugInfo').innerHTML = ''
+            
+            updateStatus('🧹 已清空所有本地数据', 'info')
+        }
+
+        // 页面加载时自动检查状态
+        window.addEventListener('load', () => {
+            updateStatus('📱 页面已加载，开始检查认证状态...', 'info')
+            
+            // 自动检查redirect结果
+            checkRedirectResult()
+            
+            // 检查cookie支持
+            setTimeout(checkCookieSupport, 1000)
+        })
+
+        // 监听认证状态变化
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase认证状态: 已登录', user.displayName || user.email)
+            } else {
+                console.log('Firebase认证状态: 未登录')
+            }
+        })
+    </script>
+
+    <div class="info">
+        <h3>📋 使用说明:</h3>
+        <ol>
+            <li><strong>推荐方法</strong>: 使用"Redirect认证"，完全避免第三方cookies问题</li>
+            <li><strong>备用方法</strong>: 如果需要保持页面状态，先尝试"宽松Popup认证"</li>
+            <li><strong>开发方法</strong>: "自定义认证"需要额外配置，适合高级定制需求</li>
+            <li>点击"检查Cookie支持"了解当前浏览器的cookies策略</li>
+        </ol>
+    </div>
+
+    <div class="warning">
+        <h3>🔧 故障排除:</h3>
+        <ul>
+            <li><strong>CORS错误</strong>: 使用Redirect认证方法</li>
+            <li><strong>弹窗被阻止</strong>: 允许此网站的弹窗，或使用Redirect认证</li>
+            <li><strong>后端验证失败</strong>: 检查服务器是否运行在 http://localhost:3001</li>
+            <li><strong>第三方Cookies被阻止</strong>: Chrome设置 → 隐私和安全 → Cookies → 允许第三方cookies</li>
+        </ul>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect认证详细调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .json-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Redirect认证详细调试</h1>
+    
+    <div class="warning">
+        <strong>调试目标:</strong> 详细分析redirect认证流程的每一步，找出问题所在
+    </div>
+
+    <div id="status" class="status info">页面加载中，正在检查环境...</div>
+
+    <h3>📊 当前状态</h3>
+    <div id="currentState" class="json-display"></div>
+
+    <h3>🔄 操作控制</h3>
+    <button onclick="startRedirectAuth()">🚀 启动Redirect认证</button>
+    <button onclick="manualCheckRedirect()">🔍 手动检查Redirect结果</button>
+    <button onclick="clearAllAuth()">🧹 清除所有认证状态</button>
+    <button onclick="refreshPage()">🔄 刷新页面</button>
+
+    <h3>📝 详细日志</h3>
+    <div id="logs" class="json-display"></div>
+
+    <h3>🔧 认证结果</h3>
+    <div id="authResult" class="json-display"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithRedirect,
+            getRedirectResult,
+            signOut,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "521053998371",
+            appId: "1:521053998371:web:5a8c5e7b8ec4d8f75f5e5d"
+        }
+
+        // 初始化Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const googleProvider = new GoogleAuthProvider()
+
+        // 日志系统
+        const logs = []
+        let authResult = null
+
+        function addLog(message, type = 'info', data = null) {
+            const timestamp = new Date().toLocaleTimeString()
+            const logEntry = {
+                时间: timestamp,
+                消息: message,
+                类型: type,
+                数据: data
+            }
+            logs.push(logEntry)
+            updateLogs()
+            console.log(`[${type.toUpperCase()}] ${message}`, data)
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status')
+            statusDiv.className = `status ${type}`
+            statusDiv.textContent = message
+            addLog(`状态更新: ${message}`, type)
+        }
+
+        function updateCurrentState() {
+            const state = {
+                当前URL: window.location.href,
+                URL参数: Object.fromEntries(new URLSearchParams(window.location.search)),
+                URL哈希: window.location.hash,
+                Firebase用户: auth.currentUser ? {
+                    uid: auth.currentUser.uid,
+                    email: auth.currentUser.email,
+                    displayName: auth.currentUser.displayName
+                } : null,
+                页面加载时间: new Date().toLocaleString(),
+                浏览器: navigator.userAgent.substring(0, 50) + '...',
+                是否HTTPS: window.location.protocol === 'https:',
+                域名: window.location.hostname
+            }
+            
+            document.getElementById('currentState').textContent = JSON.stringify(state, null, 2)
+            return state
+        }
+
+        function updateLogs() {
+            document.getElementById('logs').textContent = JSON.stringify(logs.slice(-10), null, 2)
+        }
+
+        function updateAuthResult() {
+            document.getElementById('authResult').textContent = JSON.stringify(authResult, null, 2)
+        }
+
+        // 启动Redirect认证
+        window.startRedirectAuth = async function() {
+            try {
+                addLog('开始启动Redirect认证', 'info')
+                updateStatus('🚀 正在启动Redirect认证...', 'info')
+                
+                // 保存状态标记
+                localStorage.setItem('redirect_auth_started', 'true')
+                localStorage.setItem('redirect_start_time', Date.now().toString())
+                
+                addLog('设置本地存储标记', 'info', {
+                    redirect_auth_started: 'true',
+                    redirect_start_time: Date.now()
+                })
+                
+                await signInWithRedirect(auth, googleProvider)
+                
+                // 这行代码通常不会执行，因为页面会跳转
+                addLog('signInWithRedirect 调用完成（页面应该已跳转）', 'warning')
+                
+            } catch (error) {
+                addLog('启动Redirect认证失败', 'error', error)
+                updateStatus(`❌ 启动Redirect认证失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 手动检查Redirect结果
+        window.manualCheckRedirect = async function() {
+            try {
+                addLog('开始手动检查Redirect结果', 'info')
+                updateStatus('🔍 正在检查Redirect结果...', 'info')
+                
+                const result = await getRedirectResult(auth)
+                
+                addLog('getRedirectResult 调用完成', 'info', {
+                    hasResult: !!result,
+                    result: result ? {
+                        user: {
+                            uid: result.user.uid,
+                            email: result.user.email,
+                            displayName: result.user.displayName
+                        },
+                        operationType: result.operationType
+                    } : null
+                })
+                
+                if (result) {
+                    addLog('检测到Redirect认证结果！', 'success')
+                    updateStatus('✅ 检测到Redirect认证结果！', 'success')
+                    
+                    const user = result.user
+                    const idToken = await user.getIdToken()
+                    
+                    authResult = {
+                        认证方式: 'Redirect',
+                        用户信息: {
+                            uid: user.uid,
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                            emailVerified: user.emailVerified
+                        },
+                        Token信息: {
+                            idToken: idToken.substring(0, 50) + '...',
+                            tokenLength: idToken.length
+                        },
+                        操作类型: result.operationType,
+                        时间: new Date().toLocaleString()
+                    }
+                    
+                    updateAuthResult()
+                    
+                    // 清除本地存储标记
+                    localStorage.removeItem('redirect_auth_started')
+                    localStorage.removeItem('redirect_start_time')
+                    
+                    addLog('Redirect认证完成，清除本地存储标记', 'success')
+                    
+                    // 测试后端验证
+                    await testBackendAuth(idToken, user.uid)
+                    
+                } else {
+                    addLog('没有检测到Redirect认证结果', 'warning')
+                    updateStatus('ℹ️ 没有检测到Redirect认证结果', 'info')
+                    
+                    // 检查是否有启动标记
+                    const startFlag = localStorage.getItem('redirect_auth_started')
+                    const startTime = localStorage.getItem('redirect_start_time')
+                    
+                    if (startFlag) {
+                        const elapsed = Date.now() - parseInt(startTime)
+                        addLog('发现未完成的Redirect认证', 'warning', {
+                            经过时间: `${Math.round(elapsed / 1000)}秒`,
+                            开始时间: new Date(parseInt(startTime)).toLocaleString()
+                        })
+                        
+                        if (elapsed > 300000) { // 5分钟
+                            addLog('Redirect认证可能已超时，清除标记', 'warning')
+                            localStorage.removeItem('redirect_auth_started')
+                            localStorage.removeItem('redirect_start_time')
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                addLog('检查Redirect结果失败', 'error', error)
+                updateStatus(`❌ 检查Redirect结果失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 测试后端认证
+        async function testBackendAuth(idToken, firebaseUid) {
+            try {
+                addLog('开始测试后端认证', 'info')
+                
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: idToken,
+                        firebase_uid: firebaseUid
+                    })
+                })
+
+                const data = await response.json()
+                
+                if (response.ok) {
+                    addLog('后端认证成功！', 'success', data)
+                    updateStatus('🎉 Redirect认证 + 后端验证全部成功！', 'success')
+                    
+                    authResult.后端验证 = {
+                        状态: '成功',
+                        响应: data
+                    }
+                    updateAuthResult()
+                    
+                } else {
+                    addLog('后端认证失败', 'error', data)
+                    updateStatus(`❌ Redirect认证成功，但后端验证失败: ${data.message}`, 'error')
+                    
+                    authResult.后端验证 = {
+                        状态: '失败',
+                        响应: data
+                    }
+                    updateAuthResult()
+                }
+                
+            } catch (error) {
+                addLog('后端认证测试失败', 'error', error)
+                updateStatus(`❌ 后端认证测试失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 清除所有认证状态
+        window.clearAllAuth = async function() {
+            try {
+                addLog('开始清除所有认证状态', 'info')
+                
+                await signOut(auth)
+                localStorage.removeItem('redirect_auth_started')
+                localStorage.removeItem('redirect_start_time')
+                authResult = null
+                
+                updateAuthResult()
+                updateCurrentState()
+                
+                addLog('所有认证状态已清除', 'success')
+                updateStatus('🧹 所有认证状态已清除', 'success')
+                
+            } catch (error) {
+                addLog('清除认证状态失败', 'error', error)
+                updateStatus(`❌ 清除认证状态失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 刷新页面
+        window.refreshPage = function() {
+            addLog('手动刷新页面', 'info')
+            window.location.reload()
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', async () => {
+            addLog('页面加载完成', 'info')
+            updateStatus('📱 页面已加载，开始环境检查...', 'info')
+            
+            // 更新当前状态
+            const state = updateCurrentState()
+            addLog('当前页面状态', 'info', state)
+            
+            // 检查是否来自redirect
+            const startFlag = localStorage.getItem('redirect_auth_started')
+            if (startFlag) {
+                addLog('检测到Redirect认证标记，可能来自Google认证页面', 'info')
+                updateStatus('🔍 检测到Redirect标记，正在检查认证结果...', 'info')
+                
+                // 延迟检查，给Firebase时间处理
+                setTimeout(async () => {
+                    await manualCheckRedirect()
+                }, 1000)
+            } else {
+                addLog('没有检测到Redirect认证标记', 'info')
+                updateStatus('✅ 页面加载完成，准备进行Redirect认证测试', 'success')
+            }
+        })
+
+        // 监听认证状态变化
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                addLog('Firebase认证状态变化：已登录', 'info', {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName
+                })
+            } else {
+                addLog('Firebase认证状态变化：未登录', 'info')
+            }
+            updateCurrentState()
+        })
+
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                addLog('页面重新可见，可能从认证页面返回', 'info')
+                // 延迟检查redirect结果
+                setTimeout(manualCheckRedirect, 500)
+            }
+        })
+    </script>
+
+    <div class="info">
+        <h3>📋 调试说明:</h3>
+        <ol>
+            <li><strong>正常流程</strong>: 点击"启动Redirect认证" → 跳转Google → 认证完成 → 自动返回并检测结果</li>
+            <li><strong>手动检查</strong>: 如果自动检测失败，点击"手动检查Redirect结果"</li>
+            <li><strong>状态重置</strong>: 点击"清除所有认证状态"重新开始</li>
+            <li><strong>页面刷新</strong>: 点击"刷新页面"重新加载</li>
+        </ol>
+    </div>
+
+    <div class="warning">
+        <h3>🔧 故障排除:</h3>
+        <ul>
+            <li><strong>无redirect结果</strong>: 检查Firebase授权域名配置</li>
+            <li><strong>重定向失败</strong>: 确认当前域名在Firebase控制台中已添加</li>
+            <li><strong>长时间无响应</strong>: 尝试手动检查或清除状态重试</li>
+            <li><strong>网络问题</strong>: 检查后端服务器是否运行在3001端口</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <p><strong>Firebase授权域名检查:</strong> 确保在Firebase控制台的Authentication → Settings → Authorized domains中添加了 <code>localhost</code></p>
+    </div>
+</body>
+</html> 

@@ -3,12 +3,93 @@ import mysql from 'mysql2/promise'
 import config from '../config/database.js'
 import { auth } from '../middleware/auth.js'
 import { v4 as uuidv4 } from 'uuid'
-import { mockPaymentService } from '../services/mockServices.js'
 
 const router = express.Router()
 
 // 创建数据库连接池
 const pool = mysql.createPool(config.database)
+
+/**
+ * 简化的Mock支付服务
+ */
+const mockPaymentService = {
+  /**
+   * 创建支付订单
+   */
+  async createPayment(orderData) {
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    const { payment_method, amount, order_no } = orderData
+    
+    // 模拟不同支付方式的响应
+    const mockResponses = {
+      alipay: {
+        payment_url: `https://openapi.alipay.com/gateway.do?mock_order=${order_no}`,
+        qr_code: `https://mock-qr.alipay.com/${order_no}`,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      },
+      wechat: {
+        prepay_id: `wx_prepay_${Math.random().toString(36).substr(2, 9)}`,
+        qr_code: `https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?mock=${order_no}`,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      },
+      apple: {
+        transaction_id: `apple_${Math.random().toString(36).substr(2, 9)}`,
+        receipt_data: 'mock_receipt_data_base64',
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+      },
+      google: {
+        purchase_token: `google_${Math.random().toString(36).substr(2, 9)}`,
+        order_id: `GPA.${Math.random().toString(36).substr(2, 9)}`,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+      },
+      stripe: {
+        payment_intent_id: `pi_${Math.random().toString(36).substr(2, 9)}`,
+        client_secret: `pi_${Math.random().toString(36).substr(2, 9)}_secret_${Math.random().toString(36).substr(2, 9)}`,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+      }
+    }
+    
+    return {
+      success: true,
+      order_no,
+      payment_method,
+      amount,
+      currency: 'CNY',
+      ...mockResponses[payment_method]
+    }
+  },
+
+  /**
+   * 验证支付结果
+   */
+  async verifyPayment(paymentData) {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    const { order_no, third_party_order_id } = paymentData
+    
+    // 模拟90%的成功率
+    const isSuccess = Math.random() > 0.1
+    
+    if (isSuccess) {
+      return {
+        success: true,
+        order_no,
+        third_party_order_id: third_party_order_id || `mock_${Date.now()}`,
+        paid_amount: paymentData.amount || 9.9,
+        paid_at: new Date().toISOString(),
+        status: 'paid'
+      }
+    } else {
+      return {
+        success: false,
+        order_no,
+        error: '支付失败',
+        status: 'failed'
+      }
+    }
+  }
+}
 
 /**
  * 创建付费订单

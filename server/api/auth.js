@@ -2,8 +2,9 @@ import express from 'express'
 import jwt from 'jsonwebtoken'
 import mysql from 'mysql2/promise'
 import config from '../config/database.js'
+import appConfig from '../config/env/default.js'
 import { auth } from '../middleware/auth.js'
-import { mockAuthService } from '../services/mockServices.js'
+import { firebaseAuthService } from '../services/firebaseAdmin.js'
 
 const router = express.Router()
 
@@ -26,12 +27,88 @@ try {
 }
 
 /**
+ * Firebase Google登录验证
+ * @param {string} firebaseIdToken Firebase ID Token
+ * @returns {Object} 用户信息
+ */
+async function verifyFirebaseToken(firebaseIdToken) {
+  try {
+    console.log('[Firebase Auth] 准备验证的Firebase ID Token (前30字符+...):', firebaseIdToken ? firebaseIdToken.substring(0,30) + "..." : "EMPTY_OR_NULL_TOKEN");
+    console.log('[Firebase Auth] 验证Firebase ID Token')
+    const firebaseUser = await firebaseAuthService.verifyIdToken(firebaseIdToken)
+    
+    return {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      name: firebaseUser.name || firebaseUser.email?.split('@')[0],
+      picture: firebaseUser.picture,
+      email_verified: firebaseUser.email_verified,
+      provider: 'google'
+    }
+  } catch (error) {
+    console.error('[Firebase Auth] Token验证失败:', error.message)
+    throw new Error('Firebase认证失败: ' + error.message)
+  }
+}
+
+/**
+ * Mock认证（仅开发环境）
+ * @param {string} provider 认证提供商
+ * @param {string} token 访问令牌
+ * @returns {Object} 用户信息
+ */
+async function mockAuthentication(provider, token) {
+  console.log(`[Mock Auth] 使用模拟认证: ${provider}`)
+  
+  // 固定的测试用户数据
+  const mockUsers = {
+    google: {
+      uid: 'mock_google_user_001',
+      email: 'test@gmail.com',
+      name: 'Google测试用户',
+      picture: null,
+      email_verified: true,
+      provider: 'google'
+    },
+    wechat: {
+      uid: 'mock_wechat_user_001',
+      email: null,
+      name: '微信测试用户',
+      picture: null,
+      email_verified: false,
+      provider: 'wechat'
+    },
+    apple: {
+      uid: 'mock_apple_user_001',
+      email: 'test@privaterelay.appleid.com',
+      name: 'Apple测试用户',
+      picture: null,
+      email_verified: true,
+      provider: 'apple'
+    }
+  }
+
+  // 检查token是否为有效的测试token
+  const validTokens = {
+    google: ['test_google_token', 'valid_google_token', 'mock_token'],
+    wechat: ['test_wechat_token', 'valid_wechat_token'],
+    apple: ['test_apple_token', 'valid_apple_token']
+  }
+
+  if (!validTokens[provider]?.includes(token)) {
+    throw new Error(`无效的${provider}测试token`)
+  }
+
+  return mockUsers[provider]
+}
+
+/**
  * 第三方登录
  * POST /api/auth/login
  */
 router.post('/login', async (req, res) => {
   try {
-    const { provider, access_token } = req.body
+    const { provider, access_token, firebase_uid } = req.body
 
     // 验证必需参数
     if (!provider || !access_token) {
@@ -50,23 +127,40 @@ router.post('/login', async (req, res) => {
       })
     }
 
-    // 验证第三方令牌并获取用户信息
-    let thirdPartyUser
-    try {
-      thirdPartyUser = await mockAuthService.verifyThirdPartyAuth(provider, access_token)
-    } catch (error) {
-      return res.status(401).json({ 
-        message: '第三方认证失败',
-        error: error.message 
+    let authUser
+    
+    // 根据环境和provider选择认证方式
+    if (provider === 'google') {
+      // Google登录始终使用Firebase认证
+      if (process.env.NODE_ENV === 'development' && access_token.includes('test_')) {
+        // 开发环境的测试模式
+        authUser = await mockAuthentication(provider, access_token)
+      } else {
+        // 使用Firebase验证Google登录
+        authUser = await verifyFirebaseToken(access_token)
+      }
+    } else if (process.env.NODE_ENV === 'development') {
+      // 其他provider在开发环境使用Mock
+      authUser = await mockAuthentication(provider, access_token)
+    } else {
+      // 生产环境暂不支持其他provider
+      return res.status(400).json({
+        message: `生产环境暂不支持${provider}登录`,
+        supported_providers: ['google']
       })
     }
 
-    // 提取第三方用户信息
-    const providerUserId = thirdPartyUser.openid || thirdPartyUser.sub || thirdPartyUser.id
-    const providerUsername = thirdPartyUser.nickname || thirdPartyUser.name || thirdPartyUser.username
-    const providerEmail = thirdPartyUser.email || null
-    const displayName = thirdPartyUser.nickname || thirdPartyUser.name || `${provider}用户`
-    const avatarUrl = thirdPartyUser.headimgurl || thirdPartyUser.picture || thirdPartyUser.profile_image_url || null
+    // 使用Firebase UID或者auth user的uid作为唯一标识
+    const providerUserId = firebase_uid || authUser.uid
+    const displayName = authUser.name || `${provider}用户`
+    const providerEmail = authUser.email
+    const avatarUrl = authUser.picture
+
+    console.log(`[Auth] 处理${provider}登录:`, {
+      providerUserId,
+      displayName,
+      providerEmail
+    })
 
     const connection = await pool.getConnection()
     
@@ -82,7 +176,7 @@ router.post('/login', async (req, res) => {
       let user
       
       if (existingAccounts.length > 0) {
-        // 用户已存在，更新登录时间和令牌信息
+        // 用户已存在，更新登录时间
         user = existingAccounts[0]
         
         await connection.execute(
@@ -90,6 +184,7 @@ router.post('/login', async (req, res) => {
           [user.id]
         )
         
+        // 更新第三方账号信息
         await connection.execute(
           'UPDATE third_party_accounts SET access_token = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ?',
           [access_token, provider, providerUserId]
@@ -105,8 +200,8 @@ router.post('/login', async (req, res) => {
         
         // 绑定第三方账号
         await connection.execute(
-          'INSERT INTO third_party_accounts (user_id, provider, provider_user_id, provider_username, provider_email, access_token) VALUES (?, ?, ?, ?, ?, ?)',
-          [userId, provider, providerUserId, providerUsername, providerEmail, access_token]
+          'INSERT INTO third_party_accounts (user_id, provider, provider_user_id, provider_username, provider_email, access_token, firebase_uid) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [userId, provider, providerUserId, authUser.name, providerEmail, access_token, firebase_uid]
         )
         
         // 获取新创建的用户信息
@@ -125,10 +220,11 @@ router.post('/login', async (req, res) => {
           id: user.id, 
           provider, 
           provider_user_id: providerUserId,
+          firebase_uid: firebase_uid,
           iat: Math.floor(Date.now() / 1000)
         },
-        process.env.JWT_SECRET || 'chinpoem-secret',
-        { expiresIn: '7d' }
+        process.env.JWT_SECRET || appConfig.jwtSecret,
+        { expiresIn: appConfig.jwtExpire }
       )
 
       res.json({
@@ -145,6 +241,7 @@ router.post('/login', async (req, res) => {
           difficulty_mode: user.difficulty_mode,
           hint_language: user.hint_language,
           sound_enabled: user.sound_enabled,
+          firebase_uid: firebase_uid,
           created_at: user.created_at,
           last_login_at: user.last_login_at
         },
@@ -164,7 +261,7 @@ router.post('/login', async (req, res) => {
     console.error('登录失败:', error)
     res.status(500).json({ 
       message: '服务器错误',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : '认证失败'
     })
   }
 })

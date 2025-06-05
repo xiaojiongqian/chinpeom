@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase认证测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #f44336;
+        }
+        .info {
+            background: rgba(33, 150, 243, 0.2);
+            border-color: #2196F3;
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase认证端到端测试</h1>
+        
+        <div id="status" class="status info">
+            <strong>状态:</strong> 正在初始化Firebase...
+        </div>
+
+        <div>
+            <button id="googleLogin" onclick="testGoogleLogin()">🔑 Google登录测试</button>
+            <button id="logout" onclick="testLogout()" disabled>🚪 登出</button>
+            <button onclick="clearLog()">🧹 清空日志</button>
+        </div>
+
+        <div id="userInfo" class="user-info" style="display: none;">
+            <h3>👤 用户信息</h3>
+            <div id="userDetails"></div>
+        </div>
+
+        <div id="tokenInfo" class="user-info" style="display: none;">
+            <h3>🎫 Token信息</h3>
+            <div id="tokenDetails"></div>
+        </div>
+
+        <div>
+            <h3>📋 测试日志</h3>
+            <pre id="log"></pre>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.0/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/11.8.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "542908264016",
+            appId: "1:542908264016:web:f74fcb7d1a5db08a0b6a43"
+        }
+
+        // 初始化Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const googleProvider = new GoogleAuthProvider()
+
+        // 设置Google Provider参数
+        googleProvider.setCustomParameters({
+            prompt: 'select_account'
+        })
+
+        let currentUser = null
+
+        // 监听认证状态变化
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user
+                log(`✅ Firebase用户状态: 已登录 - ${user.displayName || user.email}`)
+                updateStatus('success', `已登录: ${user.displayName || user.email}`)
+                updateUserInfo(user)
+                document.getElementById('googleLogin').disabled = true
+                document.getElementById('logout').disabled = false
+            } else {
+                currentUser = null
+                log('ℹ️ Firebase用户状态: 未登录')
+                updateStatus('info', '未登录')
+                hideUserInfo()
+                document.getElementById('googleLogin').disabled = false
+                document.getElementById('logout').disabled = true
+            }
+        })
+
+        // Google登录测试
+        window.testGoogleLogin = async function() {
+            try {
+                log('🔑 开始Google登录测试...')
+                updateStatus('info', '正在进行Google登录...')
+                
+                // 1. Firebase Google登录
+                const result = await signInWithPopup(auth, googleProvider)
+                const user = result.user
+                
+                log(`✅ Firebase登录成功: ${user.displayName}`)
+                
+                // 2. 获取ID Token
+                const idToken = await user.getIdToken()
+                log(`🎫 获取Firebase ID Token成功 (长度: ${idToken.length})`)
+                
+                // 3. 调用后端API登录
+                log('🌐 调用后端登录API...')
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: idToken,
+                        firebase_uid: user.uid
+                    })
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    log(`✅ 后端登录成功: ${data.user.display_name}`)
+                    updateStatus('success', `端到端登录成功: ${data.user.display_name}`)
+                    
+                    // 显示完整的用户信息
+                    updateTokenInfo(idToken, data)
+                } else {
+                    const errorData = await response.json()
+                    log(`❌ 后端登录失败: ${errorData.message}`)
+                    updateStatus('error', `后端登录失败: ${errorData.message}`)
+                }
+
+            } catch (error) {
+                log(`❌ 登录测试失败: ${error.message}`)
+                updateStatus('error', `登录失败: ${error.message}`)
+                console.error('登录错误:', error)
+            }
+        }
+
+        // 登出测试
+        window.testLogout = async function() {
+            try {
+                log('🚪 开始登出测试...')
+                await signOut(auth)
+                log('✅ 登出成功')
+                updateStatus('info', '已登出')
+                hideUserInfo()
+            } catch (error) {
+                log(`❌ 登出失败: ${error.message}`)
+                updateStatus('error', `登出失败: ${error.message}`)
+            }
+        }
+
+        // 清空日志
+        window.clearLog = function() {
+            document.getElementById('log').textContent = ''
+        }
+
+        // 日志记录
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString()
+            const logElement = document.getElementById('log')
+            logElement.textContent += `[${timestamp}] ${message}\n`
+            logElement.scrollTop = logElement.scrollHeight
+        }
+
+        // 更新状态
+        function updateStatus(type, message) {
+            const statusElement = document.getElementById('status')
+            statusElement.className = `status ${type}`
+            statusElement.innerHTML = `<strong>状态:</strong> ${message}`
+        }
+
+        // 更新用户信息显示
+        function updateUserInfo(user) {
+            const userInfoElement = document.getElementById('userInfo')
+            const userDetailsElement = document.getElementById('userDetails')
+            
+            userDetailsElement.innerHTML = `
+                <p><strong>UID:</strong> ${user.uid}</p>
+                <p><strong>显示名称:</strong> ${user.displayName || '未设置'}</p>
+                <p><strong>邮箱:</strong> ${user.email}</p>
+                <p><strong>头像:</strong> ${user.photoURL ? `<img src="${user.photoURL}" style="width: 32px; height: 32px; border-radius: 50%; vertical-align: middle;">` : '无'}</p>
+                <p><strong>邮箱验证:</strong> ${user.emailVerified ? '已验证' : '未验证'}</p>
+                <p><strong>创建时间:</strong> ${new Date(user.metadata.creationTime).toLocaleString()}</p>
+                <p><strong>最后登录:</strong> ${new Date(user.metadata.lastSignInTime).toLocaleString()}</p>
+            `
+            userInfoElement.style.display = 'block'
+        }
+
+        // 更新Token信息显示
+        function updateTokenInfo(idToken, backendData) {
+            const tokenInfoElement = document.getElementById('tokenInfo')
+            const tokenDetailsElement = document.getElementById('tokenDetails')
+            
+            // 解析JWT Token（仅用于显示，不验证签名）
+            const tokenParts = idToken.split('.')
+            let tokenPayload = {}
+            try {
+                tokenPayload = JSON.parse(atob(tokenParts[1]))
+            } catch (e) {
+                tokenPayload = { error: '无法解析token' }
+            }
+            
+            tokenDetailsElement.innerHTML = `
+                <p><strong>Firebase ID Token长度:</strong> ${idToken.length}</p>
+                <p><strong>Token过期时间:</strong> ${new Date(tokenPayload.exp * 1000).toLocaleString()}</p>
+                <p><strong>后端用户ID:</strong> ${backendData.user.id}</p>
+                <p><strong>后端JWT:</strong> ${backendData.token.substring(0, 50)}...</p>
+                <p><strong>Token有效期:</strong> ${Math.floor(backendData.expires_in / 3600 / 24)}天</p>
+            `
+            tokenInfoElement.style.display = 'block'
+        }
+
+        // 隐藏用户信息
+        function hideUserInfo() {
+            document.getElementById('userInfo').style.display = 'none'
+            document.getElementById('tokenInfo').style.display = 'none'
+        }
+
+        // 初始化完成
+        log('🚀 Firebase认证测试页面初始化完成')
+        updateStatus('info', 'Firebase已初始化，准备测试')
+    </script>
+</body>
+</html> 

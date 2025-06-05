@@ -24,11 +24,11 @@ const CONFIG_STORAGE_KEY = 'chinpoem_app_config'
 const defaultConfig: AppConfig = {
   api: {
     baseUrl: isDevelopment ? 'http://localhost:3001/api' : '/api',
-    useRealApi: false  // 默认使用Mock
+    useRealApi: true  // 改为使用真实API
   },
   
   auth: {
-    mockMode: true  // 默认启用Mock模式
+    mockMode: false  // 改为使用真实认证
   }
 }
 

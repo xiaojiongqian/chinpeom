@@ -22,7 +22,8 @@
 │   │   └── sound/          # 诗歌音效目录
 │   ├── backgroundmusic/    # 背景音乐文件
 │   ├── test-music-debug.html     # 音乐测试页面
-│   └── test-resume-music.html    # 音乐恢复测试页面
+│   ├── test-resume-music.html    # 音乐恢复测试页面
+│   └── test-firebase.html        # Firebase连接测试页面
 │
 ├── src/                    # 源代码
 │   ├── assets/             # 项目资源文件
@@ -46,6 +47,9 @@
 │   │   ├── PoemImage.vue   # 诗歌配图组件
 │   │   ├── AnswerOptions.vue # 答案选项组件
 │   │   └── FeedbackDialog.vue # 反馈对话框组件
+│   ├── config/             # 配置文件
+│   │   ├── app.ts          # 应用配置
+│   │   └── firebase.ts     # Firebase配置
 │   ├── locales/            # 国际化文件
 │   │   ├── zh-CN.ts        # 中文翻译
 │   │   ├── en.ts           # 英文翻译
@@ -65,6 +69,7 @@
 │   │   └── user.d.ts       # 用户相关类型
 │   ├── utils/              # 工具函数库
 │   │   ├── helpers.ts      # 通用辅助函数
+│   │   ├── logger.ts       # 日志工具
 │   │   ├── poemData.ts     # 诗歌数据处理工具
 │   │   ├── resourceChecker.ts    # 资源检查工具
 │   │   ├── resourceLoader.ts     # 资源加载工具
@@ -73,7 +78,9 @@
 │   │   ├── optionsGenerator.ts   # 选项生成器
 │   │   ├── randomPoemSelector.ts # 随机诗歌选择器
 │   │   └── poem.ts         # 诗歌相关工具函数
-│   ├── services/           # 服务层（P2后期实现）
+│   ├── services/           # 服务层
+│   │   ├── authApi.ts      # 认证API服务（支持Firebase）
+│   │   └── firebaseAuth.ts # Firebase认证服务
 │   ├── views/              # 页面组件
 │   │   ├── LoginView.vue   # 登录页面
 │   │   ├── QuizView.vue    # 游戏主页面
@@ -89,7 +96,7 @@
 │   ├── utils/              # 工具函数测试
 │   ├── views/              # 页面测试
 │   ├── stores/             # 状态管理测试
-│   ├── services/           # 服务测试（P2后期实现）
+│   ├── services/           # 服务测试
 │   ├── router/             # 路由测试
 │   ├── mocks/              # mock数据
 │   ├── models/             # 测试模型
@@ -98,7 +105,7 @@
 │   ├── verify-fetch.mjs    # 数据验证脚本
 │   └── poemTest.mjs        # 诗歌测试脚本
 │
-├── server/                 # 后端服务（P2后期实现）
+├── server/                 # 后端服务
 │   ├── server.js           # 服务入口
 │   ├── api/                # 接口实现
 │   ├── data/               # 数据文件
@@ -142,6 +149,7 @@
 - **移动端打包**: Capacitor
 - **组件自动导入**: unplugin-auto-import + unplugin-vue-components
 - **数据存储**: localStorage (本地存储模式)
+- **认证服务**: Firebase Authentication
 
 ### 测试技术
 - **测试框架**: Vitest
@@ -158,7 +166,7 @@
 ### 后期技术栈（P2）
 - **后端框架**: Express.js
 - **数据库**: SQLite/MySQL
-- **认证**: JWT Token
+- **认证**: JWT Token + Firebase UID
 - **API**: RESTful
 
 ## 核心功能模块
@@ -169,9 +177,132 @@
 - 分数记录与等级系统
 - 语言偏好设置
 - 本地存储集成
-- 用户认证（P2后期实现）
+- Firebase用户认证集成
 
-### 2. 诗歌管理系统
+### 2. 认证系统（Firebase集成 - 重构版）
+**文件位置**: `src/services/authApi.ts`, `src/services/firebaseAuth.ts`, `src/config/firebase.ts`, `server/api/auth.js`
+
+#### Firebase配置（不变）
+- **项目名称**: poem2guess
+- **项目ID**: poem2guess-8d19f
+- **Web API Key**: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
+- **Auth Domain**: poem2guess-8d19f.firebaseapp.com
+- **支持的登录方式**: Google账号登录
+
+#### 重构后的认证架构
+经过重构后，认证系统采用了更简洁清晰的架构：
+
+**🎯 核心原则**
+1. **Google登录**: 统一使用Firebase ID Token进行认证
+2. **环境区分**: 开发环境支持测试模式，生产环境仅支持真实认证
+3. **简化配置**: 移除复杂的Mock/Real API模式切换
+4. **错误处理**: 完善的错误捕获和用户友好提示
+
+#### 认证流程（简化版）
+1. **前端Firebase认证**: 用户点击Google登录，通过Firebase弹窗完成认证
+2. **获取ID Token**: 前端获取Firebase ID Token（JWT格式）
+3. **后端验证**: 后端使用Firebase Admin SDK验证ID Token
+4. **用户存储**: 验证成功后在数据库中创建/更新用户记录
+5. **JWT返回**: 返回应用自己的JWT Token供后续API调用使用
+
+#### 技术实现（重构版）
+
+**前端Firebase服务 (`src/services/firebaseAuth.ts`)**
+```typescript
+export class FirebaseAuthService {
+  async signInWithGoogle(): Promise<FirebaseAuthResult> {
+    const result = await signInWithPopup(auth, googleProvider)
+    const accessToken = await result.user.getIdToken() // Firebase ID Token
+    return {
+      user: {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        photoURL: result.user.photoURL
+      },
+      accessToken // 这是Firebase ID Token
+    }
+  }
+}
+```
+
+**前端认证API (`src/services/authApi.ts`)**
+```typescript
+// Google登录直接使用Firebase ID Token
+if (provider === 'google') {
+  const firebaseResult = await firebaseAuth.signInWithGoogle()
+  accessToken = firebaseResult.accessToken // Firebase ID Token
+  firebaseUid = firebaseResult.user.uid
+}
+
+// 发送到后端
+await fetch(`${this.baseUrl}/auth/login`, {
+  method: 'POST',
+  body: JSON.stringify({
+    provider: 'google',
+    access_token: accessToken, // Firebase ID Token
+    firebase_uid: firebaseUid
+  })
+})
+```
+
+**后端认证API (`server/api/auth.js` - 重构版)**
+```typescript
+// 简化的Firebase认证验证
+async function verifyFirebaseToken(firebaseIdToken) {
+  const firebaseUser = await firebaseAuthService.verifyIdToken(firebaseIdToken)
+  return {
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    name: firebaseUser.name || firebaseUser.email?.split('@')[0],
+    picture: firebaseUser.picture,
+    provider: 'google'
+  }
+}
+
+// 认证逻辑
+if (provider === 'google') {
+  if (process.env.NODE_ENV === 'development' && access_token.includes('test_')) {
+    // 开发环境测试模式
+    authUser = await mockAuthentication(provider, access_token)
+  } else {
+    // 使用Firebase验证真实Google登录
+    authUser = await verifyFirebaseToken(access_token)
+  }
+}
+```
+
+#### 环境配置（简化版）
+**开发环境**: 
+- Google登录: 支持真实Firebase认证 + 测试token模式
+- 其他provider: 仅支持测试token模式
+
+**生产环境**:
+- Google登录: 仅支持真实Firebase认证
+- 其他provider: 暂不支持（返回错误提示）
+
+#### 测试工具（更新版）
+- **测试页面**: `public/test-firebase-auth.html`
+- **功能**: 端到端Firebase认证测试、ID Token获取、后端API验证
+- **访问地址**: `http://localhost:3000/test-firebase-auth.html`
+- **测试覆盖**: Firebase登录 → ID Token获取 → 后端验证 → 用户创建/更新
+
+#### 重构优势
+1. **架构清晰**: 移除了复杂的Mock服务文件和配置切换
+2. **代码简洁**: 认证逻辑集中在单个文件中，易于维护
+3. **错误处理**: 统一的错误处理和用户友好提示
+4. **开发友好**: 保留测试模式，支持开发调试
+5. **生产就绪**: 生产环境配置简单可靠
+
+#### 故障排除
+如果遇到认证问题，请检查：
+1. **Firebase配置**: 确认API Key和项目ID正确
+2. **网络连接**: 确认能访问Firebase服务
+3. **Token格式**: 确认传递的是Firebase ID Token而非Access Token
+4. **环境模式**: 开发环境可以使用`test_google_token`进行测试
+5. **服务器日志**: 查看`server/logs/`目录下的错误日志
+
+### 3. 诗歌管理系统
 **文件位置**: `src/stores/poem.ts`, `src/utils/poem*.ts`
 - 多语言诗歌数据加载
 - 随机诗歌选择
@@ -179,7 +310,7 @@
 - 答案选项生成
 - 难度等级管理
 
-### 3. 音乐管理系统
+### 4. 音乐管理系统
 **文件位置**: `src/stores/music.ts`
 
 #### 功能概述
@@ -281,14 +412,14 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 2. **主页面**：随机选择音乐，默认开启，提供换音乐按钮
 3. **设置页面**：背景音乐开关控制
 
-### 4. 游戏逻辑系统
+### 5. 游戏逻辑系统
 **文件位置**: `src/utils/optionsGenerator.ts`, `src/components/AnswerOptions.vue`
 - 答案选项智能生成
 - 分数计算逻辑
 - 难度自适应调整
 - 反馈机制
 
-### 5. 成就系统
+### 6. 成就系统
 **文件位置**: `src/views/AchievementView.vue`, `src/stores/user.ts`
 - 古代学级称号展示
 - 分数进度追踪
@@ -304,6 +435,8 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 3. **类型定义文件**：使用camelCase，如`index.ts`、`poem.d.ts`
 4. **视图组件**：使用PascalCase并添加View后缀，如`LoginView.vue`、`QuizView.vue`
 5. **状态管理文件**：使用camelCase，如`user.ts`、`poem.ts`
+6. **服务文件**：使用camelCase，如`authApi.ts`、`firebaseAuth.ts`
+7. **配置文件**：使用camelCase，如`app.ts`、`firebase.ts`
 
 ### 测试文件命名
 
@@ -354,6 +487,12 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 - **错误处理**: 实现完善的异常捕获和处理机制
 - **性能优化**: 对计算密集型函数进行优化
 
+### 6. 认证服务开发
+- **服务分离**: Firebase认证服务与通用认证API分离
+- **错误处理**: 针对Firebase特定错误提供友好提示
+- **状态同步**: 确保Firebase状态与本地状态同步
+- **兼容性**: 支持Mock模式和真实API模式切换
+
 ## 测试规范
 
 ### 1. 测试文件结构
@@ -363,7 +502,7 @@ tests/
 ├── stores/         # 状态管理测试
 ├── utils/          # 工具函数测试
 ├── views/          # 页面组件测试
-├── services/       # 服务层测试
+├── services/       # 服务层测试（包括Firebase）
 ├── router/         # 路由测试
 ├── mocks/          # 模拟数据
 ├── models/         # 测试模型
@@ -375,16 +514,18 @@ tests/
 - **组件测试**: Vue组件的渲染和交互
 - **集成测试**: Store与组件的集成
 - **E2E测试**: 关键用户流程
+- **Firebase测试**: 认证流程和状态管理
 
 ### 3. 测试覆盖率目标
 - **总体覆盖率**: 目标达到80%以上
-- **关键模块**: stores、utils目录达到90%以上
+- **关键模块**: stores、services、utils目录达到90%以上
 - **组件测试**: 核心业务组件达到85%以上
 
 ### 4. Mock策略
 - **API调用**: 使用MSW模拟HTTP请求
 - **外部依赖**: 模拟音频、图片等资源加载
 - **浏览器API**: 模拟localStorage、sessionStorage等
+- **Firebase模拟**: 模拟Firebase认证服务
 
 ## 代码质量控制
 
@@ -458,10 +599,10 @@ npx cap run android  # 运行Android应用
 
 ### 2. 示例
 ```
-feat: 添加设置页面紧凑布局选项
+feat: 集成Firebase Google登录认证
 fix: 修复音乐播放状态同步问题
-docs: 更新开发规范文档
-test: 添加用户状态管理测试用例
+docs: 更新Firebase集成开发规范
+test: 添加Firebase认证服务测试用例
 ```
 
 ### 3. 分支管理
@@ -477,6 +618,7 @@ test: 添加用户状态管理测试用例
 - 定期更新依赖包到最新稳定版本
 - 使用`npm audit`检查安全漏洞
 - 保持package-lock.json与package.json同步
+- 关注Firebase SDK版本更新
 
 ### 2. 代码审查清单
 - [ ] 代码符合项目编码规范
@@ -485,10 +627,27 @@ test: 添加用户状态管理测试用例
 - [ ] 组件可复用性良好
 - [ ] 性能影响在可接受范围
 - [ ] 移动端兼容性良好
+- [ ] Firebase集成正确处理错误
 
 ### 3. 发布流程
 1. 功能开发完成并通过测试
 2. 创建Pull Request到develop分支
 3. 代码审查通过后合并
 4. 在develop分支进行集成测试
-5. 合并到main分支并打标签发布 
+5. 合并到main分支并打标签发布
+
+## 3rd Party
+
+### 1. Google Firebase Authentication
+1. Firebase项目名称: poem2guess
+2. Firebase项目ID: poem2guess-8d19f
+3. Firebase Web API Key: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
+4. Firebase已集成到Vue项目: npm install firebase
+5. Firebase测试页面: `public/test-firebase.html`
+6. 支持的认证方式: Google账号登录
+7. 认证域名: poem2guess-8d19f.firebaseapp.com
+
+### 2. Firebase Hosting（可选）
+1. 安装Firebase CLI工具: npm install firebase-tools
+2. 初始化Firebase Hosting: firebase init hosting
+3. 部署到Firebase: firebase deploy

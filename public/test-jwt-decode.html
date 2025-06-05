@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Token解析测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .json-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 JWT Token解析测试</h1>
+    
+    <div class="info">
+        <strong>目的:</strong> 测试我们的简化验证逻辑，解析Firebase ID Token的payload部分
+    </div>
+
+    <div id="status" class="status info">准备解析JWT Token...</div>
+
+    <h3>方法1: 从Firebase获取真实Token</h3>
+    <button onclick="getFirebaseToken()">🔑 获取Firebase Token</button>
+    <button onclick="testTokenWithBackend()">🔧 测试后端验证</button>
+
+    <h3>方法2: 手动输入Token进行解析</h3>
+    <textarea id="tokenInput" placeholder="在此输入Firebase ID Token进行解析..."></textarea>
+    <button onclick="parseManualToken()">🔍 解析手动输入的Token</button>
+
+    <div id="tokenInfo" class="json-display"></div>
+    <div id="payloadInfo" class="json-display"></div>
+    <div id="backendResponse" class="json-display"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "521053998371",
+            appId: "1:521053998371:web:5a8c5e7b8ec4d8f75f5e5d"
+        }
+
+        // 初始化Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const googleProvider = new GoogleAuthProvider()
+
+        let currentToken = null
+
+        // 更新状态显示
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status')
+            statusDiv.className = `status ${type}`
+            statusDiv.textContent = message
+        }
+
+        function updateTokenInfo(tokenInfo) {
+            const tokenDiv = document.getElementById('tokenInfo')
+            tokenDiv.innerHTML = '<h3>🔑 Token信息:</h3>' + JSON.stringify(tokenInfo, null, 2)
+        }
+
+        function updatePayloadInfo(payloadInfo) {
+            const payloadDiv = document.getElementById('payloadInfo')
+            payloadDiv.innerHTML = '<h3>📋 Token Payload解析:</h3>' + JSON.stringify(payloadInfo, null, 2)
+        }
+
+        function updateBackendResponse(response) {
+            const backendDiv = document.getElementById('backendResponse')
+            backendDiv.innerHTML = '<h3>🔧 后端验证响应:</h3>' + JSON.stringify(response, null, 2)
+        }
+
+        // 解析JWT Token
+        function parseJWT(token) {
+            try {
+                if (!token || typeof token !== 'string') {
+                    throw new Error('Token为空或格式错误')
+                }
+
+                const parts = token.split('.')
+                if (parts.length !== 3) {
+                    throw new Error('JWT格式错误，应该有3个部分')
+                }
+
+                // 解析header
+                const header = JSON.parse(atob(parts[0]))
+                
+                // 解析payload
+                const payload = JSON.parse(atob(parts[1]))
+                
+                // 计算时间信息
+                const now = Math.floor(Date.now() / 1000)
+                const timeInfo = {
+                    现在: new Date(now * 1000).toLocaleString(),
+                    签发时间: payload.iat ? new Date(payload.iat * 1000).toLocaleString() : '未设置',
+                    过期时间: payload.exp ? new Date(payload.exp * 1000).toLocaleString() : '未设置',
+                    认证时间: payload.auth_time ? new Date(payload.auth_time * 1000).toLocaleString() : '未设置',
+                    是否过期: payload.exp ? (payload.exp < now ? '是' : '否') : '无法判断'
+                }
+
+                return {
+                    header,
+                    payload,
+                    timeInfo,
+                    signature: parts[2].substring(0, 20) + '...'
+                }
+            } catch (error) {
+                throw new Error('JWT解析失败: ' + error.message)
+            }
+        }
+
+        // 获取Firebase Token
+        window.getFirebaseToken = async function() {
+            try {
+                updateStatus('🔑 正在获取Firebase Token...', 'info')
+
+                // 检查是否已登录
+                if (!auth.currentUser) {
+                    updateStatus('🔐 需要先登录，正在启动Google认证...', 'info')
+                    const result = await signInWithPopup(auth, googleProvider)
+                }
+
+                // 获取ID Token
+                const idToken = await auth.currentUser.getIdToken(true) // 强制刷新
+                currentToken = idToken
+
+                // 显示Token基本信息
+                const tokenInfo = {
+                    tokenLength: idToken.length,
+                    tokenPreview: idToken.substring(0, 50) + '...',
+                    userId: auth.currentUser.uid,
+                    userEmail: auth.currentUser.email
+                }
+                updateTokenInfo(tokenInfo)
+
+                // 解析Token
+                const parsed = parseJWT(idToken)
+                updatePayloadInfo(parsed)
+
+                updateStatus('✅ Firebase Token获取并解析成功！', 'success')
+
+            } catch (error) {
+                console.error('获取Firebase Token失败:', error)
+                updateStatus(`❌ 获取Firebase Token失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 解析手动输入的Token
+        window.parseManualToken = function() {
+            try {
+                const token = document.getElementById('tokenInput').value.trim()
+                if (!token) {
+                    updateStatus('⚠️ 请输入Token', 'error')
+                    return
+                }
+
+                updateStatus('🔍 正在解析手动输入的Token...', 'info')
+
+                // 显示Token基本信息
+                const tokenInfo = {
+                    tokenLength: token.length,
+                    tokenPreview: token.substring(0, 50) + '...',
+                    source: '手动输入'
+                }
+                updateTokenInfo(tokenInfo)
+
+                // 解析Token
+                const parsed = parseJWT(token)
+                updatePayloadInfo(parsed)
+
+                currentToken = token
+                updateStatus('✅ Token解析成功！', 'success')
+
+            } catch (error) {
+                console.error('解析Token失败:', error)
+                updateStatus(`❌ 解析Token失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 测试后端验证
+        window.testTokenWithBackend = async function() {
+            try {
+                if (!currentToken) {
+                    updateStatus('⚠️ 请先获取或输入Token', 'error')
+                    return
+                }
+
+                updateStatus('🔧 正在测试后端验证...', 'info')
+
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: currentToken,
+                        firebase_uid: 'test-uid'
+                    })
+                })
+
+                const data = await response.json()
+
+                if (response.ok) {
+                    updateStatus('✅ 后端验证成功！简化验证模式工作正常！', 'success')
+                    updateBackendResponse({
+                        status: '成功',
+                        response: data
+                    })
+                } else {
+                    updateStatus(`❌ 后端验证失败: ${data.message}`, 'error')
+                    updateBackendResponse({
+                        status: '失败',
+                        response: data
+                    })
+                }
+
+            } catch (error) {
+                console.error('后端验证测试失败:', error)
+                updateStatus(`❌ 后端验证测试失败: ${error.message}`, 'error')
+                updateBackendResponse({
+                    status: '网络错误',
+                    error: error.message
+                })
+            }
+        }
+
+        // 监听认证状态
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('当前已登录:', user.email)
+            } else {
+                console.log('当前未登录')
+            }
+        })
+    </script>
+
+    <div class="info">
+        <h3>📋 使用说明:</h3>
+        <ol>
+            <li>点击"获取Firebase Token"进行Google登录并获取真实Token</li>
+            <li>或者手动粘贴已有的Firebase ID Token进行解析</li>
+            <li>解析成功后，点击"测试后端验证"验证我们的简化验证逻辑</li>
+            <li>查看解析结果，确认Token的有效性和字段完整性</li>
+        </ol>
+    </div>
+
+    <div class="info">
+        <h3>🔍 检查要点:</h3>
+        <ul>
+            <li><strong>Token结构</strong>: 确认JWT有3个部分 (header.payload.signature)</li>
+            <li><strong>项目ID</strong>: aud字段应该是 "poem2guess-8d19f"</li>
+            <li><strong>发行者</strong>: iss字段应该包含 "securetoken.google.com"</li>
+            <li><strong>有效期</strong>: exp字段应该大于当前时间</li>
+            <li><strong>后端验证</strong>: 我们的简化验证应该成功解析Token</li>
+        </ul>
+    </div>
+</body>
+</html> 

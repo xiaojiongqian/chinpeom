@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 认证诊断工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #3367d6; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .diagnostic {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .checklist li:before {
+            content: "❌ ";
+            margin-right: 8px;
+        }
+        .checklist li.passed:before {
+            content: "✅ ";
+        }
+        .error-details {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase 认证诊断工具</h1>
+        <p>这个页面用于诊断 Firebase Authentication 问题</p>
+        
+        <div id="status" class="status info">正在初始化 Firebase...</div>
+        
+        <div>
+            <button id="loginBtn" onclick="testGoogleLogin()" disabled>Google 登录测试</button>
+            <button id="logoutBtn" onclick="testLogout()" disabled>登出测试</button>
+            <button id="statusBtn" onclick="checkStatus()">检查状态</button>
+            <button onclick="runDiagnostics()">运行诊断</button>
+        </div>
+        
+        <div id="errorDetails" class="error-details" style="display: none;">
+            <h3>❌ 错误详情：</h3>
+            <pre id="errorContent"></pre>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 配置检查</h2>
+        <div id="configCheck" class="section">
+            <ul id="checkList" class="checklist">
+                <li id="check-firebase">Firebase 初始化</li>
+                <li id="check-auth">Authentication 服务</li>
+                <li id="check-provider">Google Provider 配置</li>
+                <li id="check-domain">当前域名检查</li>
+                <li id="check-console">浏览器控制台</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 故障排除指南</h2>
+        <div class="diagnostic">
+            <h3>常见问题和解决方案：</h3>
+            <ol>
+                <li><strong>授权域名未配置</strong>
+                    <p>在 Firebase Console → Authentication → Settings → Authorized domains 中添加：</p>
+                    <ul>
+                        <li><code class="code">localhost</code></li>
+                        <li><code class="code">127.0.0.1</code></li>
+                        <li><code class="code">your-domain.com</code></li>
+                    </ul>
+                </li>
+                <li><strong>Google OAuth 客户端配置问题</strong>
+                    <p>在 Google Cloud Console → APIs & Services → Credentials 中检查：</p>
+                    <ul>
+                        <li>OAuth 2.0 客户端 ID 是否正确</li>
+                        <li>授权重定向 URI 是否包含当前域名</li>
+                    </ul>
+                </li>
+                <li><strong>Firebase 项目配置错误</strong>
+                    <p>检查 firebase.ts 中的配置是否与 Firebase Console 一致</p>
+                </li>
+                <li><strong>浏览器阻止弹窗</strong>
+                    <p>检查浏览器是否阻止了弹窗，需要允许此网站的弹窗</p>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📝 详细日志</h2>
+        <div id="logs">
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js'
+
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "1090834027836",
+            appId: "1:1090834027836:web:d4a2b8f4f5e1e2f3a4b5c6"
+        }
+
+        // 初始化 Firebase
+        let app, auth, provider
+        
+        try {
+            app = initializeApp(firebaseConfig)
+            auth = getAuth(app)
+            provider = new GoogleAuthProvider()
+            provider.addScope('profile')
+            provider.addScope('email')
+            provider.setCustomParameters({
+                prompt: 'select_account'
+            })
+            
+            log('✅ Firebase 初始化成功', 'success')
+            updateStatus('Firebase 初始化成功，可以开始测试', 'success')
+            updateCheck('check-firebase', true)
+            updateCheck('check-auth', true)
+            updateCheck('check-provider', true)
+            document.getElementById('loginBtn').disabled = false
+            document.getElementById('logoutBtn').disabled = false
+        } catch (error) {
+            log('❌ Firebase 初始化失败: ' + error.message, 'error')
+            updateStatus('Firebase 初始化失败: ' + error.message, 'error')
+            showErrorDetails(error)
+        }
+
+        // 监听认证状态变化
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                log('👤 用户已登录: ' + user.displayName, 'success')
+                updateStatus('用户已登录', 'success')
+                logUserDetails(user)
+            } else {
+                log('👋 用户已登出', 'info')
+                updateStatus('用户未登录', 'info')
+            }
+        })
+
+        // 全局函数
+        window.testGoogleLogin = async function() {
+            try {
+                log('🔄 开始 Google 登录...', 'info')
+                updateStatus('正在进行 Google 登录...', 'info')
+                hideErrorDetails()
+                
+                log('📍 当前域名: ' + window.location.origin, 'info')
+                log('🔧 Provider 配置: ' + JSON.stringify({
+                    scopes: provider._scopes,
+                    customParameters: provider._customParameters
+                }), 'info')
+                
+                const result = await signInWithPopup(auth, provider)
+                const user = result.user
+                const token = await user.getIdToken()
+                
+                log('✅ Google 登录成功: ' + user.displayName, 'success')
+                log('📧 邮箱: ' + user.email, 'info')
+                log('🆔 UID: ' + user.uid, 'info')
+                log('🔑 Token 长度: ' + token.length + ' 字符', 'info')
+                log('🌐 Provider: ' + user.providerData[0]?.providerId, 'info')
+                
+                updateStatus('Google 登录成功', 'success')
+            } catch (error) {
+                log('❌ Google 登录失败: ' + error.message, 'error')
+                log('🔍 错误代码: ' + error.code, 'error')
+                updateStatus('Google 登录失败: ' + error.message, 'error')
+                showErrorDetails(error)
+                
+                // 详细错误分析
+                analyzeError(error)
+            }
+        }
+
+        window.testLogout = async function() {
+            try {
+                log('🔄 开始登出...', 'info')
+                updateStatus('正在登出...', 'info')
+                
+                await signOut(auth)
+                
+                log('✅ 登出成功', 'success')
+                updateStatus('登出成功', 'success')
+            } catch (error) {
+                log('❌ 登出失败: ' + error.message, 'error')
+                updateStatus('登出失败: ' + error.message, 'error')
+                showErrorDetails(error)
+            }
+        }
+
+        window.checkStatus = function() {
+            const user = auth.currentUser
+            if (user) {
+                log('📊 当前状态: 已登录', 'success')
+                log('👤 用户: ' + user.displayName + ' (' + user.email + ')', 'info')
+                updateStatus('已登录', 'success')
+            } else {
+                log('📊 当前状态: 未登录', 'info')
+                updateStatus('未登录', 'info')
+            }
+        }
+
+        window.runDiagnostics = function() {
+            log('🔍 开始运行诊断...', 'info')
+            
+            // 检查当前域名
+            const currentDomain = window.location.hostname
+            updateCheck('check-domain', true)
+            log('🌐 当前域名: ' + currentDomain, 'info')
+            
+            // 检查是否在授权域名列表中
+            const authorizedDomains = ['localhost', '127.0.0.1', 'poem2guess-8d19f.firebaseapp.com']
+            const isDomainAuthorized = authorizedDomains.includes(currentDomain)
+            log(isDomainAuthorized ? '✅ 域名已授权' : '❌ 域名可能未授权', isDomainAuthorized ? 'success' : 'warning')
+            
+            // 检查浏览器控制台
+            updateCheck('check-console', true)
+            log('💡 请检查浏览器开发者工具的 Console 标签页是否有其他错误信息', 'info')
+            
+            // 输出配置信息
+            log('⚙️ Firebase 配置:', 'info')
+            log('  Project ID: ' + firebaseConfig.projectId, 'info')
+            log('  Auth Domain: ' + firebaseConfig.authDomain, 'info')
+            log('  API Key: ' + firebaseConfig.apiKey.substring(0, 10) + '...', 'info')
+            
+            log('✅ 诊断完成', 'success')
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status')
+            statusEl.textContent = message
+            statusEl.className = `status ${type}`
+        }
+
+        function updateCheck(checkId, passed) {
+            const checkEl = document.getElementById(checkId)
+            if (passed) {
+                checkEl.classList.add('passed')
+            } else {
+                checkEl.classList.remove('passed')
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer')
+            const logEl = document.createElement('div')
+            logEl.className = `status ${type}`
+            logEl.style.fontSize = '14px'
+            logEl.style.margin = '5px 0'
+            logEl.textContent = new Date().toLocaleTimeString() + ' - ' + message
+            logContainer.appendChild(logEl)
+            logContainer.scrollTop = logContainer.scrollHeight
+        }
+
+        function showErrorDetails(error) {
+            const errorDetailsEl = document.getElementById('errorDetails')
+            const errorContentEl = document.getElementById('errorContent')
+            
+            const errorInfo = {
+                message: error.message,
+                code: error.code,
+                stack: error.stack,
+                customData: error.customData,
+                timestamp: new Date().toISOString()
+            }
+            
+            errorContentEl.textContent = JSON.stringify(errorInfo, null, 2)
+            errorDetailsEl.style.display = 'block'
+        }
+
+        function hideErrorDetails() {
+            const errorDetailsEl = document.getElementById('errorDetails')
+            errorDetailsEl.style.display = 'none'
+        }
+
+        function analyzeError(error) {
+            log('🧪 错误分析:', 'warning')
+            
+            switch(error.code) {
+                case 'auth/popup-closed-by-user':
+                    log('   👆 用户关闭了登录弹窗', 'warning')
+                    break
+                case 'auth/popup-blocked':
+                    log('   🚫 浏览器阻止了弹窗，请允许此网站的弹窗', 'warning')
+                    break
+                case 'auth/cancelled-popup-request':
+                    log('   ⏸️ 登录请求被取消', 'warning')
+                    break
+                case 'auth/network-request-failed':
+                    log('   🌐 网络请求失败，请检查网络连接', 'warning')
+                    break
+                case 'auth/invalid-api-key':
+                    log('   🔑 API Key 无效，请检查 Firebase 配置', 'error')
+                    break
+                case 'auth/project-not-found':
+                    log('   📁 Firebase 项目未找到，请检查 Project ID', 'error')
+                    break
+                case 'auth/unauthorized-domain':
+                    log('   🚫 域名未授权，请在 Firebase Console 中添加当前域名到授权列表', 'error')
+                    log('   💡 需要在 Authentication → Settings → Authorized domains 中添加: ' + window.location.hostname, 'info')
+                    break
+                default:
+                    log('   ❓ 未知错误类型: ' + error.code, 'error')
+            }
+        }
+
+        function logUserDetails(user) {
+            log('📋 用户详细信息:', 'info')
+            log('  UID: ' + user.uid, 'info')
+            log('  显示名称: ' + user.displayName, 'info')
+            log('  邮箱: ' + user.email, 'info')
+            log('  邮箱验证: ' + (user.emailVerified ? '✅' : '❌'), 'info')
+            log('  头像: ' + (user.photoURL ? '✅' : '❌'), 'info')
+            log('  认证提供商: ' + user.providerData.map(p => p.providerId).join(', '), 'info')
+        }
+
+        // 页面加载完成后运行初始诊断
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                runDiagnostics()
+            }, 1000)
+        })
+    </script>
+</body>
+</html> 

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Redirect认证测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .json-display {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js'
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithRedirect,
+            getRedirectResult,
+            signOut 
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "521053998371",
+            appId: "1:521053998371:web:5a8c5e7b8ec4d8f75f5e5d"
+        }
+
+        // 初始化Firebase
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const googleProvider = new GoogleAuthProvider()
+
+        // 状态管理
+        let isLoading = false
+
+        // DOM元素
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status')
+            statusDiv.className = `status ${type}`
+            statusDiv.textContent = message
+        }
+
+        function updateUserInfo(userInfo) {
+            const userDiv = document.getElementById('userInfo')
+            userDiv.innerHTML = '<h3>用户信息:</h3>' + JSON.stringify(userInfo, null, 2)
+        }
+
+        function updateTokenInfo(tokenInfo) {
+            const tokenDiv = document.getElementById('tokenInfo')
+            tokenDiv.innerHTML = '<h3>Token信息:</h3>' + JSON.stringify(tokenInfo, null, 2)
+        }
+
+        function updateBackendResponse(response) {
+            const backendDiv = document.getElementById('backendResponse')
+            backendDiv.innerHTML = '<h3>后端响应:</h3>' + JSON.stringify(response, null, 2)
+        }
+
+        // 设置按钮状态
+        function setButtonsEnabled(enabled) {
+            const buttons = document.querySelectorAll('button')
+            buttons.forEach(btn => {
+                btn.disabled = !enabled
+            })
+        }
+
+        // Redirect登录（直接使用redirect模式）
+        window.redirectLogin = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('正在启动Google Redirect认证...', 'info')
+                
+                // 直接使用redirect认证，不尝试popup
+                await signInWithRedirect(auth, googleProvider)
+                
+                // 注意：redirect后页面会跳转，这里的代码不会执行
+                updateStatus('正在跳转到Google认证页面...', 'info')
+                
+            } catch (error) {
+                console.error('Redirect认证启动失败:', error)
+                updateStatus(`Redirect认证启动失败: ${error.message}`, 'error')
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 检查redirect结果
+        window.checkRedirectResult = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('检查Redirect认证结果...', 'info')
+                
+                const result = await getRedirectResult(auth)
+                
+                if (result) {
+                    const user = result.user
+                    const idToken = await user.getIdToken()
+                    
+                    // 显示用户信息
+                    const userInfo = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        emailVerified: user.emailVerified
+                    }
+                    updateUserInfo(userInfo)
+                    
+                    // 显示Token信息
+                    const tokenInfo = {
+                        idToken: idToken.substring(0, 50) + '...',
+                        tokenLength: idToken.length
+                    }
+                    updateTokenInfo(tokenInfo)
+                    
+                    updateStatus('Redirect认证成功！正在发送到后端验证...', 'success')
+                    
+                    // 发送到后端验证
+                    await testBackendAuth(idToken, user.uid)
+                    
+                } else {
+                    updateStatus('没有检测到Redirect认证结果', 'info')
+                }
+                
+            } catch (error) {
+                console.error('检查Redirect结果失败:', error)
+                updateStatus(`检查Redirect结果失败: ${error.message}`, 'error')
+            } finally {
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 测试后端认证
+        async function testBackendAuth(idToken, firebaseUid) {
+            try {
+                updateStatus('正在验证后端认证...', 'info')
+                
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: idToken,
+                        firebase_uid: firebaseUid
+                    })
+                })
+
+                const data = await response.json()
+                
+                if (response.ok) {
+                    updateStatus('✅ 后端认证成功！整个流程完成！', 'success')
+                    updateBackendResponse(data)
+                } else {
+                    updateStatus(`❌ 后端认证失败: ${data.message}`, 'error')
+                    updateBackendResponse(data)
+                }
+                
+            } catch (error) {
+                console.error('后端认证测试失败:', error)
+                updateStatus(`后端认证测试失败: ${error.message}`, 'error')
+            }
+        }
+
+        // 登出
+        window.logout = async function() {
+            if (isLoading) return
+            
+            try {
+                isLoading = true
+                setButtonsEnabled(false)
+                updateStatus('正在登出...', 'info')
+                
+                await signOut(auth)
+                
+                // 清空显示信息
+                document.getElementById('userInfo').innerHTML = ''
+                document.getElementById('tokenInfo').innerHTML = ''
+                document.getElementById('backendResponse').innerHTML = ''
+                
+                updateStatus('已登出', 'success')
+                
+            } catch (error) {
+                console.error('登出失败:', error)
+                updateStatus(`登出失败: ${error.message}`, 'error')
+            } finally {
+                isLoading = false
+                setButtonsEnabled(true)
+            }
+        }
+
+        // 页面加载时自动检查redirect结果
+        window.addEventListener('load', () => {
+            updateStatus('页面已加载，自动检查Redirect认证结果...', 'info')
+            checkRedirectResult()
+        })
+
+        // 监听认证状态变化
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase认证状态: 已登录', user.displayName)
+            } else {
+                console.log('Firebase认证状态: 未登录')
+            }
+        })
+    </script>
+</head>
+<body>
+    <h1>🔄 Firebase Redirect认证测试</h1>
+    
+    <div class="info">
+        <strong>说明:</strong> 这个页面专门测试Firebase的Redirect认证模式，避免CORS问题。
+        <ul>
+            <li>点击"启动Redirect登录"将跳转到Google认证页面</li>
+            <li>认证完成后会自动返回此页面并处理结果</li>
+            <li>页面加载时会自动检查redirect认证结果</li>
+        </ul>
+    </div>
+
+    <div id="status" class="status info">准备就绪</div>
+    
+    <div style="margin: 20px 0;">
+        <button onclick="redirectLogin()">🚀 启动Redirect登录</button>
+        <button onclick="checkRedirectResult()">🔍 检查Redirect结果</button>
+        <button onclick="logout()">🚪 登出</button>
+    </div>
+
+    <div id="userInfo" class="json-display"></div>
+    <div id="tokenInfo" class="json-display"></div>
+    <div id="backendResponse" class="json-display"></div>
+
+    <div class="info">
+        <h3>📋 测试步骤:</h3>
+        <ol>
+            <li>点击"启动Redirect登录"按钮</li>
+            <li>页面会跳转到Google认证页面</li>
+            <li>完成Google账号登录</li>
+            <li>自动返回此页面并显示认证结果</li>
+            <li>自动进行后端API验证</li>
+        </ol>
+    </div>
+
+    <div class="info">
+        <h3>🔧 故障排除:</h3>
+        <ul>
+            <li>如果redirect后没有自动检查结果，请手动点击"检查Redirect结果"</li>
+            <li>确保后端服务运行在 http://localhost:3001</li>
+            <li>检查浏览器控制台是否有错误信息</li>
+        </ul>
+    </div>
+</body>
+</html> 

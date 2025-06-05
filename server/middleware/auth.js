@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import appConfig from '../config/env/default.js' // Import appConfig
 
 /**
  * 用户认证中间件
@@ -21,7 +22,8 @@ export const auth = (req, res, next) => {
     }
 
     // 验证令牌
-    const jwtSecret = process.env.JWT_SECRET || 'chinpoem-secret'
+    // 使用与签名时一致的密钥配置
+    const jwtSecret = process.env.JWT_SECRET || appConfig.jwtSecret 
     const decoded = jwt.verify(token, jwtSecret)
 
     // 将用户信息添加到请求对象

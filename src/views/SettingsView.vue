@@ -232,6 +232,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { usePoemStore } from '../stores/poem'
 import { useMusicStore } from '../stores/music'
+import authApi from '@/services/authApi'
 import type { DifficultyLevel } from '../utils/optionsGenerator'
 
 const router = useRouter()
@@ -287,9 +288,22 @@ const setDifficulty = async (newDifficulty: DifficultyLevel) => {
 }
 
 // 退出登录
-const logout = () => {
-  userStore.logout()
-  router.push('/login')
+const logout = async () => {
+  try {
+    // 调用认证API登出（会处理Firebase登出）
+    await authApi.logout()
+    
+    // 调用用户存储登出（清理本地状态）
+    userStore.logout()
+    
+    // 跳转到登录页面
+    router.push('/login')
+  } catch (error) {
+    console.error('登出失败:', error)
+    // 即使登出失败，也要清理本地状态
+    userStore.logout()
+    router.push('/login')
+  }
 }
 
 // 确认退出登录

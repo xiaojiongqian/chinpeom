@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单认证测试 - 修复验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #4285F4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .button:hover {
+            background: #3367D6;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>简单认证测试</h1>
+        <p>测试修复后的Firebase认证和后端验证流程</p>
+        
+        <div id="status" class="status info">
+            准备测试...
+        </div>
+        
+        <button class="button" id="authBtn" onclick="testAuth()">
+            🔐 开始完整认证测试
+        </button>
+        
+        <div class="log" id="logContainer"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js'
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js'
+
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
+            authDomain: "poem2guess-8d19f.firebaseapp.com",
+            projectId: "poem2guess-8d19f",
+            storageBucket: "poem2guess-8d19f.firebasestorage.app",
+            messagingSenderId: "1090834027836",
+            appId: "1:1090834027836:web:d4a2b8f4f5e1e2f3a4b5c6"
+        }
+
+        const app = initializeApp(firebaseConfig)
+        const auth = getAuth(app)
+        const provider = new GoogleAuthProvider()
+        provider.addScope('profile')
+        provider.addScope('email')
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString()
+            const logElement = document.getElementById('logContainer')
+            const logEntry = document.createElement('div')
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff'
+            logEntry.textContent = `[${timestamp}] ${message}`
+            logElement.appendChild(logEntry)
+            logElement.scrollTop = logElement.scrollHeight
+            console.log(`[${type.toUpperCase()}] ${message}`)
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status')
+            statusElement.textContent = message
+            statusElement.className = `status ${type}`
+        }
+
+        window.testAuth = async function() {
+            const authBtn = document.getElementById('authBtn')
+            
+            try {
+                authBtn.disabled = true
+                authBtn.textContent = '认证中...'
+                updateStatus('正在进行Firebase认证...', 'info')
+                log('🚀 开始完整认证流程测试', 'info')
+                
+                // Step 1: Firebase认证
+                log('1️⃣ 开始Firebase Google登录...', 'info')
+                const result = await signInWithPopup(auth, provider)
+                log(`✅ Firebase登录成功: ${result.user.displayName}`, 'success')
+                
+                // Step 2: 获取ID Token
+                log('2️⃣ 获取Firebase ID Token...', 'info')
+                const idToken = await result.user.getIdToken()
+                log(`✅ 成功获取ID Token (长度: ${idToken.length})`, 'success')
+                
+                // Step 3: 发送到后端验证
+                log('3️⃣ 发送到后端验证...', 'info')
+                updateStatus('正在后端验证...', 'info')
+                
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        provider: 'google',
+                        access_token: idToken,
+                        firebase_uid: result.user.uid
+                    })
+                })
+                
+                log(`📡 后端响应状态: ${response.status}`, 'info')
+                
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(`后端验证失败: ${errorData.message || errorData.error || '未知错误'}`)
+                }
+                
+                const data = await response.json()
+                log(`✅ 后端验证成功!`, 'success')
+                log(`👤 用户: ${data.user.display_name}`, 'success')
+                log(`🏆 分数: ${data.user.total_score}`, 'success')
+                log(`🎖️ 等级: ${data.user.current_rank}`, 'success')
+                
+                updateStatus('🎉 完整认证流程测试成功！', 'success')
+                
+            } catch (error) {
+                log(`❌ 认证失败: ${error.message}`, 'error')
+                updateStatus('❌ 认证测试失败', 'error')
+                
+                // 提供调试信息
+                if (error.message.includes('popup-closed-by-user')) {
+                    log('💡 提示: 用户取消了登录', 'info')
+                } else if (error.message.includes('popup-blocked')) {
+                    log('💡 提示: 请允许弹窗后重试', 'info')
+                } else if (error.message.includes('网络') || error.message.includes('network')) {
+                    log('💡 提示: 检查网络连接和服务器状态', 'info')
+                }
+            } finally {
+                authBtn.disabled = false
+                authBtn.textContent = '🔐 开始完整认证测试'
+            }
+        }
+
+        // 页面加载完成
+        log('✅ 测试页面已加载，Firebase已初始化', 'success')
+        updateStatus('页面已准备就绪，点击按钮开始测试', 'success')
+    </script>
+</body>
+</html> 
