@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export const useMusicStore = defineStore('music', () => {
   // 背景音乐列表
@@ -16,7 +16,8 @@ export const useMusicStore = defineStore('music', () => {
 
   // 状态
   const isPlaying = ref(false)
-  const isMuted = ref(false) // 改为默认开启音效
+  // 从localStorage初始化静音状态，默认不静音
+  const isMuted = ref(JSON.parse(localStorage.getItem('musicMuted') || 'false'))
   const currentMusicIndex = ref(0) // 默认从第一首开始（古韵绵长）
   const audio = ref<HTMLAudioElement | null>(null)
   const volume = ref(0.3) // 默认音量30%
@@ -29,6 +30,11 @@ export const useMusicStore = defineStore('music', () => {
 
   const currentMusicName = computed(() => {
     return backgroundMusicList[currentMusicIndex.value]
+  })
+
+  // 监听isMuted的变化并持久化到localStorage
+  watch(isMuted, (newVal) => {
+    localStorage.setItem('musicMuted', JSON.stringify(newVal))
   })
 
   // 检测是否在移动应用环境中
