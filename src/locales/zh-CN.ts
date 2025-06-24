@@ -192,5 +192,15 @@ export default {
     spanish: '西班牙语',
     german: '德语',
     japanese: '日语'
+  },
+  errors: {
+    llmError: '抱歉，与AI通信时出错，请重试。'
+  },
+  poemDetail: {
+    meaning: '诗词释义',
+    allusion: '典故',
+    background: '背景',
+    additionalInfo: '补充信息',
+    askPlaceholder: '问些关于这首诗的问题...'
   }
 }

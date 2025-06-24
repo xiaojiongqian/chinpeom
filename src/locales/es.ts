@@ -190,5 +190,15 @@ export default {
     spanish: 'Español',
     german: 'Alemán',
     japanese: 'Japonés'
+  },
+  errors: {
+    llmError: 'Lo sentimos, ha habido un error de comunicación con la IA. Por favor, inténtalo de nuevo.'
+  },
+  poemDetail: {
+    meaning: 'Significado',
+    allusion: 'Alusión',
+    background: 'Trasfondo',
+    additionalInfo: 'Información adicional',
+    askPlaceholder: 'Pregunta algo sobre el poema...'
   }
 }

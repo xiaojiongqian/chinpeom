@@ -48,7 +48,7 @@ export interface TranslatedPoem {
 /**
  * 支持的语言类型
  */
-export type SupportedLanguage = 'chinese' | 'english' | 'french' | 'spanish' | 'german' | 'japanese'
+export type SupportedLanguage = 'chinese' | 'english' | 'french' | 'spanish' | 'german' | 'japanese' | 'none'
 
 /**
  * 难度模式类型

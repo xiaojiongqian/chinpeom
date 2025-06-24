@@ -190,5 +190,15 @@ export default {
     spanish: 'スペイン語',
     german: 'ドイツ語',
     japanese: '日本語'
+  },
+  errors: {
+    llmError: '申し訳ありませんが、AIとの通信中にエラーが発生しました。もう一度お試しください。'
+  },
+  poemDetail: {
+    meaning: '意味',
+    allusion: '典故',
+    background: '背景',
+    additionalInfo: '補足情報',
+    askPlaceholder: '詩について何か質問してください...'
   }
 }

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom prose styles */
+.prose h2 {
+  @apply text-2xl font-bold mb-2 mt-4 text-gray-800;
+}
+
 /* 移动端优化基础样式 */
 html {
   font-family: 'Inter var', sans-serif;
@@ -113,4 +118,31 @@ body {
   @apply fixed left-0 right-0;
   max-width: 448px; /* max-w-md 的像素值 */
   margin: 0 auto;
+}
+
+/* Scrollbar that appears on hover */
+.hover-scrollbar {
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: transparent transparent; /* For Firefox */
+}
+
+.hover-scrollbar:hover {
+  scrollbar-color: #a1a1aa transparent; /* For Firefox, thumb and track */
+}
+
+.hover-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hover-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hover-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+.hover-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #a1a1aa; /* zinc-400 */
 } 

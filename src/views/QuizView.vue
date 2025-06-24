@@ -63,7 +63,7 @@
       <!-- 诗歌卡片 -->
       <div class="flex-1 flex flex-col justify-center px-6 py-6">
         <!-- 诗歌内容卡片 - 包含图片和诗歌正文 -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 cursor-pointer" @click="goToPoemDetail">
           <!-- 诗歌图片区域 - 占满panel上半部分，4:3长宽比 -->
           <div v-if="hasImage" class="w-full aspect-[4/3] overflow-hidden">
             <img 
@@ -218,7 +218,7 @@
   import { usePoemStore } from '../stores/poem'
   import { useUserStore } from '../stores/user'
   import { useMusicStore } from '../stores/music'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import soundOnIcon from '@/assets/icons/feature/icon_sound_on.svg'
   import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
@@ -227,6 +227,7 @@
   const userStore = useUserStore()
   const musicStore = useMusicStore()
   const route = useRoute()
+  const router = useRouter()
 
   const answered = ref(false)
   const selectedOptionIndex = ref<number | null>(null)
@@ -365,6 +366,12 @@
     poemStore.initialize()
     // 重试时滚动到顶部
     scrollToTop()
+  }
+
+  function goToPoemDetail() {
+    if (poemStore.currentPoem) {
+      router.push({ name: 'PoemDetail', params: { id: poemStore.currentPoem.id } })
+    }
   }
 
   onMounted(() => {

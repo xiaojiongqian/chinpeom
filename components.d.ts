@@ -17,6 +17,7 @@ declare module 'vue' {
     ExampleButton: typeof import('./src/components/common/ExampleButton.vue')['default']
     FeedbackDialog: typeof import('./src/components/FeedbackDialog.vue')['default']
     MainLayout: typeof import('./src/components/layout/MainLayout.vue')['default']
+    PoemDetailDialog: typeof import('./src/components/PoemDetailDialog.vue')['default']
     PoemDisplay: typeof import('./src/components/PoemDisplay.vue')['default']
     PoemImage: typeof import('./src/components/PoemImage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

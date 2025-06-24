@@ -3,6 +3,19 @@ export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      typography: ({ theme }) => ({
+        DEFAULT: {
+          css: {
+            h2: {
+              color: theme('colors.gray.800'),
+              fontSize: theme('fontSize.xl'),
+              fontWeight: '700',
+              marginTop: theme('spacing.4'),
+              marginBottom: theme('spacing.2'),
+            },
+          },
+        },
+      }),
       colors: {
         primary: {
           DEFAULT: '#0369a1',
@@ -55,5 +68,8 @@ export default {
       }
     }
   },
-  plugins: []
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/line-clamp'),
+  ]
 }

@@ -190,5 +190,15 @@ export default {
     spanish: 'Spanisch',
     german: 'Deutsch',
     japanese: 'Japanisch'
+  },
+  errors: {
+    llmError: 'Entschuldigung, es gab einen Fehler bei der Kommunikation mit der KI. Bitte versuchen Sie es erneut.'
+  },
+  poemDetail: {
+    meaning: 'Bedeutung',
+    allusion: 'Anspielung',
+    background: 'Hintergrund',
+    additionalInfo: 'Zusätzliche Informationen',
+    askPlaceholder: 'Fragen Sie etwas über das Gedicht...'
   }
 }

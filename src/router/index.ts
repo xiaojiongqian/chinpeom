@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import SettingsView from '../views/SettingsView.vue'
+import AchievementView from '../views/AchievementView.vue'
+import ComponentsView from '../views/ComponentsView.vue'
+import PoemDetailView from '../views/PoemDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -31,17 +35,23 @@ const router = createRouter({
     {
       path: '/settings',
       name: 'settings',
-      component: () => import('../views/SettingsView.vue')
+      component: SettingsView
     },
     {
       path: '/achievement',
       name: 'achievement',
-      component: () => import('../views/AchievementView.vue')
+      component: AchievementView
     },
     {
       path: '/components',
       name: 'components',
-      component: () => import('../views/ComponentsView.vue')
+      component: () => import('../views/ComponentsView.vue'),
+    },
+    {
+      path: '/poem/:id',
+      name: 'PoemDetail',
+      component: () => import('../views/PoemDetailView.vue'),
+      props: true,
     }
   ]
 })

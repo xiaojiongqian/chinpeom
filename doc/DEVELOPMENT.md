@@ -17,7 +17,13 @@
 │   │   │   ├── poem_french.json    # 法文翻译数据
 │   │   │   ├── poem_german.json    # 德文翻译数据
 │   │   │   ├── poem_japanese.json  # 日文翻译数据
-│   │   │   └── poem_spanish.json   # 西班牙文翻译数据
+│   │   │   ├── poem_spanish.json   # 西班牙文翻译数据
+│   │   │   ├── poem_stories_chinese.json   # 中文诗歌故事数据
+│   │   │   ├── poem_stories_english.json   # 英文诗歌故事数据
+│   │   │   ├── poem_stories_french.json    # 法文诗歌故事数据
+│   │   │   ├── poem_stories_german.json    # 德文诗歌故事数据
+│   │   │   ├── poem_stories_japanese.json  # 日文诗歌故事数据
+│   │   │   └── poem_stories_spanish.json   # 西班牙文诗歌故事数据
 │   │   ├── poem_images/    # 诗歌配图目录
 │   │   └── sound/          # 诗歌音效目录（暂时不使用）
 │   ├── backgroundmusic/    # 背景音乐文件
@@ -46,7 +52,8 @@
 │   │   ├── PoemDisplay.vue # 诗歌显示组件
 │   │   ├── PoemImage.vue   # 诗歌配图组件
 │   │   ├── AnswerOptions.vue # 答案选项组件
-│   │   └── FeedbackDialog.vue # 反馈对话框组件
+│   │   ├── FeedbackDialog.vue # 反馈对话框组件
+│   │   └── PoemDetailDialog.vue # 诗歌详情对话框组件
 │   ├── config/             # 配置文件
 │   │   ├── app.ts          # 应用配置
 │   │   ├── firebase.ts     # Firebase配置
@@ -81,12 +88,14 @@
 │   │   └── poem.ts         # 诗歌相关工具函数
 │   ├── services/           # 服务层
 │   │   ├── authApi.ts      # 认证API服务（支持Firebase）
-│   │   └── firebaseAuth.ts # Firebase认证服务
+│   │   ├── firebaseAuth.ts # Firebase认证服务
+│   │   └── llmApi.ts       # LLM服务
 │   ├── views/              # 页面组件
 │   │   ├── LoginView.vue   # 登录页面
 │   │   ├── QuizView.vue    # 游戏主页面
 │   │   ├── SettingsView.vue # 设置页面
 │   │   ├── AchievementView.vue # 成就页面
+│   │   ├── PoemDetailView.vue # 诗歌详情页面
 │   │   └── ComponentsView.vue  # 组件展示页面
 │   ├── App.vue             # 根组件
 │   ├── main.ts             # 应用入口文件
@@ -339,6 +348,21 @@
 - **UI状态管理**: 中文模式下简单模式按钮置灰不可选
 - **默认值检测**: 根据浏览器语言智能设置初始语言和难度
 - **无缝切换**: 语言切换时无需额外提示，系统自动处理模式调整
+
+### 8. 诗歌详情与AI对话系统
+**文件位置**: `src/views/PoemDetailView.vue`, `src/components/PoemDetailDialog.vue`, `src/services/llmApi.ts`, `public/resource/data/poem_stories_*.json`
+- **功能概述**: 在答题页点击诗歌可进入详情页，查看诗歌的详细解读（如典故、背景），并与AI进行对话，深入了解诗歌内涵。
+- **诗歌详情**:
+    - 加载并展示对应诗歌的背景、典故等信息。
+    - 内容支持多语言，根据用户设置的界面语言显示。
+- **AI对话**:
+    - 集成DeepSeek LLM服务，提供智能问答功能。
+    - 用户可通过输入框提问，或点击预设的动态问题按钮快速提问。
+    - 对话历史会呈现在详情内容下方。
+- **技术实现**:
+    - 前端通过`PoemDetailView.vue`作为独立页面承载，便于路由和返回。
+    - `PoemDetailDialog.vue`负责展示详情和处理对话交互。
+    - `llmApi.ts`服务封装对DeepSeek API的请求逻辑。
 
 ## 命名规范
 

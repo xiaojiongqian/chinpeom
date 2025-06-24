@@ -188,5 +188,15 @@ export default {
     spanish: 'Spanish',
     german: 'German',
     japanese: 'Japanese'
+  },
+  errors: {
+    llmError: 'Sorry, there was an error communicating with the AI. Please try again.'
+  },
+  poemDetail: {
+    meaning: 'Meaning',
+    allusion: 'Allusion',
+    background: 'Background',
+    additionalInfo: 'Additional Info',
+    askPlaceholder: 'Ask something about the poem...'
   }
 }
