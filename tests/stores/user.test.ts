@@ -36,7 +36,8 @@ describe('用户Store测试', () => {
       id: 1,
       username: 'testuser',
       score: 100,
-      language: 'english'
+      language: 'english',
+      isPaid: false
     }
     const token = 'test-token'
 
@@ -56,7 +57,8 @@ describe('用户Store测试', () => {
       id: 1,
       username: 'testuser',
       score: 100,
-      language: 'english'
+      language: 'english',
+      isPaid: false
     }, 'test-token')
 
     // 然后登出
@@ -71,12 +73,13 @@ describe('用户Store测试', () => {
   it('updateScore应该正确更新用户分数', () => {
     const userStore = useUserStore()
     
-    // 先登录
+    // 先登录付费用户
     userStore.login({
       id: 1,
       username: 'testuser',
       score: 100,
-      language: 'english'
+      language: 'english',
+      isPaid: true
     }, 'test-token')
 
     userStore.updateScore(150)
@@ -92,7 +95,8 @@ describe('用户Store测试', () => {
       id: 1,
       username: 'testuser',
       score: 100,
-      language: 'english'
+      language: 'english',
+      isPaid: false
     }, 'test-token')
 
     userStore.setLanguage('spanish')
@@ -145,12 +149,13 @@ describe('用户Store测试', () => {
     expect(userStore.rank).toBe('白丁')
     expect(userStore.language).toBe('english')
 
-    // 登录后
+    // 登录付费用户后
     userStore.login({
       id: 1,
       username: 'testuser',
       score: 250,
-      language: 'english'
+      language: 'english',
+      isPaid: true
     }, 'test-token')
 
     expect(userStore.username).toBe('testuser')
@@ -162,10 +167,18 @@ describe('用户Store测试', () => {
   it('init应该从localStorage恢复状态', () => {
     const savedSettings = {
       language: 'english',
+      difficulty: 'easy',
       theme: 'dark',
       soundEffects: false
     }
     const savedToken = 'saved-token'
+    const savedUser = {
+      id: 1,
+      username: 'testuser',
+      score: 20,
+      language: 'english',
+      isPaid: false
+    }
 
     localStorageMock.getItem.mockImplementation((key) => {
       if (key === 'app_settings') {
@@ -173,6 +186,9 @@ describe('用户Store测试', () => {
       }
       if (key === 'token') {
         return savedToken
+      }
+      if (key === 'user_data') {
+        return JSON.stringify(savedUser)
       }
       return null
     })
@@ -216,6 +232,7 @@ describe('用户Store测试', () => {
   it('init中的loadSettings应该正确加载设置', () => {
     const savedSettings = {
       language: 'spanish',
+      difficulty: 'hard',
       theme: 'dark',
       soundEffects: false
     }

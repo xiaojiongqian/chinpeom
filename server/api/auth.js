@@ -153,13 +153,16 @@ router.post('/login', async (req, res) => {
     // 使用Firebase UID或者auth user的uid作为唯一标识
     const providerUserId = firebase_uid || authUser.uid
     const displayName = authUser.name || `${provider}用户`
-    const providerEmail = authUser.email
-    const avatarUrl = authUser.picture
+    const providerEmail = authUser.email || null
+    const avatarUrl = authUser.picture || null
+    const finalFirebaseUid = firebase_uid || null  // 确保firebase_uid不会是undefined
 
     console.log(`[Auth] 处理${provider}登录:`, {
       providerUserId,
       displayName,
-      providerEmail
+      providerEmail,
+      avatarUrl,
+      finalFirebaseUid
     })
 
     const connection = await pool.getConnection()
@@ -184,24 +187,32 @@ router.post('/login', async (req, res) => {
           [user.id]
         )
         
-        // 更新第三方账号信息
+        // 更新第三方账号信息 - 将undefined转换为null避免数据库错误
         await connection.execute(
           'UPDATE third_party_accounts SET access_token = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ?',
-          [access_token, provider, providerUserId]
+          [access_token || null, provider, providerUserId]
         )
       } else {
-        // 新用户注册
+        // 新用户注册 - 将undefined转换为null避免数据库错误
         const [userResult] = await connection.execute(
           'INSERT INTO users (display_name, avatar_url, last_login_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-          [displayName, avatarUrl]
+          [displayName || null, avatarUrl || null]
         )
         
         const userId = userResult.insertId
         
-        // 绑定第三方账号
+        // 绑定第三方账号 - 将undefined转换为null避免数据库错误
         await connection.execute(
           'INSERT INTO third_party_accounts (user_id, provider, provider_user_id, provider_username, provider_email, access_token, firebase_uid) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [userId, provider, providerUserId, authUser.name, providerEmail, access_token, firebase_uid]
+          [
+            userId, 
+            provider, 
+            providerUserId, 
+            displayName || null, 
+            providerEmail || null, 
+            access_token || null, 
+            finalFirebaseUid
+          ]
         )
         
         // 获取新创建的用户信息
@@ -220,7 +231,7 @@ router.post('/login', async (req, res) => {
           id: user.id, 
           provider, 
           provider_user_id: providerUserId,
-          firebase_uid: firebase_uid,
+          firebase_uid: finalFirebaseUid,
           iat: Math.floor(Date.now() / 1000)
         },
         process.env.JWT_SECRET || appConfig.jwtSecret,
@@ -241,7 +252,7 @@ router.post('/login', async (req, res) => {
           difficulty_mode: user.difficulty_mode,
           hint_language: user.hint_language,
           sound_enabled: user.sound_enabled,
-          firebase_uid: firebase_uid,
+          firebase_uid: finalFirebaseUid,
           created_at: user.created_at,
           last_login_at: user.last_login_at
         },

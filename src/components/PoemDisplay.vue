@@ -12,7 +12,7 @@
         class="mt-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
         @click="getRandomPoem"
       >
-        重试
+        {{ $t('common.retry') }}
       </button>
     </div>
 
@@ -61,7 +61,7 @@
           class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition-colors"
           @click="getRandomPoem"
         >
-          下一首
+          {{ $t('common.next') }}
         </button>
       </div>
     </div>

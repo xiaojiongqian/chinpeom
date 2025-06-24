@@ -35,184 +35,186 @@
         class="retry-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         @click="retryLoadPoem"
       >
-        重试
+        {{ $t('common.retry') }}
       </button>
     </div>
 
     <!-- 实际内容，仅在非加载且无错误状态下显示 -->
-    <template v-else>
-      <!-- 顶部操作栏 -->
-      <div class="flex items-center justify-between pt-6 pb-3 px-4">
+    <template v-else-if="currentPoem">
+      <!-- 用户信息横幅 -->
+      <div class="bg-white shadow-sm px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <span class="text-gray-700 font-medium">{{ $t(userStore.rank) }}</span>
+          <span class="text-sm text-gray-500">({{ userStore.score }}{{ $t('home.score') }})</span>
+        </div>
+        
+        <!-- 难度指示器 -->
         <div class="flex items-center space-x-2">
-          <!-- 移除了音效开关按钮 -->
-        </div>
-        <!-- 当前学级与得分 -->
-        <div class="flex items-center space-x-1">
-          <span class="text-base font-medium text-gray-700">{{ userStore.rank }}</span>
-          <span class="text-sm text-gray-500">({{ userStore.score }}分)</span>
-        </div>
-        <div>
-          <!-- 空占位，保持布局平衡 -->
+          <span class="text-xs px-2 py-1 rounded-full" 
+                :class="{ 
+                  'bg-green-100 text-green-700': currentDifficulty === 'easy',
+                  'bg-red-100 text-red-700': currentDifficulty === 'hard'
+                }">
+            {{ currentDifficulty === 'easy' ? $t('settings.easyMode') : $t('settings.hardMode') }}
+          </span>
         </div>
       </div>
 
-      <!-- 诗歌展示卡片 -->
-      <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-4 mx-4">
-        <!-- 配图 -->
-        <div class="relative w-full">
-          <img
-            v-if="hasImage"
-            :src="imagePath"
-            :alt="currentPoem?.title"
-            class="w-full h-80 object-cover"
-          />
-          <div v-else class="w-full h-80 flex items-center justify-center bg-gray-200">
-            <img
-              src="@/assets/icons/feature/icon_star.svg"
-              alt="配图占位"
-              class="w-16 h-16 opacity-40"
+      <!-- 诗歌卡片 -->
+      <div class="flex-1 flex flex-col justify-center px-6 py-6">
+        <!-- 诗歌内容卡片 - 包含图片和诗歌正文 -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          <!-- 诗歌图片区域 - 占满panel上半部分，4:3长宽比 -->
+          <div v-if="hasImage" class="w-full aspect-[4/3] overflow-hidden">
+            <img 
+              :src="imagePath" 
+              :alt="$t('home.noImage')"
+              class="w-full h-full object-cover"
+              @error="() => {}"
             />
           </div>
+
+          <!-- 诗歌正文内容 -->
+          <div class="p-5">
+            <!-- 标题与作者 -->
+            <div class="mb-3">
+              <h2 class="text-2xl font-bold text-gray-800 text-center font-mono">{{ currentPoem?.title }}</h2>
+              <p class="text-gray-600 text-center mt-1 font-mono">{{ currentPoem?.author }}</p>
+            </div>
+
+            <!-- 诗句内容 -->
+            <div v-if="displayContent" class="space-y-2 text-lg font-sans">
+              <p
+                v-for="(line, index) in displayContent"
+                :key="index"
+                class="poem-line font-medium"
+                :class="{
+                  'text-gray-800': index !== currentSentenceIndex,
+                  'text-success-400 text-base font-normal': index === currentSentenceIndex
+                }"
+              >
+                {{ line }}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- 诗歌内容 -->
-        <div class="p-5">
-          <!-- 标题与作者 -->
-          <div class="mb-3">
-            <h2 class="text-2xl font-bold text-gray-800 text-center font-mono">{{ currentPoem?.title }}</h2>
-            <p class="text-gray-600 text-center mt-1 font-mono">{{ currentPoem?.author }}</p>
-          </div>
-
-          <!-- 诗句内容 -->
-          <div v-if="displayContent" class="space-y-2 text-lg font-sans">
-            <p
-              v-for="(line, index) in displayContent"
-              :key="index"
-              class="poem-line font-medium"
-              :class="{
-                'text-gray-800': index !== currentSentenceIndex,
-                'text-success-400 text-base font-normal': index === currentSentenceIndex
-              }"
-            >
-              {{ line }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 答题选项区 -->
-      <div class="space-y-2 mt-2 mb-4 px-4">
-        <button
-          v-for="(option, index) in options"
-          :key="index"
-          :disabled="answered"
-          class="w-full text-left p-4 rounded-xl transition-colors text-gray-700 font-medium quiz-option-button"
-          :class="getOptionClass(index)"
-          @click="() => !answered && handleSelect(index)"
-        >
-          <span class="mr-2">{{ index + 1 }}.</span>{{ option.label }}
-        </button>
-      </div>
-
-      <!-- 操作按钮区 -->
-      <div class="flex justify-between items-center mb-4 px-4">
-        <!-- 左侧音乐控制按钮组 -->
-        <div class="flex items-center space-x-3">
-          <!-- 换音乐按钮（移除图标） -->
-          <button 
-            class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors" 
-            @click="handlePrevMusic"
+        <!-- 答题选项区 -->
+        <div class="space-y-2 mt-2 mb-4">
+          <button
+            v-for="(option, index) in options"
+            :key="index"
+            :disabled="answered"
+            class="w-full text-left p-4 rounded-xl transition-colors text-gray-700 font-medium quiz-option-button"
+            :class="getOptionClass(index)"
+            @click="() => !answered && handleSelect(index)"
           >
-            <span>换音乐</span>
+            <span class="mr-2">{{ index + 1 }}.</span>{{ option.label }}
           </button>
+        </div>
+
+        <!-- 操作按钮区 -->
+        <div class="flex justify-between items-center mb-4 min-h-[48px]">
+          <!-- 左侧音乐控制按钮组 -->
+          <div class="flex items-center space-x-3 flex-shrink-0">
+            <!-- 换音乐按钮（移除图标） -->
+            <button 
+              class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors h-12" 
+              @click="handlePrevMusic"
+            >
+              <span>{{ $t('common.switchMusic') }}</span>
+            </button>
+            
+            <!-- 音效开关按钮 -->
+            <button 
+              class="bg-success-500 hover:bg-success-600 text-white p-3 rounded-xl transition-colors flex items-center justify-center h-12 w-12" 
+              @click="toggleSound"
+            >
+              <img 
+                :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon" 
+                :alt="$t('common.soundToggle')" 
+                class="w-5 h-5 filter-white" 
+              />
+            </button>
+          </div>
           
-          <!-- 音效开关按钮 -->
+          <!-- 中间答题结果显示区域 - 始终存在以保持布局稳定 -->
+          <div class="flex-1 text-center mx-4 h-12 flex items-center justify-center">
+            <div v-if="answered && isCorrect" class="text-success-600 font-medium">
+              <div class="text-lg">{{ $t('home.correctAnswer') }}</div>
+            </div>
+            <div v-else-if="answered && !isCorrect" class="text-red-600 font-medium">
+              <div class="text-lg">{{ $t('home.wrongAnswer') }}</div>
+            </div>
+            <!-- 未答题时显示空内容，但保持空间 -->
+          </div>
+          
+          <!-- 右侧下一首按钮 -->
           <button 
-            class="bg-success-500 hover:bg-success-600 text-white p-3 rounded-xl transition-colors flex items-center justify-center" 
-            @click="toggleSound"
+            class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors h-12 flex-shrink-0" 
+            @click="getNextPoem"
+          >
+            <span>{{ $t('common.next') }}</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 底部tab导航 -->
+        <nav
+          class="fixed-mobile bottom-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
+        >
+          <!-- 成就页面 -->
+          <router-link 
+            to="/achievement" 
+            class="flex flex-col items-center transition-colors"
+            :class="route.name === 'achievement' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
           >
             <img 
-              :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon" 
-              alt="音效开关" 
-              class="w-5 h-5 filter-white" 
+              src="@/assets/icons/nav/icon_achievement.svg" 
+              :alt="$t('common.achievement')" 
+              class="w-7 h-7 mb-0.5"
+              :class="route.name === 'achievement' ? 'filter-green' : 'filter-gray'"
             />
-          </button>
-        </div>
-        
-        <!-- 中间答题结果显示区域 -->
-        <div v-if="answered" class="flex-1 text-center mx-4">
-          <div v-if="isCorrect" class="text-success-600 font-medium">
-            <div class="text-lg">✓ 答对了!</div>
-          </div>
-          <div v-else class="text-red-600 font-medium">
-            <div class="text-lg">✗ 答错了!</div>
-          </div>
-        </div>
-        
-        <!-- 右侧下一首按钮 -->
-        <button 
-          class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors" 
-          @click="getNextPoem"
-        >
-          <span>下一首</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-        </button>
+          </router-link>
+          
+          <!-- 主页 -->
+          <router-link 
+            to="/quizview" 
+            class="flex flex-col items-center transition-colors"
+            :class="route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
+          >
+            <img 
+              src="@/assets/icons/nav/icon_home.svg" 
+              :alt="$t('common.home')" 
+              class="w-8 h-8 mb-0.5"
+              :class="route.name === 'home' ? 'filter-green' : 'filter-gray'"
+            />
+          </router-link>
+          
+          <!-- 设置页面 -->
+          <router-link
+            to="/settings"
+            class="flex flex-col items-center transition-colors"
+            :class="route.name === 'settings' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
+          >
+            <img 
+              src="@/assets/icons/nav/icon_usersetting.svg" 
+              :alt="$t('common.settings')" 
+              class="w-7 h-7 mb-0.5"
+              :class="route.name === 'settings' ? 'filter-green' : 'filter-gray'"
+            />
+          </router-link>
+        </nav>
       </div>
-
-      <!-- 底部tab导航 -->
-      <nav
-        class="fixed-mobile bottom-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
-      >
-        <!-- 成就页面 -->
-        <router-link 
-          to="/achievement" 
-          class="flex flex-col items-center transition-colors"
-          :class="route.name === 'achievement' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
-        >
-          <img 
-            src="@/assets/icons/nav/icon_achievement.svg" 
-            alt="成就" 
-            class="w-7 h-7 mb-0.5"
-            :class="route.name === 'achievement' ? 'filter-green' : 'filter-gray'"
-          />
-        </router-link>
-        
-        <!-- 主页 -->
-        <router-link 
-          to="/quizview" 
-          class="flex flex-col items-center transition-colors"
-          :class="route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
-        >
-          <img 
-            src="@/assets/icons/nav/icon_home.svg" 
-            alt="主页" 
-            class="w-8 h-8 mb-0.5"
-            :class="route.name === 'home' ? 'filter-green' : 'filter-gray'"
-          />
-        </router-link>
-        
-        <!-- 设置页面 -->
-        <router-link
-          to="/settings"
-          class="flex flex-col items-center transition-colors"
-          :class="route.name === 'settings' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
-        >
-          <img 
-            src="@/assets/icons/nav/icon_usersetting.svg" 
-            alt="设置" 
-            class="w-7 h-7 mb-0.5"
-            :class="route.name === 'settings' ? 'filter-green' : 'filter-gray'"
-          />
-        </router-link>
-      </nav>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted, onActivated, onUnmounted, nextTick } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { usePoemStore } from '../stores/poem'
   import { useUserStore } from '../stores/user'
   import { useMusicStore } from '../stores/music'
@@ -220,6 +222,7 @@
   import soundOnIcon from '@/assets/icons/feature/icon_sound_on.svg'
   import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
+  const { t } = useI18n()
   const poemStore = usePoemStore()
   const userStore = useUserStore()
   const musicStore = useMusicStore()
@@ -334,7 +337,7 @@
           scoreChange.value = 0
           // 显示升级提示
           setTimeout(() => {
-            if (confirm('🎉 恭喜答对！\n\n您已达到免费用户的最高学级：秀才\n是否升级VIP继续挑战更高学级？')) {
+            if (confirm(t('quiz.freeUserLimitAlert'))) {
               // 跳转到成就页面，用户可以在那里购买升级
               window.location.href = '/achievement'
             }

@@ -12,7 +12,7 @@
       <div class="p-5 border-b" :class="isCorrect ? 'bg-success-50' : 'bg-red-50'">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-bold" :class="isCorrect ? 'text-success-700' : 'text-red-700'">
-            {{ isCorrect ? '答对了！' : '答错了！' }}
+            {{ isCorrect ? $t('feedback.correct') : $t('feedback.incorrect') }}
           </h3>
           <button class="text-gray-500 hover:text-gray-700" @click="close">
             <svg
@@ -36,9 +36,9 @@
       <!-- 反馈内容 -->
       <div class="p-5">
         <div v-if="isCorrect" class="mb-4">
-          <p class="text-success-700 text-sm mb-2">太棒了！你选择了正确的诗句。</p>
+          <p class="text-success-700 text-sm mb-2">{{ $t('feedback.correctMessage') }}</p>
           <div v-if="scoreChange" class="flex items-center text-sm text-success-600">
-            <span>获得 +{{ scoreChange }} 分</span>
+            <span>{{ $t('feedback.gainedPoints', { score: scoreChange }) }}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-4 w-4 ml-1"
@@ -57,10 +57,10 @@
         </div>
 
         <div v-else class="mb-4">
-          <p class="text-red-700 text-sm mb-2">别灰心，正确的诗句是：</p>
+          <p class="text-red-700 text-sm mb-2">{{ $t('feedback.incorrectMessage') }}</p>
           <p class="font-bold text-gray-800 p-2 bg-gray-100 rounded">{{ correctAnswer }}</p>
           <div v-if="scoreChange" class="flex items-center text-sm text-red-600 mt-2">
-            <span>扣除 {{ scoreChange }} 分</span>
+            <span>{{ $t('feedback.lostPoints', { score: scoreChange }) }}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-4 w-4 ml-1"
@@ -80,16 +80,16 @@
 
         <!-- 诗歌信息 -->
         <div class="bg-gray-50 p-3 rounded-lg mb-4">
-          <h4 class="font-bold text-gray-700 mb-1">诗歌信息</h4>
+          <h4 class="font-bold text-gray-700 mb-1">{{ $t('feedback.poemInfo') }}</h4>
           <div class="text-sm text-gray-600">
             <p>《{{ poemTitle }}》</p>
-            <p>作者：{{ poemAuthor }}</p>
+            <p>{{ $t('feedback.author') }}{{ poemAuthor }}</p>
           </div>
         </div>
 
         <!-- 知识扩展 -->
         <div v-if="funFact" class="bg-blue-50 p-3 rounded-lg">
-          <h4 class="font-bold text-blue-700 mb-1">诗词小知识</h4>
+          <h4 class="font-bold text-blue-700 mb-1">{{ $t('feedback.funFact') }}</h4>
           <p class="text-sm text-blue-600">{{ funFact }}</p>
         </div>
       </div>
@@ -100,13 +100,13 @@
           class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
           @click="close"
         >
-          关闭
+          {{ $t('feedback.close') }}
         </button>
         <button
           class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           @click="$emit('next')"
         >
-          下一首
+          {{ $t('feedback.next') }}
         </button>
       </div>
     </div>

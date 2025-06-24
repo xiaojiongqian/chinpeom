@@ -6,7 +6,7 @@
         <div class="flex justify-center mb-8">
           <img
             src="@/assets/login_floatwater.webp"
-            alt="唐诗译境"
+            :alt="$t('common.appName')"
             class="w-40 h-40 rounded-full object-cover shadow-lg"
           />
         </div>
@@ -14,25 +14,25 @@
         <!-- 标题和描述 -->
         <div class="text-center mb-8">
           <div class="flex items-center justify-center mb-3">
-            <h1 class="text-3xl font-bold text-gray-800">唐诗译境</h1>
+            <h1 class="text-3xl font-bold text-gray-800">{{ $t('login.appTitle') }}</h1>
             <!-- 音效开关按钮 - 位于标题右侧 -->
             <button class="ml-3 p-2 rounded-full hover:bg-gray-100" @click="toggleSound">
-              <img :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon" alt="音效开关" class="w-6 h-6" />
+              <img :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon" :alt="$t('common.soundToggle')" class="w-6 h-6" />
             </button>
           </div>
-          <p class="mt-3 text-base text-gray-600">配合其它语言来学习唐诗的游戏</p>
+          <p class="mt-3 text-base text-gray-600">{{ $t('login.subtitle') }}</p>
           
           <!-- 开发环境配置信息 -->
           <div v-if="isDevelopment" class="mt-4 p-2 bg-blue-50 rounded-lg text-xs text-blue-600">
-            <div>API模式: {{ authApi.currentMode }}</div>
+            <div>{{ $t('login.apiMode') }}: {{ authApi.currentMode }}</div>
             <div v-if="authApi.isFirebaseAuthenticated()" class="text-green-600">
-              ✓ Firebase已连接
+              {{ $t('login.firebaseConnected') }}
             </div>
             <button 
               class="mt-1 px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
               @click="toggleApiMode"
             >
-              切换到{{ authApi.currentMode === 'Mock' ? '真实API' : 'Mock' }}
+              {{ authApi.currentMode === 'Mock' ? $t('login.switchToApi') : $t('login.switchToMock') }}
             </button>
           </div>
         </div>
@@ -52,7 +52,7 @@
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {{ loading ? '登录中...' : '使用 Google 账号登录' }}
+            {{ loading ? $t('login.loggingIn') : $t('login.googleLogin') }}
           </button>
 
           <button
@@ -60,7 +60,7 @@
             @click="handleLogin('wechat')"
             :disabled="loading"
           >
-            {{ loading ? '登录中...' : '微信登录' }}
+            {{ loading ? $t('login.loggingIn') : $t('login.wechatLogin') }}
           </button>
 
           <button
@@ -68,7 +68,7 @@
             @click="handleLogin('apple')"
             :disabled="loading"
           >
-            {{ loading ? '登录中...' : 'Apple 账号登录' }}
+            {{ loading ? $t('login.loggingIn') : $t('login.appleLogin') }}
           </button>
         </div>
 
@@ -83,6 +83,7 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { useMusicStore } from '../stores/music'
   import { useUserStore } from '@/stores/user'
   import authApi from '@/services/authApi'
@@ -91,6 +92,7 @@
   import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
   const router = useRouter()
+  const { t } = useI18n()
   const musicStore = useMusicStore()
   const userStore = useUserStore()
 
@@ -132,7 +134,7 @@
       // 添加超时处理，避免无限等待
       const loginPromise = authApi.login(provider)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('登录超时，请重试')), 30000) // 30秒超时
+        setTimeout(() => reject(new Error(t('login.loginTimeout'))), 30000) // 30秒超时
       )
       
       // 调用认证API (带超时)
@@ -141,16 +143,19 @@
       console.log('[LoginView] 登录成功，处理用户数据')
       
       // 处理语言偏好设置
-      // 如果后端返回中文（zh-CN），映射为英语，因为poem store只支持外语
-      const userLanguagePreference = result.user.language_preference || 'english'
-      const mappedLanguage = userLanguagePreference === 'zh-CN' ? 'english' : userLanguagePreference
+      // 优先使用当前用户设置的语言，如果没有则使用后端返回的语言偏好
+      const currentUserLanguage = userStore.language
+      const backendLanguage = result.user.language_preference
+      
+      // 如果用户已经有语言设置，保持当前设置；否则使用后端返回的语言
+      const finalLanguage = currentUserLanguage !== 'english' ? currentUserLanguage : (backendLanguage || 'english')
       
       // 更新用户状态
       const userData = {
         id: result.user.id,
         username: result.user.display_name,
         score: result.user.total_score,
-        language: mappedLanguage
+        language: finalLanguage as any
       }
       
       userStore.login(userData, result.token)
@@ -162,16 +167,16 @@
       console.error(`[LoginView] ${provider}登录失败:`, error)
       
       // 根据错误类型提供更友好的错误信息
-      let friendlyMessage = error.message || '登录失败，请重试'
+      let friendlyMessage = error.message || t('login.loginFailed')
       
       if (error.message.includes('popup-closed-by-user')) {
-        friendlyMessage = '登录已取消'
+        friendlyMessage = t('login.loginCancelled')
       } else if (error.message.includes('popup-blocked')) {
-        friendlyMessage = '登录弹窗被阻止，请允许弹窗后重试'
+        friendlyMessage = t('login.popupBlocked')
       } else if (error.message.includes('network') || error.message.includes('超时')) {
-        friendlyMessage = '网络连接问题，请检查网络后重试'
+        friendlyMessage = t('login.networkError')
       } else if (error.message.includes('Firebase')) {
-        friendlyMessage = 'Google登录服务暂时不可用，请稍后重试'
+        friendlyMessage = t('login.googleServiceError')
       }
       
       errorMessage.value = friendlyMessage
@@ -196,15 +201,19 @@
         console.log('[LoginView] 检测到redirect认证结果，处理登录')
         
         // 处理语言偏好设置
-        const userLanguagePreference = result.user.language_preference || 'english'
-        const mappedLanguage = userLanguagePreference === 'zh-CN' ? 'english' : userLanguagePreference
+        // 优先使用当前用户设置的语言，如果没有则使用后端返回的语言偏好
+        const currentUserLanguage = userStore.language
+        const backendLanguage = result.user.language_preference
+        
+        // 如果用户已经有语言设置，保持当前设置；否则使用后端返回的语言
+        const finalLanguage = currentUserLanguage !== 'english' ? currentUserLanguage : (backendLanguage || 'english')
         
         // 更新用户状态
         const userData = {
           id: result.user.id,
           username: result.user.display_name,
           score: result.user.total_score,
-          language: mappedLanguage
+          language: finalLanguage as any
         }
         
         userStore.login(userData, result.token)
@@ -214,7 +223,11 @@
       }
     } catch (error: any) {
       console.error('[LoginView] 处理redirect认证失败:', error)
-      errorMessage.value = 'Google登录验证失败，请重试'
+      errorMessage.value = t('login.googleServiceError')
     }
   }
 </script>
+
+<style scoped>
+  /* 已有的样式 */
+</style>

@@ -20,27 +20,27 @@ describe('用户数据模型测试', () => {
     const ranks = Object.keys(RANK_SCORE_MAPPING) as AcademicRank[]
 
     // 检查是否包含所有学级称号
-    expect(ranks).toContain('白丁')
-    expect(ranks).toContain('学童')
-    expect(ranks).toContain('秀才')
-    expect(ranks).toContain('廪生')
-    expect(ranks).toContain('贡生')
-    expect(ranks).toContain('举人')
-    expect(ranks).toContain('贡士')
-    expect(ranks).toContain('进士')
-    expect(ranks).toContain('探花')
-    expect(ranks).toContain('榜眼')
-    expect(ranks).toContain('状元')
+    expect(ranks).toContain('rank.baiDing')
+    expect(ranks).toContain('rank.xueTong')
+    expect(ranks).toContain('rank.xiuCai')
+    expect(ranks).toContain('rank.linSheng')
+    expect(ranks).toContain('rank.gongSheng')
+    expect(ranks).toContain('rank.juRen')
+    expect(ranks).toContain('rank.gongShi')
+    expect(ranks).toContain('rank.jinShi')
+    expect(ranks).toContain('rank.tanHua')
+    expect(ranks).toContain('rank.bangYan')
+    expect(ranks).toContain('rank.zhuangYuan')
 
     // 检查得分范围是否正确
-    expect(RANK_SCORE_MAPPING['白丁'].min).toBe(0)
-    expect(RANK_SCORE_MAPPING['白丁'].max).toBe(10)
+    expect(RANK_SCORE_MAPPING['rank.baiDing'].min).toBe(0)
+    expect(RANK_SCORE_MAPPING['rank.baiDing'].max).toBe(10)
 
-    expect(RANK_SCORE_MAPPING['学童'].min).toBe(11)
-    expect(RANK_SCORE_MAPPING['学童'].max).toBe(25)
+    expect(RANK_SCORE_MAPPING['rank.xueTong'].min).toBe(11)
+    expect(RANK_SCORE_MAPPING['rank.xueTong'].max).toBe(25)
 
-    expect(RANK_SCORE_MAPPING['状元'].min).toBe(341)
-    expect(RANK_SCORE_MAPPING['状元'].max).toBe(Infinity)
+    expect(RANK_SCORE_MAPPING['rank.zhuangYuan'].min).toBe(341)
+    expect(RANK_SCORE_MAPPING['rank.zhuangYuan'].max).toBe(Infinity)
   })
 
   it('根据得分应能正确判断学级称号', () => {
@@ -50,17 +50,17 @@ describe('用户数据模型测试', () => {
           return rank as AcademicRank
         }
       }
-      return '白丁' // 默认值
+      return 'rank.baiDing' // 默认值
     }
 
-    expect(getRank(0)).toBe('白丁')
-    expect(getRank(10)).toBe('白丁')
-    expect(getRank(11)).toBe('学童')
-    expect(getRank(25)).toBe('学童')
-    expect(getRank(50)).toBe('廪生')
-    expect(getRank(100)).toBe('贡生')
-    expect(getRank(200)).toBe('进士')
-    expect(getRank(300)).toBe('榜眼')
-    expect(getRank(500)).toBe('状元')
+    expect(getRank(0)).toBe('rank.baiDing')
+    expect(getRank(10)).toBe('rank.baiDing')
+    expect(getRank(11)).toBe('rank.xueTong')
+    expect(getRank(25)).toBe('rank.xueTong')
+    expect(getRank(50)).toBe('rank.linSheng')
+    expect(getRank(100)).toBe('rank.gongSheng')
+    expect(getRank(200)).toBe('rank.jinShi')
+    expect(getRank(300)).toBe('rank.bangYan')
+    expect(getRank(500)).toBe('rank.zhuangYuan')
   })
 })

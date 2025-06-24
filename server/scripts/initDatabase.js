@@ -121,7 +121,7 @@ async function initDatabase() {
     const rankData = [
       { rank_name: '白丁', min_score: 0, max_score: 10, rank_order: 1, requires_premium: false, description: '初学者，刚开始学习唐诗' },
       { rank_name: '学童', min_score: 11, max_score: 25, rank_order: 2, requires_premium: false, description: '已掌握基础诗句，继续努力' },
-      { rank_name: '秀才', min_score: 26, max_score: 45, rank_order: 3, requires_premium: false, description: '免费用户的最高等级' },
+      { rank_name: '秀才', min_score: 26, max_score: 45, rank_order: 3, requires_premium: true, description: '需要付费解锁' },
       { rank_name: '廪生', min_score: 46, max_score: 70, rank_order: 4, requires_premium: true, description: '需要付费解锁' },
       { rank_name: '贡生', min_score: 71, max_score: 100, rank_order: 5, requires_premium: true, description: '需要付费解锁' },
       { rank_name: '举人', min_score: 101, max_score: 135, rank_order: 6, requires_premium: true, description: '需要付费解锁' },

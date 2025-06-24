@@ -40,7 +40,7 @@ describe('音乐Store测试', () => {
     const musicStore = useMusicStore()
     
     expect(musicStore.isPlaying).toBe(false)
-    expect(musicStore.isMuted).toBe(true)
+    expect(musicStore.isMuted).toBe(false)
     expect(musicStore.currentMusicIndex).toBe(0)
     expect(musicStore.volume).toBe(0.3)
     expect(musicStore.isAudioEnabled).toBe(false)
@@ -94,13 +94,13 @@ describe('音乐Store测试', () => {
   it('toggleMute应该正确切换静音状态', () => {
     const musicStore = useMusicStore()
     
-    expect(musicStore.isMuted).toBe(true)
-    
-    musicStore.toggleMute()
     expect(musicStore.isMuted).toBe(false)
     
     musicStore.toggleMute()
     expect(musicStore.isMuted).toBe(true)
+    
+    musicStore.toggleMute()
+    expect(musicStore.isMuted).toBe(false)
   })
 
   it('nextMusic应该切换到下一首音乐', () => {

@@ -2,46 +2,48 @@
   <div class="flex flex-col min-h-screen bg-gray-100 pb-16">
     <!-- 页面标题 -->
     <div class="pt-4 pb-2 text-center">
-      <h1 class="text-xl font-bold text-gray-800">唐诗译境设置</h1>
+      <h1 class="text-xl font-bold text-gray-800">{{ $t('settings.title') }}</h1>
     </div>
 
     <!-- 设置内容 -->
     <div class="flex-1 px-3">
       <!-- 游戏设置 -->
       <div class="bg-white rounded-xl shadow-md mb-3 p-4">
-        <!-- 翻译语言设置（始终显示，困难模式下禁用） -->
+        <!-- 语言设置（始终可用，同时控制界面语言和诗歌提示语言） -->
         <div class="mb-5" data-testid="language-settings">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="text-base font-bold">翻译语言</h2>
-            <div v-if="difficulty === 'hard'" class="text-xs text-orange-500 bg-orange-50 px-2 py-1 rounded">
-              困难模式下禁用
+            <h2 class="text-base font-bold">{{ $t('settings.language') }}</h2>
+            <div class="flex items-center space-x-2">
+              <div v-if="currentLanguage === 'chinese'" class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">
+                {{ $t('common.chineseMode') }}
+              </div>
+              <!-- 调试信息 -->
+              <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                {{ currentLanguage }}
+              </div>
             </div>
           </div>
-          <div class="text-xs text-gray-500 mb-3">
-            {{ difficulty === 'easy' ? '选择您希望看到的外语提示' : '困难模式下不显示外语提示，但可以预设语言' }}
-          </div>
+
           
           <div class="space-y-2">
             <div
               v-for="language in languages"
               :key="language.value"
-              class="flex items-center justify-between p-2.5 border rounded-lg transition-colors"
+              class="flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors"
               :class="{
-                'bg-success-50 border-success-500': currentLanguage === language.value && difficulty === 'easy',
-                'bg-gray-50 border-gray-200 cursor-not-allowed': difficulty === 'hard',
-                'cursor-pointer hover:bg-gray-50': difficulty === 'easy' && currentLanguage !== language.value,
-                'bg-gray-100 border-gray-300': currentLanguage === language.value && difficulty === 'hard'
+                'bg-success-50 border-success-500': currentLanguage === language.value,
+                'hover:bg-gray-50': currentLanguage !== language.value
               }"
-              @click="difficulty === 'easy' ? setLanguage(language.value) : null"
+              :data-testid="`language-${language.value}`"
+              @click="setLanguage(language.value)"
             >
               <div class="flex items-center space-x-2">
-                <span class="text-xl" :class="{ 'opacity-50': difficulty === 'hard' }">{{ language.emoji }}</span>
-                <span class="font-medium text-sm" :class="{ 'text-gray-400': difficulty === 'hard' }">{{ language.label }}</span>
+                <span class="text-xl">{{ language.emoji }}</span>
+                <span class="font-medium text-sm">{{ $t(`languages.${language.value}`) }}</span>
               </div>
               <div 
                 v-if="currentLanguage === language.value"
-                class="w-4 h-4 rounded-full flex items-center justify-center"
-                :class="difficulty === 'easy' ? 'bg-success-500' : 'bg-gray-400'"
+                class="w-4 h-4 bg-success-500 rounded-full flex items-center justify-center"
               >
                 <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -53,21 +55,36 @@
 
         <!-- 难度设置 -->
         <div class="mb-5 border-t pt-4">
-          <h2 class="text-base font-bold mb-3">难度</h2>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold">{{ $t('settings.difficulty') }}</h2>
+            <!-- 调试信息 -->
+            <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">
+              {{ difficulty }}
+            </div>
+          </div>
           
           <div class="space-y-2">
             <div
-              class="flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors"
-              :class="{ 'bg-success-50 border-success-500': difficulty === 'easy' }"
+              class="flex items-center justify-between p-2.5 border rounded-lg transition-colors"
+              :class="{
+                'bg-success-50 border-success-500': difficulty === 'easy' && currentLanguage !== 'chinese',
+                'cursor-pointer': currentLanguage !== 'chinese',
+                'cursor-not-allowed bg-gray-100 border-gray-300': currentLanguage === 'chinese'
+              }"
               data-testid="difficulty-easy"
-              @click="setDifficulty('easy')"
+              @click="currentLanguage !== 'chinese' ? setDifficulty('easy') : null"
             >
               <div>
-                <div class="font-medium text-sm">简单（有提示）</div>
-                <div class="text-xs text-gray-500">显示外语提示，答对+1分</div>
+                <div class="font-medium text-sm" :class="{ 'text-gray-400': currentLanguage === 'chinese' }">
+                  {{ $t('settings.easyMode') }}
+                  <span v-if="currentLanguage === 'chinese'" class="text-xs text-gray-400">（{{ $t('settings.chineseModeUnavailable') }}）</span>
+                </div>
+                <div class="text-xs" :class="currentLanguage === 'chinese' ? 'text-gray-400' : 'text-gray-500'">
+                  {{ $t('settings.easyModeDesc') }}
+                </div>
               </div>
               <div 
-                v-if="difficulty === 'easy'"
+                v-if="difficulty === 'easy' && currentLanguage !== 'chinese'"
                 class="w-4 h-4 bg-success-500 rounded-full flex items-center justify-center"
               >
                 <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -83,8 +100,8 @@
               @click="setDifficulty('hard')"
             >
               <div>
-                <div class="font-medium text-sm">困难（无提示）</div>
-                <div class="text-xs text-gray-500">不显示提示，答对+2分</div>
+                <div class="font-medium text-sm">{{ $t('settings.hardMode') }}</div>
+                <div class="text-xs text-gray-500">{{ $t('settings.hardModeDesc') }}</div>
               </div>
               <div 
                 v-if="difficulty === 'hard'"
@@ -100,38 +117,45 @@
 
         <!-- 音乐设置 -->
         <div class="border-t pt-4">
-          <h2 class="text-base font-bold mb-3">音乐</h2>
-          
-          <div class="flex items-center justify-between p-2.5 border rounded-lg">
-            <div>
-              <div class="font-medium text-sm">背景音乐</div>
-              <div class="text-xs text-gray-500">开启或关闭游戏背景音乐</div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold">{{ $t('settings.music') }}</h2>
+            <!-- 调试信息 -->
+            <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">
+              {{ musicStore.isMuted ? 'Off' : 'On' }}
             </div>
-            <button
-              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
-              :class="!musicStore.isMuted ? 'bg-success-500' : 'bg-gray-300'"
-              @click="musicStore.toggleMute()"
+          </div>
+          <div
+            class="flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors"
+            :class="{ 'bg-success-50 border-success-500': !musicStore.isMuted }"
+            @click="musicStore.toggleMute()"
+          >
+            <div>
+              <div class="font-medium text-sm">{{ $t('settings.musicEnabled') }}</div>
+              <div class="text-xs text-gray-500">{{ $t('settings.musicDesc') }}</div>
+            </div>
+            <div 
+              v-if="!musicStore.isMuted"
+              class="w-4 h-4 bg-success-500 rounded-full flex items-center justify-center"
             >
-              <span
-                class="inline-block h-3 w-3 transform rounded-full bg-white transition"
-                :class="!musicStore.isMuted ? 'translate-x-5' : 'translate-x-1'"
-              />
-            </button>
+              <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 账户管理 -->
+      <!-- 用户信息 -->
       <div class="bg-white rounded-xl shadow-md mb-3 p-4">
-        <h2 class="text-base font-bold mb-3">账户</h2>
+        <h2 class="text-base font-bold mb-3">{{ $t('settings.userInfo') }}</h2>
         <div class="mb-3 text-xs text-gray-600">
-          当前用户：{{ userStore.username || '测试用户' }}
+          {{ $t('settings.currentUser') }}：{{ userStore.username || $t('settings.guestUser') }}
         </div>
         <button
           class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 px-3 rounded-lg transition-colors text-sm"
           @click="showLogoutDialog = true"
         >
-          退出登录
+          {{ $t('common.logout') }}
         </button>
       </div>
 
@@ -141,7 +165,7 @@
           class="w-full bg-success-500 hover:bg-success-600 text-white font-medium py-3 px-4 rounded-lg transition-colors text-sm"
           @click="confirmSettings"
         >
-          确定
+          {{ $t('common.confirm') }}
         </button>
       </div>
     </div>
@@ -155,8 +179,8 @@
       <div class="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4">
         <!-- 弹框头部 -->
         <div class="p-6 border-b">
-          <h3 class="text-lg font-bold text-gray-800">确认退出</h3>
-          <p class="text-gray-600 mt-2">您确定要退出登录吗？</p>
+          <h3 class="text-lg font-bold text-gray-800">{{ $t('settings.confirmLogout') }}</h3>
+          <p class="text-gray-600 mt-2">{{ $t('settings.confirmLogoutText') }}</p>
         </div>
         
         <!-- 弹框按钮 -->
@@ -165,13 +189,13 @@
             class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors"
             @click="showLogoutDialog = false"
           >
-            取消
+            {{ $t('common.cancel') }}
           </button>
           <button
             class="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
             @click="confirmLogout"
           >
-            确定退出
+            {{ $t('settings.confirmLogoutAction') }}
           </button>
         </div>
       </div>
@@ -189,7 +213,7 @@
       >
         <img 
           src="@/assets/icons/nav/icon_achievement.svg" 
-          alt="成就" 
+          :alt="$t('common.achievement')" 
           class="w-7 h-7 mb-0.5"
           :class="$route.name === 'achievement' ? 'filter-green' : 'filter-gray'"
         />
@@ -203,7 +227,7 @@
       >
         <img 
           src="@/assets/icons/nav/icon_home.svg" 
-          alt="主页" 
+          :alt="$t('common.home')" 
           class="w-8 h-8 mb-0.5"
           :class="$route.name === 'home' ? 'filter-green' : 'filter-gray'"
         />
@@ -217,7 +241,7 @@
       >
         <img 
           src="@/assets/icons/nav/icon_usersetting.svg" 
-          alt="设置" 
+          :alt="$t('common.settings')" 
           class="w-7 h-7 mb-0.5"
           :class="$route.name === 'settings' ? 'filter-green' : 'filter-gray'"
         />
@@ -227,8 +251,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '../stores/user'
 import { usePoemStore } from '../stores/poem'
 import { useMusicStore } from '../stores/music'
@@ -236,17 +261,19 @@ import authApi from '@/services/authApi'
 import type { DifficultyLevel } from '../utils/optionsGenerator'
 
 const router = useRouter()
+const { t } = useI18n()
 const userStore = useUserStore()
 const poemStore = usePoemStore()
 const musicStore = useMusicStore()
-const difficulty = ref<DifficultyLevel>(poemStore.currentDifficulty || 'easy')
+const difficulty = ref<DifficultyLevel>(poemStore.currentDifficulty || userStore.difficulty || 'easy')
 const showLogoutDialog = ref(false)
 
-// 创建响应式的本地语言状态
-const currentLanguage = ref<string>('english')
+// 创建响应式的本地语言状态 - 初始化为当前用户语言或设置语言
+const currentLanguage = ref<string>(userStore.language || userStore.settings.language || 'english')
 
 // 可用的提示语言
 const languages = [
+  { value: 'chinese', label: '中文（仅困难模式）', emoji: '🇨🇳' },
   { value: 'english', label: '英语', emoji: '🇬🇧' },
   { value: 'french', label: '法语', emoji: '🇫🇷' },
   { value: 'spanish', label: '西班牙语', emoji: '🇪🇸' },
@@ -254,22 +281,33 @@ const languages = [
   { value: 'japanese', label: '日语', emoji: '🇯🇵' }
 ]
 
-// 设置语言
+// 设置语言 - 统一语言设置，同时控制界面语言和诗歌提示语言
 const setLanguage = async (language: string) => {
   // 更新本地状态
   currentLanguage.value = language
   
-  // 更新用户语言设置
-  userStore.setLanguage(language)
+  // 更新用户语言设置（界面语言）
+  userStore.setLanguage(language as any)
   
-  // 如果是简单模式，同时更新诗歌显示语言
-  if (difficulty.value === 'easy') {
-    try {
-      await poemStore.setDisplayLanguage(language as any)
-    } catch (error) {
-      console.error('切换语言失败:', error)
+  // 中文模式检查：如果选择中文，必须切换到困难模式
+  if (language === 'chinese') {
+    difficulty.value = 'hard'
+    poemStore.setDifficulty('hard')
+    // 中文模式下诗歌提示语言设置为"none"
+    console.log('切换到中文模式，诗歌提示语言设置为none')
+  } else {
+    // 非中文模式：同时更新诗歌显示语言（如果是简单模式）
+    if (difficulty.value === 'easy') {
+      try {
+        await poemStore.setDisplayLanguage(language as any)
+        console.log('语言设置已同步到诗歌显示语言:', language)
+      } catch (error) {
+        console.error('同步诗歌显示语言失败:', error)
+      }
     }
   }
+  
+  console.log('语言设置已更新为:', language)
 }
 
 // 设置难度
@@ -277,14 +315,17 @@ const setDifficulty = async (newDifficulty: DifficultyLevel) => {
   difficulty.value = newDifficulty
   poemStore.setDifficulty(newDifficulty)
   
-  // 如果切换到简单模式，需要同步当前语言设置
-  if (newDifficulty === 'easy') {
+  // 如果切换到简单模式且不是中文模式，需要同步当前语言设置到诗歌显示语言
+  if (newDifficulty === 'easy' && currentLanguage.value !== 'chinese') {
     try {
-      await poemStore.setDisplayLanguage(userStore.language as any)
+      await poemStore.setDisplayLanguage(currentLanguage.value as any)
+      console.log('切换到简单模式，语言设置已同步:', currentLanguage.value)
     } catch (error) {
       console.error('同步语言设置失败:', error)
     }
   }
+  
+  console.log('难度设置已更新为:', newDifficulty)
 }
 
 // 退出登录
@@ -325,28 +366,32 @@ onMounted(async () => {
   // 1. 首先确保用户存储已初始化
   await userStore.init()
   
-  // 2. 同步语言设置
-  const userLanguage = userStore.language || 'english'
+  // 2. 等待一个tick确保所有响应式数据已更新
+  await nextTick()
+  
+  // 3. 同步语言设置 - 优先使用用户语言，其次使用设置中的语言
+  const userLanguage = userStore.language || userStore.settings.language || 'english'
   currentLanguage.value = userLanguage
   console.log('当前语言已设置为:', userLanguage)
   
-  // 3. 同步难度设置
-  const currentDifficulty = poemStore.currentDifficulty || 'easy'
+  // 4. 同步难度设置
+  const currentDifficulty = poemStore.currentDifficulty || userStore.difficulty || 'easy'
   difficulty.value = currentDifficulty
   console.log('当前难度:', currentDifficulty)
   
-  // 4. 确保音乐存储状态正确
-  console.log('音乐状态:', musicStore.isMuted ? '关闭' : '开启')
+  // 5. 确保音乐存储状态正确
+  console.log('音乐状态:', musicStore.isMuted ? 'Off' : 'On')
   
-  // 5. 确保语言设置正确显示
+  // 6. 确保语言设置正确显示
   console.log('用户登录状态:', userStore.isLoggedIn)
   console.log('设置中的语言:', userStore.settings.language)
+  console.log('用户语言:', userStore.language)
   
-  // 6. 如果是简单模式，确保语言设置同步
-  if (difficulty.value === 'easy') {
+  // 7. 如果是简单模式且不是中文模式，确保语言设置同步到诗歌显示语言
+  if (difficulty.value === 'easy' && userLanguage !== 'chinese') {
     try {
       await poemStore.setDisplayLanguage(userLanguage as any)
-      console.log('语言设置已同步到诗歌存储')
+      console.log('语言设置已同步到诗歌存储:', userLanguage)
     } catch (error) {
       console.error('初始化语言设置失败:', error)
     }
@@ -355,17 +400,33 @@ onMounted(async () => {
 
 // 监听诗歌存储的难度变化
 watch(() => poemStore.currentDifficulty, (newDifficulty) => {
-  if (newDifficulty) {
+  if (newDifficulty && newDifficulty !== difficulty.value) {
     difficulty.value = newDifficulty
-    console.log('难度已更新为:', newDifficulty)
+    console.log('诗歌存储难度已更新为:', newDifficulty)
+  }
+}, { immediate: true })
+
+// 监听用户设置的难度变化（作为后备）
+watch(() => userStore.difficulty, (newDifficulty) => {
+  if (newDifficulty && !poemStore.currentDifficulty && newDifficulty !== difficulty.value) {
+    difficulty.value = newDifficulty
+    console.log('用户设置难度已更新为:', newDifficulty)
   }
 }, { immediate: true })
 
 // 监听用户语言变化
 watch(() => userStore.language, (newLanguage) => {
-  if (newLanguage) {
+  if (newLanguage && newLanguage !== currentLanguage.value) {
     currentLanguage.value = newLanguage
     console.log('用户语言已更新为:', newLanguage)
+  }
+}, { immediate: true })
+
+// 监听用户设置中的语言变化（作为后备）
+watch(() => userStore.settings.language, (newLanguage) => {
+  if (newLanguage && !userStore.language && newLanguage !== currentLanguage.value) {
+    currentLanguage.value = newLanguage
+    console.log('设置语言已更新为:', newLanguage)
   }
 }, { immediate: true })
 </script>
@@ -380,6 +441,6 @@ watch(() => userStore.language, (newLanguage) => {
   }
 
   .filter-gray {
-    filter: brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
+    filter: brightness(0) saturate(100%) invert(60%) sepia(7%) saturate(0%) hue-rotate(157deg) brightness(95%) contrast(85%);
   }
 </style>

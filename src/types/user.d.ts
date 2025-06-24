@@ -1,8 +1,11 @@
+import type { SupportedLanguage } from './index'
+
 export interface User {
   id: number
   username: string
   score: number
-  language: string
+  language: SupportedLanguage
+  isPaid?: boolean
 }
 
 export interface UserLoginForm {
@@ -15,14 +18,14 @@ export interface UserRegisterForm extends UserLoginForm {
 }
 
 export type RankType =
-  | '白丁'
-  | '学童'
-  | '秀才'
-  | '廪生'
-  | '贡生'
-  | '举人'
-  | '贡士'
-  | '进士'
-  | '探花'
-  | '榜眼'
-  | '状元'
+  | 'rank.baiDing'
+  | 'rank.xueTong'
+  | 'rank.xiuCai'
+  | 'rank.linSheng'
+  | 'rank.gongSheng'
+  | 'rank.juRen'
+  | 'rank.gongShi'
+  | 'rank.jinShi'
+  | 'rank.tanHua'
+  | 'rank.bangYan'
+  | 'rank.zhuangYuan'

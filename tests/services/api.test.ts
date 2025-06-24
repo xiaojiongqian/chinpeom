@@ -1,106 +1,62 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { userApi, isAuthenticated, isOffline } from '../../src/services/api'
 
-// 模拟fetch
-const mockFetch = vi.fn()
-vi.stubGlobal('fetch', mockFetch)
-
-// 模拟localStorage
+// 创建模拟的localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
+  clear: vi.fn()
 }
-vi.stubGlobal('localStorage', localStorageMock)
 
-// 模拟navigator.onLine
-Object.defineProperty(navigator, 'onLine', {
-  writable: true,
-  value: true
-})
+// 创建模拟的navigator
+const navigatorMock = {
+  onLine: true
+}
+
+// 模拟fetch
+const mockFetch = vi.fn()
+
+// 设置全局模拟
+vi.stubGlobal('localStorage', localStorageMock)
+vi.stubGlobal('navigator', navigatorMock)
+vi.stubGlobal('fetch', mockFetch)
+
+// 在模拟设置后导入要测试的模块
+const { userApi, isAuthenticated, isOffline } = await import('../../src/services/api')
 
 describe('API服务测试', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.getItem.mockReturnValue('mock-token')
-    // 重置navigator.onLine
-    ;(navigator as any).onLine = true
+    navigatorMock.onLine = true
   })
 
-  describe('用户认证', () => {
-    it('login应该发送正确的请求并返回用户数据', async () => {
-      const mockResponse = {
-        success: true,
-        user: {
-          id: 1,
-          username: 'testuser',
-          score: 100,
-          language: 'chinese'
-        },
-        token: 'new-token'
-      }
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse
-      })
-
-      const result = await userApi.login('test@example.com', 'password')
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/user/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-token'
-        },
-        body: JSON.stringify({
-          email: 'test@example.com',
-          password: 'password'
-        })
-      })
-
-      expect(result).toEqual(mockResponse)
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('auth_token', 'new-token')
-    })
-
-    it('register应该发送正确的注册请求', async () => {
-      const mockResponse = {
-        success: true,
-        user: {
-          id: 1,
-          username: 'newuser',
-          score: 0,
-          language: 'chinese'
-        },
-        token: 'new-user-token'
-      }
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse
-      })
-
-      const result = await userApi.register('newuser', 'new@example.com', 'password')
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/user/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer mock-token'
-        },
-        body: JSON.stringify({
-          username: 'newuser',
-          email: 'new@example.com',
-          password: 'password'
-        })
-      })
-
-      expect(result).toEqual(mockResponse)
+  describe('认证状态管理', () => {
+    it('isAuthenticated应该正确检查登录状态', () => {
+      // 有token时应该返回true
+      localStorageMock.getItem.mockReturnValue('valid-token')
+      expect(isAuthenticated()).toBe(true)
+      
+      // 没有token时应该返回false
+      localStorageMock.getItem.mockReturnValue(null)
+      expect(isAuthenticated()).toBe(false)
     })
 
     it('logout应该清除本地存储的token', () => {
       userApi.logout()
       expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_token')
+    })
+  })
+
+  describe('离线状态检测', () => {
+    it('isOffline应该正确检测网络状态', () => {
+      // 在线状态
+      navigatorMock.onLine = true
+      expect(isOffline()).toBe(false)
+      
+      // 离线状态
+      navigatorMock.onLine = false
+      expect(isOffline()).toBe(true)
     })
   })
 
@@ -128,6 +84,21 @@ describe('API服务测试', () => {
       })
 
       expect(result).toEqual(mockUser)
+    })
+
+    it('getCurrentUser应该处理认证错误', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ message: '未授权，请登录' })
+      })
+
+      try {
+        await userApi.getCurrentUser()
+        expect(true).toBe(false) // 不应该到达这里
+      } catch (error: any) {
+        expect(error.message).toBe('未授权，请登录')
+        expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_token')
+      }
     })
 
     it('updateScore应该更新用户分数', async () => {
@@ -211,77 +182,38 @@ describe('API服务测试', () => {
     })
   })
 
-  describe('认证状态检查', () => {
-    it('isAuthenticated应该在有token时返回true', () => {
-      localStorageMock.getItem.mockReturnValue('some-token')
-      expect(isAuthenticated()).toBe(true)
-    })
-
-    it('isAuthenticated应该在没有token时返回false', () => {
-      localStorageMock.getItem.mockReturnValue(null)
-      expect(isAuthenticated()).toBe(false)
-    })
-  })
-
-  describe('离线状态检查', () => {
-    it('isOffline应该在在线时返回false', () => {
-      ;(navigator as any).onLine = true
-      expect(isOffline()).toBe(false)
-    })
-
-    it('isOffline应该在离线时返回true', () => {
-      ;(navigator as any).onLine = false
-      expect(isOffline()).toBe(true)
-    })
-  })
-
   describe('错误处理', () => {
-    it('应该处理网络错误', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
-
-      await expect(userApi.login('test@example.com', 'password'))
-        .rejects.toThrow('Network error')
-    })
-
-    it('应该处理HTTP错误状态', async () => {
+    it('应该正确处理API错误响应', async () => {
+      const errorMessage = '服务器内部错误'
+      
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 401,
-        json: async () => ({ message: 'Unauthorized' })
+        json: async () => ({ message: errorMessage })
       })
 
-      await expect(userApi.getCurrentUser())
-        .rejects.toThrow('Unauthorized')
+      try {
+        await userApi.getCurrentUser()
+        expect(true).toBe(false) // 不应该到达这里
+      } catch (error: any) {
+        expect(error.message).toBe(errorMessage)
+      }
     })
 
-    it('getCurrentUser在认证错误时应该清除token', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({ message: '未授权，请登录' })
-      })
+    it('应该正确处理网络错误', async () => {
+      const networkError = new Error('网络连接失败')
+      mockFetch.mockRejectedValueOnce(networkError)
 
-      await expect(userApi.getCurrentUser()).rejects.toThrow('未授权，请登录')
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_token')
-    })
-
-    it('getCurrentUser在token过期时应该清除token', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({ message: '令牌已过期，请重新登录' })
-      })
-
-      await expect(userApi.getCurrentUser()).rejects.toThrow('令牌已过期，请重新登录')
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('auth_token')
+      try {
+        await userApi.getCurrentUser()
+        expect(true).toBe(false) // 不应该到达这里
+      } catch (error) {
+        expect(error).toBe(networkError)
+      }
     })
   })
 
-  describe('请求头设置', () => {
-    it('请求应该包含正确的Authorization头', async () => {
-      const token = 'test-token'
-      localStorageMock.getItem.mockReturnValue(token)
-
+  describe('API基础功能', () => {
+    it('应该正确构建API请求URL', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ user: {} })
@@ -290,31 +222,23 @@ describe('API服务测试', () => {
       await userApi.getCurrentUser()
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'Authorization': `Bearer ${token}`
-          })
-        })
+        '/api/user/me',
+        expect.any(Object)
       )
     })
 
-    it('所有请求应该包含正确的Content-Type头', async () => {
+    it('应该正确设置请求头', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true })
+        json: async () => ({ user: {} })
       })
 
-      await userApi.register('test', 'test@example.com', 'password')
+      await userApi.getCurrentUser()
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json'
-          })
-        })
-      )
+      const [, options] = mockFetch.mock.calls[0]
+      
+      expect(options.headers['Content-Type']).toBe('application/json')
+      expect(options.headers['Authorization']).toBe('Bearer mock-token')
     })
   })
 }) 

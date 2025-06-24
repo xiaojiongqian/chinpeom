@@ -19,7 +19,7 @@
 │   │   │   ├── poem_japanese.json  # 日文翻译数据
 │   │   │   └── poem_spanish.json   # 西班牙文翻译数据
 │   │   ├── poem_images/    # 诗歌配图目录
-│   │   └── sound/          # 诗歌音效目录
+│   │   └── sound/          # 诗歌音效目录（暂时不使用）
 │   ├── backgroundmusic/    # 背景音乐文件
 │   ├── test-music-debug.html     # 音乐测试页面
 │   ├── test-resume-music.html    # 音乐恢复测试页面
@@ -49,14 +49,15 @@
 │   │   └── FeedbackDialog.vue # 反馈对话框组件
 │   ├── config/             # 配置文件
 │   │   ├── app.ts          # 应用配置
-│   │   └── firebase.ts     # Firebase配置
+│   │   ├── firebase.ts     # Firebase配置
+│   │   └── analytics.ts    # Firebase Analytics配置
 │   ├── locales/            # 国际化文件
-│   │   ├── zh-CN.ts        # 中文翻译
+│   │   ├── zh.ts           # 中文翻译
 │   │   ├── en.ts           # 英文翻译
-│   │   ├── fr.ts           # 法文翻译
-│   │   ├── de.ts           # 德文翻译
+│   │   ├── es.ts           # 西班牙文翻译
 │   │   ├── ja.ts           # 日文翻译
-│   │   └── es.ts           # 西班牙文翻译
+│   │   ├── fr.ts           # 法文翻译
+│   │   └── de.ts           # 德文翻译
 │   ├── router/             # 路由配置
 │   │   └── index.ts        # 路由定义
 │   ├── stores/             # 状态管理 (Pinia)
@@ -145,11 +146,12 @@
 - **状态管理**: Pinia
 - **路由**: Vue Router 4
 - **样式**: TailwindCSS + PostCSS
-- **国际化**: Vue I18n
+- **国际化**: Vue I18n (支持中文、英语、西班牙语、日语、法语、德语)
 - **移动端打包**: Capacitor
 - **组件自动导入**: unplugin-auto-import + unplugin-vue-components
 - **数据存储**: localStorage (本地存储模式)
-- **认证服务**: Firebase Authentication
+- **认证服务**: Firebase Authentication (Apple, Google, Twitter/X)
+- **数据分析**: Firebase Analytics (用户行为追踪)
 
 ### 测试技术
 - **测试框架**: Vitest
@@ -174,118 +176,68 @@
 ### 1. 用户管理系统
 **文件位置**: `src/stores/user.ts`, `src/types/user.d.ts`
 - 本地用户状态管理
-- 分数记录与等级系统
-- 语言偏好设置
+- 分数记录与等级系统（免费用户限制至学童25分）
+- 统一语言设置：界面语言与诗歌提示语言复用同一UI控件
+- 中文模式特殊处理：提示语言存储为"none"，仅支持困难模式
+- 默认语言检测：中文浏览器默认中文+困难模式
 - 本地存储集成
-- Firebase用户认证集成
+- Firebase用户认证集成（Apple, Google, Twitter/X）
+- Firebase Analytics用户行为追踪
 
 ### 2. 认证系统（Firebase集成 - 重构版）
 **文件位置**: `src/services/authApi.ts`, `src/services/firebaseAuth.ts`, `src/config/firebase.ts`, `server/api/auth.js`
 
-#### Firebase配置（不变）
+#### Firebase配置（更新版）
 - **项目名称**: poem2guess
 - **项目ID**: poem2guess-8d19f
 - **Web API Key**: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
 - **Auth Domain**: poem2guess-8d19f.firebaseapp.com
-- **支持的登录方式**: Google账号登录
+- **支持的登录方式**: Apple Sign-In, Google OAuth, Twitter/X API
+- **Analytics**: 用户行为分析与关键动作埋点
 
 #### 重构后的认证架构
 经过重构后，认证系统采用了更简洁清晰的架构：
 
 **🎯 核心原则**
-1. **Google登录**: 统一使用Firebase ID Token进行认证
+1. **多平台登录**: Apple Sign-In, Google OAuth, Twitter/X API统一使用Firebase ID Token认证
 2. **环境区分**: 开发环境支持测试模式，生产环境仅支持真实认证
 3. **简化配置**: 移除复杂的Mock/Real API模式切换
 4. **错误处理**: 完善的错误捕获和用户友好提示
+5. **数据分析**: Firebase Analytics集成，关键用户行为埋点
 
-#### 认证流程（简化版）
-1. **前端Firebase认证**: 用户点击Google登录，通过Firebase弹窗完成认证
+#### 认证流程（多平台版）
+1. **前端Firebase认证**: 用户选择Apple/Google/Twitter登录，通过Firebase弹窗完成认证
 2. **获取ID Token**: 前端获取Firebase ID Token（JWT格式）
 3. **后端验证**: 后端使用Firebase Admin SDK验证ID Token
 4. **用户存储**: 验证成功后在数据库中创建/更新用户记录
 5. **JWT返回**: 返回应用自己的JWT Token供后续API调用使用
+6. **Analytics埋点**: 记录用户登录行为和平台来源
 
-#### 技术实现（重构版）
+#### 技术实现要点
+- **多平台支持**: 集成Apple Sign-In、Google OAuth、Twitter/X API三种登录方式
+- **Firebase集成**: 使用Firebase Authentication进行用户身份验证和ID Token生成
+- **后端验证**: 使用Firebase Admin SDK验证前端传递的ID Token
+- **Analytics集成**: 登录成功时记录用户行为数据和登录平台来源
+- **开发模式**: 支持测试token模式，便于开发调试
+- **错误处理**: 完善的错误捕获机制和用户友好提示
+- **状态同步**: Firebase认证状态与本地用户状态保持同步
 
-**前端Firebase服务 (`src/services/firebaseAuth.ts`)**
-```typescript
-export class FirebaseAuthService {
-  async signInWithGoogle(): Promise<FirebaseAuthResult> {
-    const result = await signInWithPopup(auth, googleProvider)
-    const accessToken = await result.user.getIdToken() // Firebase ID Token
-    return {
-      user: {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName,
-        photoURL: result.user.photoURL
-      },
-      accessToken // 这是Firebase ID Token
-    }
-  }
-}
-```
-
-**前端认证API (`src/services/authApi.ts`)**
-```typescript
-// Google登录直接使用Firebase ID Token
-if (provider === 'google') {
-  const firebaseResult = await firebaseAuth.signInWithGoogle()
-  accessToken = firebaseResult.accessToken // Firebase ID Token
-  firebaseUid = firebaseResult.user.uid
-}
-
-// 发送到后端
-await fetch(`${this.baseUrl}/auth/login`, {
-  method: 'POST',
-  body: JSON.stringify({
-    provider: 'google',
-    access_token: accessToken, // Firebase ID Token
-    firebase_uid: firebaseUid
-  })
-})
-```
-
-**后端认证API (`server/api/auth.js` - 重构版)**
-```typescript
-// 简化的Firebase认证验证
-async function verifyFirebaseToken(firebaseIdToken) {
-  const firebaseUser = await firebaseAuthService.verifyIdToken(firebaseIdToken)
-  return {
-    uid: firebaseUser.uid,
-    email: firebaseUser.email,
-    name: firebaseUser.name || firebaseUser.email?.split('@')[0],
-    picture: firebaseUser.picture,
-    provider: 'google'
-  }
-}
-
-// 认证逻辑
-if (provider === 'google') {
-  if (process.env.NODE_ENV === 'development' && access_token.includes('test_')) {
-    // 开发环境测试模式
-    authUser = await mockAuthentication(provider, access_token)
-  } else {
-    // 使用Firebase验证真实Google登录
-    authUser = await verifyFirebaseToken(access_token)
-  }
-}
-```
-
-#### 环境配置（简化版）
+#### 环境配置（多平台版）
 **开发环境**: 
-- Google登录: 支持真实Firebase认证 + 测试token模式
-- 其他provider: 仅支持测试token模式
+- Apple/Google/Twitter登录: 支持真实Firebase认证 + 测试token模式
+- Firebase Analytics: 开发模式，详细日志记录
 
 **生产环境**:
-- Google登录: 仅支持真实Firebase认证
-- 其他provider: 暂不支持（返回错误提示）
+- Apple/Google/Twitter登录: 仅支持真实Firebase认证
+- Firebase Analytics: 生产模式，用户行为数据收集
 
-#### 测试工具（更新版）
-- **测试页面**: `public/test-firebase-auth.html`
-- **功能**: 端到端Firebase认证测试、ID Token获取、后端API验证
-- **访问地址**: `http://localhost:3000/test-firebase-auth.html`
-- **测试覆盖**: Firebase登录 → ID Token获取 → 后端验证 → 用户创建/更新
+#### 测试工具（精简版）
+- **主要测试页面**: `public/test-firebase-auth.html` - Firebase认证端到端测试
+- **登录流程诊断**: `public/test-login-flow.html` - 登录问题诊断工具
+- **简化认证测试**: `public/test-simple-auth.html` - 快速认证测试
+- **音乐功能测试**: `public/test-music-debug.html` - 音乐播放调试
+- **音乐暂停测试**: `public/test-resume-music.html` - 暂停/恢复功能测试
+- **访问地址**: `http://localhost:3000/test-*.html`
 
 #### 重构优势
 1. **架构清晰**: 移除了复杂的Mock服务文件和配置切换
@@ -315,6 +267,7 @@ if (provider === 'google') {
 
 #### 功能概述
 为应用提供沉浸式的古典背景音乐体验，支持自动播放、手动切换和状态控制。
+**注意**：暂时不使用音效功能，所有音频控制均针对背景音乐。
 
 #### 音乐文件
 位置：`public/backgroundmusic/` 目录，包含8首古典音乐：
@@ -334,72 +287,13 @@ if (provider === 'google') {
 - **浏览器兼容**：处理自动播放限制和用户交互要求
 - **错误处理**：音乐加载失败时自动切换到下一首
 
-#### 技术实现
-
-**状态管理 (`src/stores/music.ts`)**
-```typescript
-export const useMusicStore = defineStore('music', () => {
-  const isPlaying = ref(false)
-  const isMuted = ref(true)  // 默认静音
-  const currentMusicIndex = ref(0)
-  const volume = ref(0.5)
-  const isAudioEnabled = ref(false)
-  
-  // 启动登录页面音乐（固定第一首，默认静音）
-  const startBackgroundMusic = () => {
-    currentMusicIndex.value = 0
-    playMusic()
-  }
-  
-  // 启动主页面音乐（随机选择，默认开启）
-  const startMainPageMusic = () => {
-    isMuted.value = false
-    currentMusicIndex.value = Math.floor(Math.random() * musicFiles.length)
-    playMusic()
-  }
-  
-  // 暂停后恢复播放（保持播放位置）
-  const resumeMusic = () => {
-    if (audioElement.value && !audioElement.value.paused) return
-    if (audioElement.value) {
-      audioElement.value.play()
-      isPlaying.value = true
-    }
-  }
-  
-  // 切换静音状态（使用恢复播放）
-  const toggleMute = () => {
-    isMuted.value = !isMuted.value
-    if (!isMuted.value) {
-      resumeMusic()  // 恢复播放而非重新开始
-    } else {
-      pauseMusic()
-    }
-  }
-  
-  return {
-    startBackgroundMusic,
-    startMainPageMusic,
-    resumeMusic,
-    toggleMute,
-    nextMusic
-  }
-})
-```
-
-**使用方法**
-```typescript
-// 在登录页面
-const musicStore = useMusicStore()
-musicStore.startBackgroundMusic()  // 固定第一首，默认静音
-
-// 在主页面  
-musicStore.startMainPageMusic()    // 随机音乐，默认开启
-
-// 控制音乐
-musicStore.toggleMute()            // 切换播放/暂停（保持播放位置）
-musicStore.nextMusic()             // 手动切换下一首（立即切换）
-```
+#### 技术实现要点
+- **状态管理**: 使用Pinia管理音乐播放状态、音量控制和当前曲目
+- **智能播放**: 登录页面固定第一首音乐且默认静音，主页面随机选择且默认开启
+- **暂停恢复**: 支持从暂停位置继续播放，避免重新开始造成的体验中断
+- **自动切换**: 音乐自然结束后随机选择下一首，保持连续播放体验
+- **手动控制**: 提供独立的播放/暂停开关和手动切换下一首功能
+- **浏览器兼容**: 处理不同浏览器的自动播放限制和用户交互要求
 
 #### 播放逻辑优化
 - **自动播放**：音乐自然结束时，随机选择下一首音乐无缝播放
@@ -408,9 +302,12 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 - **暂停恢复优化**：音效开关实现真正的暂停/恢复，提升用户体验
 
 #### 用户交互设计
-1. **登录界面**：固定播放第一首音乐，默认静音，用户可手动开启
-2. **主页面**：随机选择音乐，默认开启，提供换音乐按钮
-3. **设置页面**：背景音乐开关控制
+1. **登录界面**：固定播放第一首音乐，默认静音，用户可手动开启背景音乐
+2. **主页面**：随机选择音乐，默认开启，提供两个独立按钮：
+   - 背景音乐开关按钮：控制播放/暂停（保持播放位置）
+   - 背景音乐切换按钮：切换到下一首音乐
+3. **设置页面**：背景音乐开关控制，状态与主界面同步
+4. **音效移除**：暂时不使用音效功能，音频控制专注于背景音乐
 
 ### 5. 游戏逻辑系统
 **文件位置**: `src/utils/optionsGenerator.ts`, `src/components/AnswerOptions.vue`
@@ -425,6 +322,23 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 - 分数进度追踪
 - 等级说明和介绍
 - 成就反馈机制
+- 付费边界处理：25分时显示学童并立即弹出付费提示
+
+### 7. 语言逻辑系统
+**文件位置**: `src/stores/user.ts`, `src/locales/`, `src/utils/language.ts`
+
+#### 功能概述
+- 统一语言设置：界面语言与诗歌提示语言使用同一个语言选择器
+- 中文模式特殊处理：自动进入困难模式，禁用简单模式选项
+- 浏览器语言检测：自动设置合适的默认语言和模式
+- 数据存储：中文模式下提示语言字段存储为"none"
+
+#### 实现要点
+- **语言切换**: 用户选择语言时同时设置界面语言和提示语言
+- **中文模式限制**: 检测中文模式时自动禁用简单模式选择
+- **UI状态管理**: 中文模式下简单模式按钮置灰不可选
+- **默认值检测**: 根据浏览器语言智能设置初始语言和难度
+- **无缝切换**: 语言切换时无需额外提示，系统自动处理模式调整
 
 ## 命名规范
 
@@ -476,9 +390,19 @@ musicStore.nextMusic()             // 手动切换下一首（立即切换）
 - **懒加载**: 页面组件使用动态导入
 - **滚动行为**: 配置平滑滚动和位置恢复
 
-### 4. 国际化
-- **文件组织**: 按语言代码组织翻译文件
-- **键命名**: 使用点分层级结构，如`settings.language`
+### 4. 国际化（多语言架构）
+- **支持语言**: 中文、英语、西班牙语、日语、法语、德语
+- **文件组织**: 按语言代码组织翻译文件（zh.ts, en.ts, es.ts, ja.ts, fr.ts, de.ts）
+- **统一语言设置**: 界面语言与诗歌提示语言使用同一个UI控件，无需分离
+- **中文特殊逻辑**: 
+  * 中文模式下仅支持困难模式，简单模式选项置灰不可选
+  * 提示语言字段存储为"none"，无外语提示
+  * 中文选项显示为"中文（仅困难模式）"进行特殊标注
+  * 从其他语言切换到中文时，自动切换到困难模式，无需提示
+- **默认语言检测**: 
+  * 中文浏览器：默认中文模式+困难模式
+  * 非中文浏览器：默认对应语言+简单模式
+- **键命名**: 使用点分层级结构，如`settings.language`, `difficulty.mode`
 - **类型安全**: 使用TypeScript确保翻译键的类型安全
 
 ### 5. 工具函数开发
@@ -636,18 +560,50 @@ test: 添加Firebase认证服务测试用例
 4. 在develop分支进行集成测试
 5. 合并到main分支并打标签发布
 
+## 项目状态概览
+
+### 当前完成度
+- **核心游戏功能**: 100%完成
+- **用户系统**: 100%完成  
+- **音乐系统**: 100%完成（音效功能暂时移除）
+- **成就系统**: 100%完成
+- **中文模式逻辑**: 需要实施
+- **测试覆盖率**: 47.75%
+- **国际化架构**: 需要更新为6语言版本
+
+### 等级系统
+- 白丁 (0-10分) - 免费
+- 学童 (11-25分) - 免费 (免费用户上限)
+- 秀才 (26-45分) - 需要付费 (付费门槛)
+- 廪生至状元 (46-341+分) - 付费
+
 ## 3rd Party
 
-### 1. Google Firebase Authentication
-1. Firebase项目名称: poem2guess
-2. Firebase项目ID: poem2guess-8d19f
-3. Firebase Web API Key: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
-4. Firebase已集成到Vue项目: npm install firebase
-5. Firebase测试页面: `public/test-firebase.html`
-6. 支持的认证方式: Google账号登录
-7. 认证域名: poem2guess-8d19f.firebaseapp.com
+### 1. Firebase配置
+- **项目名称**: poem2guess
+- **项目ID**: poem2guess-8d19f  
+- **Web API Key**: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
+- **Auth Domain**: poem2guess-8d19f.firebaseapp.com
+- **支持认证**: Apple Sign-In, Google OAuth, Twitter/X API
+- **Analytics**: 用户行为分析和关键动作埋点
+- **SSO功能**: 检测浏览器登录状态，支持一键登录
 
-### 2. Firebase Hosting（可选）
-1. 安装Firebase CLI工具: npm install firebase-tools
-2. 初始化Firebase Hosting: firebase init hosting
-3. 部署到Firebase: firebase deploy
+### 2. 多语言架构
+- **界面语言**: 中文、英语、西班牙语、日语、法语、德语
+- **语言设置**: 界面语言与诗歌提示语言使用统一的语言选择器
+- **中文特殊性**: 中文模式下无外语提示，仅支持困难模式，提示语言存储为"none"
+- **自动检测**: 中文浏览器默认中文+困难模式，非中文浏览器默认对应语言+简单模式
+- **困难模式**: 界面语言保持，诗歌提示显示星号（中文模式始终如此）
+- **UI标注**: 中文选项显示为"中文（仅困难模式）"
+
+### 3. 音乐系统
+- **背景音乐**: 8首古典音乐自动轮播
+- **智能控制**: 登录页默认静音，主页面默认开启
+- **暂停恢复**: 支持从暂停位置继续播放
+- **浏览器兼容**: 处理自动播放限制
+
+### 4. 部署配置
+- **Firebase部署**: 使用Firebase CLI工具进行项目初始化和部署
+- **移动应用打包**: 使用Capacitor添加iOS/Android平台支持
+- **同步更新**: 支持代码同步到移动平台并运行测试
+- **构建优化**: 针对不同平台的资源优化和性能调整

@@ -1,12 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AppSettings } from '@/types'
+import type { AppSettings, SupportedLanguage, DifficultyMode } from '@/types'
+import { 
+  isChineseMode, 
+  detectBrowserLanguage, 
+  getHintLanguage, 
+  handleLanguageChange,
+  isValidDifficultyForLanguage 
+} from '@/utils/language'
 
 export interface User {
   id: number
   username: string
   score: number
-  language: string
+  language: SupportedLanguage
   isPaid?: boolean  // 添加付费状态
 }
 
@@ -16,6 +23,7 @@ export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(null)
   const settings = ref<AppSettings>({
     language: 'english',
+    difficulty: 'easy',
     theme: 'light',
     soundEffects: true
   })
@@ -25,36 +33,43 @@ export const useUserStore = defineStore('user', () => {
   const username = computed(() => user.value?.username || '')
   const score = computed(() => user.value?.score || 0)
   const language = computed(() => user.value?.language || settings.value.language)
+  const difficulty = computed(() => settings.value.difficulty)
   
   // 添加付费状态
   const isPaidUser = computed(() => user.value?.isPaid || false)
   
-  // 免费用户最高等级（秀才）的分数上限
-  const FREE_USER_MAX_SCORE = 45
+  // 中文模式检测
+  const isInChineseMode = computed(() => isChineseMode(language.value))
+  
+  // 提示语言（用于游戏逻辑）
+  const hintLanguage = computed(() => getHintLanguage(language.value))
+  
+  // 免费用户最高等级（学童）的分数上限
+  const FREE_USER_MAX_SCORE = 25
   // 最低分数限制
   const MIN_SCORE = 0
 
-  // 根据得分获取学级称号（考虑付费限制）
+  // 根据得分获取学级称号翻译键（考虑付费限制）
   const rank = computed(() => {
     const currentScore = score.value
     const userIsPaid = isPaidUser.value
 
-    // 免费用户分数限制在45分（秀才）
+    // 免费用户分数限制在25分（学童）
     const effectiveScore = !userIsPaid && currentScore > FREE_USER_MAX_SCORE 
       ? FREE_USER_MAX_SCORE 
       : currentScore
 
-    if (effectiveScore <= 10) return '白丁'
-    if (effectiveScore <= 25) return '学童'
-    if (effectiveScore <= 45) return '秀才'
-    if (effectiveScore <= 70) return '廪生'
-    if (effectiveScore <= 100) return '贡生'
-    if (effectiveScore <= 135) return '举人'
-    if (effectiveScore <= 175) return '贡士'
-    if (effectiveScore <= 220) return '进士'
-    if (effectiveScore <= 280) return '探花'
-    if (effectiveScore <= 340) return '榜眼'
-    return '状元'
+    if (effectiveScore <= 10) return 'rank.baiDing'
+    if (effectiveScore <= 25) return 'rank.xueTong'
+    if (effectiveScore <= 45) return 'rank.xiuCai'
+    if (effectiveScore <= 70) return 'rank.linSheng'
+    if (effectiveScore <= 100) return 'rank.gongSheng'
+    if (effectiveScore <= 135) return 'rank.juRen'
+    if (effectiveScore <= 175) return 'rank.gongShi'
+    if (effectiveScore <= 220) return 'rank.jinShi'
+    if (effectiveScore <= 280) return 'rank.tanHua'
+    if (effectiveScore <= 340) return 'rank.bangYan'
+    return 'rank.zhuangYuan'
   })
 
   // 检查用户是否已达到免费等级上限
@@ -65,17 +80,17 @@ export const useUserStore = defineStore('user', () => {
   // 获取等级详细信息
   const rankDetails = computed(() => {
     const levels = [
-      { name: '白丁', minScore: 0, maxScore: 10, description: '初学者，刚开始接触诗词的启蒙阶段', emoji: '📚' },
-      { name: '学童', minScore: 11, maxScore: 25, description: '已有基础认知，能够理解简单的诗词内容', emoji: '🎓' },
-      { name: '秀才', minScore: 26, maxScore: 45, description: '具备一定文学素养，能欣赏诗词之美', emoji: '📜' },
-      { name: '廪生', minScore: 46, maxScore: 70, description: '文学功底扎实，深谙诗词韵律', emoji: '🖋️' },
-      { name: '贡生', minScore: 71, maxScore: 100, description: '学识渊博，对诗词有独到见解', emoji: '📖' },
-      { name: '举人', minScore: 101, maxScore: 135, description: '才华出众，能够创作优美诗句', emoji: '🏆' },
-      { name: '贡士', minScore: 136, maxScore: 175, description: '诗词造诣精深，文采斐然', emoji: '🎭' },
-      { name: '进士', minScore: 176, maxScore: 220, description: '学富五车，诗词功力炉火纯青', emoji: '👑' },
-      { name: '探花', minScore: 221, maxScore: 280, description: '诗词大家，作品流传千古', emoji: '🌸' },
-      { name: '榜眼', minScore: 281, maxScore: 340, description: '文坛巨匠，诗词成就卓越', emoji: '💎' },
-      { name: '状元', minScore: 341, maxScore: Infinity, description: '诗圣境界，千古传诵的文学大师', emoji: '👑' }
+      { name: 'rank.baiDing', minScore: 0, maxScore: 10, description: 'rankDesc.baiDing', emoji: '📚' },
+      { name: 'rank.xueTong', minScore: 11, maxScore: 25, description: 'rankDesc.xueTong', emoji: '🎓' },
+      { name: 'rank.xiuCai', minScore: 26, maxScore: 45, description: 'rankDesc.xiuCai', emoji: '📜' },
+      { name: 'rank.linSheng', minScore: 46, maxScore: 70, description: 'rankDesc.linSheng', emoji: '🖋️' },
+      { name: 'rank.gongSheng', minScore: 71, maxScore: 100, description: 'rankDesc.gongSheng', emoji: '📖' },
+      { name: 'rank.juRen', minScore: 101, maxScore: 135, description: 'rankDesc.juRen', emoji: '🏆' },
+      { name: 'rank.gongShi', minScore: 136, maxScore: 175, description: 'rankDesc.gongShi', emoji: '🎭' },
+      { name: 'rank.jinShi', minScore: 176, maxScore: 220, description: 'rankDesc.jinShi', emoji: '👑' },
+      { name: 'rank.tanHua', minScore: 221, maxScore: 280, description: 'rankDesc.tanHua', emoji: '🌸' },
+      { name: 'rank.bangYan', minScore: 281, maxScore: 340, description: 'rankDesc.bangYan', emoji: '💎' },
+      { name: 'rank.zhuangYuan', minScore: 341, maxScore: Infinity, description: 'rankDesc.zhuangYuan', emoji: '👑' }
     ]
     
     return levels.find(level => 
@@ -96,12 +111,27 @@ export const useUserStore = defineStore('user', () => {
   function login(userData: User, userToken: string) {
     setUser(userData)
     setToken(userToken)
+    
+    // 只有在用户语言与当前设置不同时才更新语言设置
+    if (userData.language !== settings.value.language) {
+      const result = handleLanguageChange(userData.language, settings.value.difficulty)
+      settings.value.language = result.language
+      settings.value.difficulty = result.difficulty
+      saveSettings()
+      console.log('用户登录时更新语言设置为:', result.language)
+    } else {
+      console.log('用户登录时保持当前语言设置:', settings.value.language)
+    }
+    
+    // 保存用户数据到本地存储
+    localStorage.setItem('user_data', JSON.stringify(userData))
   }
 
   function logout() {
     user.value = null
     token.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('user_data')
   }
 
   function updateScore(increment: number) {
@@ -112,6 +142,8 @@ export const useUserStore = defineStore('user', () => {
       if (newScore < MIN_SCORE) {
         console.log('分数已达最低限制，不能低于0分')
         user.value.score = MIN_SCORE
+        // 更新本地存储
+        localStorage.setItem('user_data', JSON.stringify(user.value))
         return true // 返回true但分数设为0
       }
       
@@ -124,6 +156,9 @@ export const useUserStore = defineStore('user', () => {
       
       user.value.score = newScore
       
+      // 更新本地存储中的用户数据
+      localStorage.setItem('user_data', JSON.stringify(user.value))
+      
       // 同步积分到后端
       if (token.value) {
         syncScoreToBackend(user.value.score).catch(error => {
@@ -135,6 +170,8 @@ export const useUserStore = defineStore('user', () => {
             if (user.value.score < MIN_SCORE) {
               user.value.score = MIN_SCORE
             }
+            // 更新本地存储
+            localStorage.setItem('user_data', JSON.stringify(user.value))
           }
         })
       }
@@ -180,17 +217,36 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  function setLanguage(newLanguage: string) {
-    // 验证语言是否为poem store支持的外语
-    const supportedLanguages = ['english', 'french', 'spanish', 'german', 'japanese']
-    const validLanguage = supportedLanguages.includes(newLanguage) ? newLanguage : 'english'
+  function setLanguage(newLanguage: SupportedLanguage) {
+    // 使用语言切换处理器处理逻辑
+    const result = handleLanguageChange(newLanguage, settings.value.difficulty)
     
-    if (user.value) {
-      user.value.language = validLanguage
-      // 这里可以添加与后端同步的逻辑
-    }
-    settings.value.language = validLanguage as AppSettings['language']
+    // 更新设置
+    settings.value.language = result.language
+    settings.value.difficulty = result.difficulty
     saveSettings()
+    
+    // 更新用户数据（如果已登录）
+    if (user.value) {
+      user.value.language = result.language
+      localStorage.setItem('user_data', JSON.stringify(user.value))
+    }
+    
+    console.log(`语言已切换到 ${result.language}，难度模式: ${result.difficulty}，提示语言: ${result.hintLanguage}`)
+  }
+
+  function setDifficulty(newDifficulty: DifficultyMode) {
+    // 检查当前语言是否支持该难度
+    if (!isValidDifficultyForLanguage(language.value, newDifficulty)) {
+      console.warn(`${language.value} 模式不支持 ${newDifficulty} 难度`)
+      return false
+    }
+    
+    settings.value.difficulty = newDifficulty
+    saveSettings()
+    
+    console.log(`难度模式已切换到: ${newDifficulty}`)
+    return true
   }
 
   // 更新应用设置
@@ -231,12 +287,44 @@ export const useUserStore = defineStore('user', () => {
 
   // 初始化时尝试从localStorage恢复会话和设置
   function init() {
+    const savedToken = localStorage.getItem('token')
+    const savedUser = localStorage.getItem('user_data')
+    
+    // 先尝试恢复用户会话，如果用户已登录，优先使用用户保存的语言设置
+    if (savedToken && savedUser) {
+      try {
+        token.value = savedToken
+        user.value = JSON.parse(savedUser)
+        console.log('用户会话已恢复:', user.value?.username)
+        
+        // 如果用户有保存的语言设置，优先使用用户的语言设置
+        if (user.value && user.value.language) {
+          const result = handleLanguageChange(user.value.language, settings.value.difficulty)
+          settings.value.language = result.language
+          settings.value.difficulty = result.difficulty
+          console.log('恢复用户语言设置:', user.value.language)
+        }
+      } catch (e) {
+        console.error('恢复用户会话失败:', e)
+        // 清除无效的存储数据
+        localStorage.removeItem('token')
+        localStorage.removeItem('user_data')
+        user.value = null
+        token.value = null
+      }
+    }
+
+    // 加载本地保存的设置
     loadSettings()
 
-    const savedToken = localStorage.getItem('token')
-    if (savedToken) {
-      token.value = savedToken
-      // 这里可以添加从后端获取用户信息的逻辑
+    // 如果没有用户会话且没有保存的设置，使用浏览器检测的默认值
+    const savedSettings = localStorage.getItem('app_settings')
+    if (!savedSettings && !user.value) {
+      const browserDefaults = detectBrowserLanguage()
+      settings.value.language = browserDefaults.language
+      settings.value.difficulty = browserDefaults.difficulty
+      saveSettings()
+      console.log('检测到浏览器语言，设置默认值:', browserDefaults)
     }
   }
 
@@ -245,7 +333,12 @@ export const useUserStore = defineStore('user', () => {
     if (user.value) {
       user.value.isPaid = true
       console.log('用户已升级为付费用户')
+      
+      // 更新本地存储中的用户数据
+      localStorage.setItem('user_data', JSON.stringify(user.value))
+      
       // 这里应该调用后端API更新用户状态
+      // TODO: 调用后端API同步付费状态
     }
   }
 
@@ -258,6 +351,9 @@ export const useUserStore = defineStore('user', () => {
     score,
     rank,
     language,
+    difficulty,
+    hintLanguage,
+    isInChineseMode,
     isPaidUser,
     isAtFreeLimit,
     rankDetails,
@@ -268,6 +364,7 @@ export const useUserStore = defineStore('user', () => {
     updateScore,
     syncScoreToBackend,
     setLanguage,
+    setDifficulty,
     updateSettings,
     toggleSoundEffects,
     toggleTheme,
