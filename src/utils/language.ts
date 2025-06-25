@@ -1,10 +1,10 @@
-import type { SupportedLanguage, DifficultyMode } from '@/types'
+import type { SupportedLanguage, DifficultyMode, HintLanguage } from '@/types'
 
 /**
  * 支持的语言映射表
  */
 export const LANGUAGE_MAP: Record<SupportedLanguage, { label: string; code: string; hasHint: boolean }> = {
-  chinese: { label: '中文（仅困难模式）', code: 'zh', hasHint: false },
+  chinese: { label: '中文', code: 'zh', hasHint: true },
   english: { label: 'English', code: 'en', hasHint: true },
   spanish: { label: 'Español', code: 'es', hasHint: true },
   japanese: { label: '日本語', code: 'ja', hasHint: true },
@@ -18,8 +18,8 @@ export const LANGUAGE_MAP: Record<SupportedLanguage, { label: string; code: stri
 export const DEFAULT_SETTINGS = {
   chinese: {
     language: 'chinese' as SupportedLanguage,
-    difficulty: 'hard' as DifficultyMode,
-    hintLanguage: 'none'
+    difficulty: 'easy' as DifficultyMode,
+    hintLanguage: 'english' as HintLanguage
   },
   nonChinese: {
     language: 'english' as SupportedLanguage,
@@ -43,7 +43,10 @@ export function detectBrowserLanguage(): { language: SupportedLanguage; difficul
 
   // 检测中文
   if (langCode.startsWith('zh')) {
-    return DEFAULT_SETTINGS.chinese
+    return {
+      language: DEFAULT_SETTINGS.chinese.language,
+      difficulty: DEFAULT_SETTINGS.chinese.difficulty
+    }
   }
 
   // 检测其他支持的语言
@@ -64,27 +67,29 @@ export function detectBrowserLanguage(): { language: SupportedLanguage; difficul
 
 /**
  * 获取提示语言
- * 中文模式返回 'none'，其他模式返回对应语言
+ * 中文模式下，简单难度返回'english'，困难难度返回'none'
  */
-export function getHintLanguage(language: SupportedLanguage): string {
-  return isChineseMode(language) ? 'none' : language
+export function getHintLanguage(language: SupportedLanguage, difficulty: DifficultyMode): HintLanguage {
+  if (isChineseMode(language)) {
+    return difficulty === 'easy' ? 'english' : 'none'
+  }
+  return language
 }
 
 /**
  * 验证难度模式是否适用于指定语言
  */
 export function isValidDifficultyForLanguage(language: SupportedLanguage, difficulty: DifficultyMode): boolean {
-  if (isChineseMode(language)) {
-    return difficulty === 'hard' // 中文模式只支持困难模式
-  }
-  return true // 其他语言支持所有模式
+  // 所有语言都支持所有难度模式
+  return true
 }
 
 /**
  * 获取语言切换后的默认难度
  */
 export function getDefaultDifficultyForLanguage(language: SupportedLanguage): DifficultyMode {
-  return isChineseMode(language) ? 'hard' : 'easy'
+  // 默认都为 easy
+  return 'easy'
 }
 
 /**
@@ -105,7 +110,7 @@ export function getLanguageOptions(): Array<{ value: SupportedLanguage; label: s
 export function handleLanguageChange(
   newLanguage: SupportedLanguage,
   currentDifficulty: DifficultyMode
-): { language: SupportedLanguage; difficulty: DifficultyMode; hintLanguage: string } {
+): { language: SupportedLanguage; difficulty: DifficultyMode; hintLanguage: HintLanguage } {
   const difficulty = isValidDifficultyForLanguage(newLanguage, currentDifficulty)
     ? currentDifficulty
     : getDefaultDifficultyForLanguage(newLanguage)
@@ -113,6 +118,6 @@ export function handleLanguageChange(
   return {
     language: newLanguage,
     difficulty,
-    hintLanguage: getHintLanguage(newLanguage)
+    hintLanguage: getHintLanguage(newLanguage, difficulty)
   }
 } 

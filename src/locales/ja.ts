@@ -184,7 +184,7 @@ export default {
     zhuangYuan: '詩聖の境地、千古に伝承される文学の大師'
   },
   languages: {
-    chinese: '中国語（ハードモードのみ）',
+    chinese: '中国語',
     english: '英語',
     french: 'フランス語',
     spanish: 'スペイン語',

@@ -182,7 +182,7 @@ export default {
     zhuangYuan: 'Poetic sage, literary grandmaster celebrated for millennia'
   },
   languages: {
-    chinese: 'Chinese (Hard Mode Only)',
+    chinese: 'Chinese',
     english: 'English',
     french: 'French',
     spanish: 'Spanish',

@@ -184,7 +184,7 @@ export default {
     zhuangYuan: 'Sabio poético, gran maestro literario celebrado por milenios'
   },
   languages: {
-    chinese: 'Chino (Solo modo difícil)',
+    chinese: 'Chino',
     english: 'Inglés',
     french: 'Francés',
     spanish: 'Español',

@@ -186,10 +186,10 @@ export default {
     zhuangYuan: '诗圣境界，千古传诵的文学大师'
   },
   languages: {
-    chinese: '中文（仅困难模式）',
-    english: '英语',
+    chinese: '中文',
+    english: 'English',
     french: '法语',
-    spanish: '西班牙语',
+    spanish: 'Español',
     german: '德语',
     japanese: '日语'
   },

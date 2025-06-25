@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Poem, TranslatedPoem, PoemOption } from '@/types'
+import { useUserStore } from '@/stores/user'
 import { loadPoemData as loadPoemDataUtil, getAllSentences, LanguageType } from '@/utils/poemData'
 import { getPoemImageUrl } from '@/utils/resourceLoader'
 import { selectRandomPoemAndPrepareTranslation } from '@/utils/randomPoemSelector'
@@ -11,17 +12,21 @@ import {
 } from '@/utils/optionsGenerator'
 
 export const usePoemStore = defineStore('poem', () => {
+  // 依赖 userStore
+  const userStore = useUserStore()
+
   // 状态
   const currentPoem = ref<Poem | null>(null)
   const currentTranslation = ref<TranslatedPoem | null>(null)
-  const displayLanguage = ref<Exclude<LanguageType, 'chinese'>>('english')
   const currentSentenceIndex = ref<number>(0)
   const options = ref<PoemOption[]>([])
   const isLoading = ref(true)
   const loadError = ref<string | null>(null)
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem>>({})
-  const currentDifficulty = ref<DifficultyLevel>('easy')
+  
+  // 难度直接从 userStore 获取
+  const currentDifficulty = computed(() => userStore.difficulty)
 
   // 计算属性
   const hasImage = computed(() => {
@@ -39,56 +44,69 @@ export const usePoemStore = defineStore('poem', () => {
       currentPoem.value,
       currentTranslation.value,
       currentSentenceIndex.value,
-      currentDifficulty.value
+      currentDifficulty.value,
+      userStore.language // 传入当前界面语言
     )
   })
 
   // 方法
   // 初始化诗歌数据
   async function initialize() {
-    console.log('[PoemStore] Initialize: START, current isLoading state:', isLoading.value) // Store日志1
+    console.log('[PoemStore] Initialize: START, current isLoading state:', isLoading.value)
     isLoading.value = true
     loadError.value = null
 
     try {
-      console.log('[PoemStore] Calling loadPoemDataUtil...') // Store日志2
-      const poemData = await loadPoemDataUtil(['chinese', displayLanguage.value])
-      console.log('[PoemStore] loadPoemDataUtil returned. poemData exists:', !!poemData) // Store日志3
+      console.log('[PoemStore] Calling loadPoemDataUtil...')
+      const hintLang = userStore.hintLanguage
+      const languagesToLoad: LanguageType[] = ['chinese']
+      if (hintLang !== 'none' && hintLang !== 'chinese') {
+        languagesToLoad.push(hintLang as LanguageType)
+      }
+      
+      const poemData = await loadPoemDataUtil(languagesToLoad)
+      console.log('[PoemStore] loadPoemDataUtil returned. poemData exists:', !!poemData)
 
       // 保存所有诗歌数据
       allPoems.value = [...poemData.chinese]
 
       // 构建翻译字典
       allTranslations.value = {}
-      poemData[displayLanguage.value].forEach((poem: TranslatedPoem) => {
-        allTranslations.value[poem.id] = poem
-      })
+      if (hintLang !== 'none' && poemData[hintLang]) {
+        poemData[hintLang].forEach((poem: TranslatedPoem) => {
+          allTranslations.value[poem.id] = poem
+        })
+      }
 
-      console.log('[PoemStore] Calling selectRandomPoem...') // Store日志4
+      console.log('[PoemStore] Calling selectRandomPoem...')
       selectRandomPoem()
-      console.log('[PoemStore] selectRandomPoem finished.') // Store日志5
+      console.log('[PoemStore] selectRandomPoem finished.')
       isLoading.value = false
-      console.log('[PoemStore] Initialize: SUCCESS, isLoading set to:', isLoading.value) // Store日志6
+      console.log('[PoemStore] Initialize: SUCCESS, isLoading set to:', isLoading.value)
     } catch (error) {
-      console.error('[PoemStore] Initialize: FAILED with error:', error) // Store日志7
+      console.error('[PoemStore] Initialize: FAILED with error:', error)
       loadError.value = '加载诗歌数据失败，请刷新页面重试'
       isLoading.value = false
       console.log(
         '[PoemStore] Initialize: FAILED (error caught), isLoading set to:',
         isLoading.value
-      ) // Store日志8
+      )
     }
   }
 
-  // 随机选择一首诗，可以指定难度
-  function selectRandomPoem(difficulty: DifficultyLevel = 'easy') {
+  // 监听用户语言或难度变化，重新加载数据
+  watch([() => userStore.language, () => userStore.difficulty], () => {
+    console.log('检测到用户语言或难度变化，重新初始化诗歌数据...')
+    initialize()
+  }, { deep: true })
+
+
+  // 随机选择一首诗
+  function selectRandomPoem() {
     try {
       if (allPoems.value.length === 0) {
         throw new Error('诗歌数据尚未加载')
       }
-
-      // 更新当前难度
-      currentDifficulty.value = difficulty
 
       // 使用新的随机诗歌选择器
       const { poem, translation, sentenceResult } = selectRandomPoemAndPrepareTranslation(
@@ -98,11 +116,11 @@ export const usePoemStore = defineStore('poem', () => {
 
       // 更新状态
       currentPoem.value = poem
-      currentTranslation.value = translation
-      currentSentenceIndex.value = sentenceResult.sentenceIndex
+      currentTranslation.value = translation // 可以是 null
+      currentSentenceIndex.value = sentenceResult?.sentenceIndex ?? 0 // 如果为null，默认为0
 
       // 生成选项
-      generateOptionsWithDifficulty(difficulty)
+      generateOptionsWithDifficulty()
     } catch (error) {
       console.error('选择随机诗歌失败', error)
       loadError.value = '选择诗歌失败，请重试'
@@ -110,7 +128,7 @@ export const usePoemStore = defineStore('poem', () => {
   }
 
   // 生成备选答案，支持难度调整
-  function generateOptionsWithDifficulty(difficulty: DifficultyLevel = 'easy') {
+  function generateOptionsWithDifficulty() {
     if (!currentPoem.value) return
 
     // 获取当前选中的句子
@@ -127,7 +145,7 @@ export const usePoemStore = defineStore('poem', () => {
       currentSentence.content,
       4, // 生成4个选项
       allSentences,
-      difficulty
+      currentDifficulty.value
     )
   }
 
@@ -137,46 +155,9 @@ export const usePoemStore = defineStore('poem', () => {
     return selectedLine === correctOption?.value
   }
 
-  // 设置显示语言
-  async function setDisplayLanguage(language: Exclude<LanguageType, 'chinese'>) {
-    if (displayLanguage.value === language) return
-
-    displayLanguage.value = language
-    isLoading.value = true
-
-    try {
-      // 加载新语言的诗歌数据
-      const poemData = await loadPoemDataUtil(['chinese', language])
-
-      // 更新翻译字典
-      allTranslations.value = {}
-      poemData[language].forEach((poem: TranslatedPoem) => {
-        allTranslations.value[poem.id] = poem
-      })
-
-      // 重新选择随机诗歌
-      selectRandomPoem(currentDifficulty.value)
-      isLoading.value = false
-    } catch (error) {
-      console.error(`加载${language}翻译失败`, error)
-      loadError.value = `加载${language}翻译失败，请重试`
-      isLoading.value = false
-    }
-  }
-
-  // 设置难度
-  function setDifficulty(difficulty: DifficultyLevel) {
-    if (currentDifficulty.value !== difficulty) {
-      currentDifficulty.value = difficulty
-      // 以新的难度重新选择诗歌
-      selectRandomPoem(difficulty)
-    }
-  }
-
   return {
     currentPoem,
     currentTranslation,
-    displayLanguage,
     currentSentenceIndex,
     displayContent,
     hasImage,
@@ -188,8 +169,6 @@ export const usePoemStore = defineStore('poem', () => {
     initialize,
     selectRandomPoem,
     checkAnswer,
-    setDisplayLanguage,
     generateOptionsWithDifficulty,
-    setDifficulty
   }
 })

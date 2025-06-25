@@ -89,20 +89,32 @@ export function selectRandomPoemAndPrepareTranslation(
   translations: Record<string, TranslatedPoem>
 ): {
   poem: Poem
-  translation: TranslatedPoem
-  sentenceResult: TranslatedSentenceResult
+  translation: TranslatedPoem | null
+  sentenceResult: TranslatedSentenceResult | null
 } {
   // 随机选择一首诗
   const poem = getRandomPoem(poems)
 
-  // 获取该诗的翻译
-  const translation = translations[poem.id]
-  if (!translation) {
-    throw new Error(`找不到诗歌 ${poem.id} 的翻译`)
-  }
-
   // 随机选择一句
   const sentenceIndex = chooseRandomSentence(poem)
+
+  // 尝试获取该诗的翻译
+  const translation = translations[poem.id]
+
+  // 如果没有翻译（例如在困难模式下），则返回 null
+  if (!translation) {
+    const originalSentence = poem.sentence.find(s => s.senid === sentenceIndex)
+    const sentenceResult = {
+      original: originalSentence?.content || '',
+      translated: '', // 无翻译
+      sentenceIndex
+    }
+    return {
+      poem,
+      translation: null,
+      sentenceResult
+    }
+  }
 
   // 准备翻译结果
   const sentenceResult = prepareTranslatedSentence(poem, translation, sentenceIndex)

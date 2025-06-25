@@ -184,7 +184,7 @@ export default {
     zhuangYuan: 'Poetischer Weiser, literarischer Großmeister seit Jahrtausenden gefeiert'
   },
   languages: {
-    chinese: 'Chinesisch (Nur schwerer Modus)',
+    chinese: 'Chinesisch',
     english: 'Englisch',
     french: 'Französisch',
     spanish: 'Spanisch',

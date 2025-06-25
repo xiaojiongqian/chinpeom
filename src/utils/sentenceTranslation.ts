@@ -1,5 +1,4 @@
-import type { Poem, TranslatedPoem } from '@/types'
-import { type DifficultyLevel } from './optionsGenerator'
+import type { Poem, TranslatedPoem, DifficultyMode, SupportedLanguage } from '@/types'
 
 /**
  * 在翻译中查找指定索引的句子
@@ -20,39 +19,55 @@ export function findTranslatedSentence(
 }
 
 /**
- * 创建显示内容，将指定句子替换为翻译或占位符
- * @param poem 原诗
- * @param translation 翻译
- * @param sentenceIndex 要替换的句子索引
- * @param difficulty 难度级别
- * @returns 包含原句和替换后句子的数组
+ * 创建要显示的诗句内容
+ * @param poem - 当前诗歌
+ * @param translation - 当前诗歌的翻译
+ * @param sentenceIndex - 当前句子的索引
+ * @param difficulty - 当前难度
+ * @param language - 当前界面语言
+ * @returns 包含要显示的诗句的字符串数组
  */
 export function createDisplayContent(
   poem: Poem | null,
   translation: TranslatedPoem | null,
   sentenceIndex: number,
-  difficulty: DifficultyLevel = 'normal'
-): string[] {
-  if (!poem) {
-    return []
+  difficulty: DifficultyMode,
+  language: SupportedLanguage
+): string[] | null {
+  if (!poem) return null
+
+  const displayLines = poem.sentence.map(s => s.content)
+
+  if (sentenceIndex < 0 || sentenceIndex >= displayLines.length) {
+    return displayLines
   }
 
-  return poem.sentence.map(sen => {
-    // 如果该句是要替换的句子
-    if (sen.senid === sentenceIndex) {
-      if (difficulty === 'hard') {
-        // 困难模式：显示 "***"
-        return '***'
-      } else {
-        // 简单模式：显示外语翻译，如果找不到翻译则显示 "***"
-        const translatedContent = findTranslatedSentence(translation, sentenceIndex)
-        return translatedContent || '***'
-      }
+  // 困难模式：用星号替换
+  if (difficulty === 'hard') {
+    const originalLine = displayLines[sentenceIndex]
+    displayLines[sentenceIndex] = '★'.repeat(originalLine.length)
+    return displayLines
+  }
+
+  // 简单模式
+  // 如果是中文模式下的简单模式，则使用英文翻译
+  if (language === 'chinese' && difficulty === 'easy') {
+    if (translation && translation.sentence && sentenceIndex < translation.sentence.length) {
+      displayLines[sentenceIndex] = translation.sentence[sentenceIndex].content
+    } else {
+      // 降级处理：如果没有翻译，显示星号
+      const originalLine = displayLines[sentenceIndex]
+      displayLines[sentenceIndex] = '★'.repeat(originalLine.length)
     }
-    
-    // 其他句子显示中文原句
-    return sen.content
-  })
+    return displayLines
+  }
+
+  // 其他语言的简单模式
+  if (translation && translation.sentence && sentenceIndex < translation.sentence.length) {
+    displayLines[sentenceIndex] = translation.sentence[sentenceIndex].content
+  }
+
+  return displayLines
 }
 
 /**

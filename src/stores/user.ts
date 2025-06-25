@@ -42,7 +42,7 @@ export const useUserStore = defineStore('user', () => {
   const isInChineseMode = computed(() => isChineseMode(language.value))
   
   // 提示语言（用于游戏逻辑）
-  const hintLanguage = computed(() => getHintLanguage(language.value))
+  const hintLanguage = computed(() => getHintLanguage(language.value, difficulty.value))
   
   // 免费用户最高等级（学童）的分数上限
   const FREE_USER_MAX_SCORE = 25

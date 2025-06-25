@@ -184,7 +184,7 @@ export default {
     zhuangYuan: 'Sage poétique, grand maître littéraire célébré depuis des millénaires'
   },
   languages: {
-    chinese: 'Chinois (Mode difficile uniquement)',
+    chinese: 'Chinois',
     english: 'Anglais',
     french: 'Français',
     spanish: 'Espagnol',

@@ -14,9 +14,6 @@
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-base font-bold">{{ $t('settings.language') }}</h2>
             <div class="flex items-center space-x-2">
-              <div v-if="currentLanguage === 'chinese'" class="text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded">
-                {{ $t('common.chineseMode') }}
-              </div>
               <!-- 调试信息 -->
               <div class="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">
                 {{ currentLanguage }}
@@ -65,26 +62,24 @@
           
           <div class="space-y-2">
             <div
-              class="flex items-center justify-between p-2.5 border rounded-lg transition-colors"
+              class="flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors"
               :class="{
-                'bg-success-50 border-success-500': difficulty === 'easy' && currentLanguage !== 'chinese',
-                'cursor-pointer': currentLanguage !== 'chinese',
-                'cursor-not-allowed bg-gray-100 border-gray-300': currentLanguage === 'chinese'
+                'bg-success-50 border-success-500': difficulty === 'easy',
+                'hover:bg-gray-50': difficulty !== 'easy'
               }"
               data-testid="difficulty-easy"
-              @click="currentLanguage !== 'chinese' ? setDifficulty('easy') : null"
+              @click="setDifficulty('easy')"
             >
               <div>
-                <div class="font-medium text-sm" :class="{ 'text-gray-400': currentLanguage === 'chinese' }">
+                <div class="font-medium text-sm">
                   {{ $t('settings.easyMode') }}
-                  <span v-if="currentLanguage === 'chinese'" class="text-xs text-gray-400">（{{ $t('settings.chineseModeUnavailable') }}）</span>
                 </div>
-                <div class="text-xs" :class="currentLanguage === 'chinese' ? 'text-gray-400' : 'text-gray-500'">
+                <div class="text-xs text-gray-500">
                   {{ $t('settings.easyModeDesc') }}
                 </div>
               </div>
               <div 
-                v-if="difficulty === 'easy' && currentLanguage !== 'chinese'"
+                v-if="difficulty === 'easy'"
                 class="w-4 h-4 bg-success-500 rounded-full flex items-center justify-center"
               >
                 <svg class="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -95,7 +90,10 @@
 
             <div
               class="flex items-center justify-between p-2.5 border rounded-lg cursor-pointer transition-colors"
-              :class="{ 'bg-success-50 border-success-500': difficulty === 'hard' }"
+              :class="{
+                'bg-success-50 border-success-500': difficulty === 'hard',
+                'hover:bg-gray-50': difficulty !== 'hard'
+              }"
               data-testid="difficulty-hard"
               @click="setDifficulty('hard')"
             >
@@ -251,184 +249,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useUserStore } from '../stores/user'
-import { usePoemStore } from '../stores/poem'
+import { useUserStore } from '@/stores/user'
 import { useMusicStore } from '../stores/music'
-import authApi from '@/services/authApi'
-import type { DifficultyLevel } from '../utils/optionsGenerator'
+import type { SupportedLanguage, DifficultyMode } from '@/types'
+import soundOnIcon from '@/assets/icons/feature/icon_sound_on.svg'
+import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
 const router = useRouter()
 const { t } = useI18n()
 const userStore = useUserStore()
-const poemStore = usePoemStore()
 const musicStore = useMusicStore()
-const difficulty = ref<DifficultyLevel>(poemStore.currentDifficulty || userStore.difficulty || 'easy')
+
+// 状态
+const currentLanguage = computed(() => userStore.language)
+const difficulty = computed(() => userStore.difficulty)
 const showLogoutDialog = ref(false)
 
-// 创建响应式的本地语言状态 - 初始化为当前用户语言或设置语言
-const currentLanguage = ref<string>(userStore.language || userStore.settings.language || 'english')
+// 可用语言
+const languages = computed<Array<{ value: SupportedLanguage; emoji: string }>>(() => [
+  { value: 'chinese', emoji: '🇨🇳' },
+  { value: 'english', emoji: '🇬🇧' },
+  { value: 'spanish', emoji: '🇪🇸' },
+  { value: 'japanese', emoji: '🇯🇵' },
+  { value: 'french', emoji: '🇫🇷' },
+  { value: 'german', emoji: '🇩🇪' }
+])
 
-// 可用的提示语言
-const languages = [
-  { value: 'chinese', label: '中文（仅困难模式）', emoji: '🇨🇳' },
-  { value: 'english', label: '英语', emoji: '🇬🇧' },
-  { value: 'french', label: '法语', emoji: '🇫🇷' },
-  { value: 'spanish', label: '西班牙语', emoji: '🇪🇸' },
-  { value: 'german', label: '德语', emoji: '🇩🇪' },
-  { value: 'japanese', label: '日语', emoji: '🇯🇵' }
-]
-
-// 设置语言 - 统一语言设置，同时控制界面语言和诗歌提示语言
-const setLanguage = async (language: string) => {
-  // 更新本地状态
-  currentLanguage.value = language
-  
-  // 更新用户语言设置（界面语言）
-  userStore.setLanguage(language as any)
-  
-  // 中文模式检查：如果选择中文，必须切换到困难模式
-  if (language === 'chinese') {
-    difficulty.value = 'hard'
-    poemStore.setDifficulty('hard')
-    // 中文模式下诗歌提示语言设置为"none"
-    console.log('切换到中文模式，诗歌提示语言设置为none')
-  } else {
-    // 非中文模式：同时更新诗歌显示语言（如果是简单模式）
-    if (difficulty.value === 'easy') {
-      try {
-        await poemStore.setDisplayLanguage(language as any)
-        console.log('语言设置已同步到诗歌显示语言:', language)
-      } catch (error) {
-        console.error('同步诗歌显示语言失败:', error)
-      }
-    }
-  }
-  
-  console.log('语言设置已更新为:', language)
+// 方法
+function setDifficulty(newDifficulty: DifficultyMode) {
+  userStore.setDifficulty(newDifficulty)
 }
 
-// 设置难度
-const setDifficulty = async (newDifficulty: DifficultyLevel) => {
-  difficulty.value = newDifficulty
-  poemStore.setDifficulty(newDifficulty)
-  
-  // 如果切换到简单模式且不是中文模式，需要同步当前语言设置到诗歌显示语言
-  if (newDifficulty === 'easy' && currentLanguage.value !== 'chinese') {
-    try {
-      await poemStore.setDisplayLanguage(currentLanguage.value as any)
-      console.log('切换到简单模式，语言设置已同步:', currentLanguage.value)
-    } catch (error) {
-      console.error('同步语言设置失败:', error)
-    }
-  }
-  
-  console.log('难度设置已更新为:', newDifficulty)
+function setLanguage(newLanguage: SupportedLanguage) {
+  userStore.setLanguage(newLanguage)
 }
 
-// 退出登录
-const logout = async () => {
-  try {
-    // 调用认证API登出（会处理Firebase登出）
-    await authApi.logout()
-    
-    // 调用用户存储登出（清理本地状态）
-    userStore.logout()
-    
-    // 跳转到登录页面
-    router.push('/login')
-  } catch (error) {
-    console.error('登出失败:', error)
-    // 即使登出失败，也要清理本地状态
-    userStore.logout()
-    router.push('/login')
-  }
-}
-
-// 确认退出登录
-const confirmLogout = () => {
-  logout()
-  showLogoutDialog.value = false
-}
-
-// 确认设置
-const confirmSettings = () => {
-  // 导航回主页
+function confirmSettings() {
   router.push('/quizview')
 }
 
-// 组件挂载时初始化
-onMounted(async () => {
-  console.log('设置页面初始化...')
-  
-  // 1. 首先确保用户存储已初始化
-  await userStore.init()
-  
-  // 2. 等待一个tick确保所有响应式数据已更新
-  await nextTick()
-  
-  // 3. 同步语言设置 - 优先使用用户语言，其次使用设置中的语言
-  const userLanguage = userStore.language || userStore.settings.language || 'english'
-  currentLanguage.value = userLanguage
-  console.log('当前语言已设置为:', userLanguage)
-  
-  // 4. 同步难度设置
-  const currentDifficulty = poemStore.currentDifficulty || userStore.difficulty || 'easy'
-  difficulty.value = currentDifficulty
-  console.log('当前难度:', currentDifficulty)
-  
-  // 5. 确保音乐存储状态正确
-  console.log('音乐状态:', musicStore.isMuted ? 'Off' : 'On')
-  
-  // 6. 确保语言设置正确显示
-  console.log('用户登录状态:', userStore.isLoggedIn)
-  console.log('设置中的语言:', userStore.settings.language)
-  console.log('用户语言:', userStore.language)
-  
-  // 7. 如果是简单模式且不是中文模式，确保语言设置同步到诗歌显示语言
-  if (difficulty.value === 'easy' && userLanguage !== 'chinese') {
-    try {
-      await poemStore.setDisplayLanguage(userLanguage as any)
-      console.log('语言设置已同步到诗歌存储:', userLanguage)
-    } catch (error) {
-      console.error('初始化语言设置失败:', error)
-    }
-  }
-})
-
-// 监听诗歌存储的难度变化
-watch(() => poemStore.currentDifficulty, (newDifficulty) => {
-  if (newDifficulty && newDifficulty !== difficulty.value) {
-    difficulty.value = newDifficulty
-    console.log('诗歌存储难度已更新为:', newDifficulty)
-  }
-}, { immediate: true })
-
-// 监听用户设置的难度变化（作为后备）
-watch(() => userStore.difficulty, (newDifficulty) => {
-  if (newDifficulty && !poemStore.currentDifficulty && newDifficulty !== difficulty.value) {
-    difficulty.value = newDifficulty
-    console.log('用户设置难度已更新为:', newDifficulty)
-  }
-}, { immediate: true })
-
-// 监听用户语言变化
-watch(() => userStore.language, (newLanguage) => {
-  if (newLanguage && newLanguage !== currentLanguage.value) {
-    currentLanguage.value = newLanguage
-    console.log('用户语言已更新为:', newLanguage)
-  }
-}, { immediate: true })
-
-// 监听用户设置中的语言变化（作为后备）
-watch(() => userStore.settings.language, (newLanguage) => {
-  if (newLanguage && !userStore.language && newLanguage !== currentLanguage.value) {
-    currentLanguage.value = newLanguage
-    console.log('设置语言已更新为:', newLanguage)
-  }
-}, { immediate: true })
+function confirmLogout() {
+  userStore.logout()
+  showLogoutDialog.value = false
+  // 可选：退出后跳转到登录页
+  router.push('/login')
+}
 </script>
 
 <style scoped>
