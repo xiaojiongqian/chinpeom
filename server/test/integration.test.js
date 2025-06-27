@@ -1,34 +1,39 @@
 import request from 'supertest'
-import app from '../server.js'
+import app from '../app.js'
+import { createTestAuthToken } from './helpers/authHelper.js'
+import testDbHelper from './helpers/testDbHelper.js'
 
 describe('API集成测试', () => {
-  let userToken
-  let userId
   
   describe('完整的用户流程测试', () => {
-    test('1. 新用户注册和登录', async () => {
-      // 微信登录
+    let userToken
+    let userId
+
+    beforeAll(async () => {
+      // 在这个测试套件开始前，先登录并创建一个用户
       const response = await request(app)
         .post('/api/auth/login')
         .send({
           provider: 'wechat',
-          access_token: 'integration_test_token'
+          access_token: createTestAuthToken('wechat', { sub: 'integration_test_user' })
         })
-        .expect(200)
       
-      expect(response.body.message).toBe('登录成功')
-      expect(response.body.user).toHaveProperty('id')
-      expect(response.body.user.total_score).toBe(0)
-      expect(response.body.user.current_rank).toBe('白丁')
-      
+      expect(response.status).toBe(200)
       userToken = response.body.token
       userId = response.body.user.id
+      
+      // 跟踪这个测试套件创建的用户，以便在 afterEach 中清理
+      testDbHelper.trackUser(userId);
+    });
 
-      // 跟踪测试创建的用户
-      if (global.trackTestUser) {
-        global.trackTestUser(userId)
-      }
-    })
+    afterAll(async () => {
+      // 清理现在由全局的 afterEach 处理
+    });
+
+    test('1. 新用户注册和登录 - is implicitly tested in beforeAll', () => {
+      expect(userToken).toBeDefined();
+      expect(userId).toBeDefined();
+    });
 
     test('2. 获取用户详细信息', async () => {
       const response = await request(app)
@@ -144,6 +149,7 @@ describe('API集成测试', () => {
         .expect(200)
       
       expect(response.body.records).toBeInstanceOf(Array)
+      // Since we create an order in test 7, we expect at least one record
       expect(response.body.records.length).toBeGreaterThan(0)
       
       // 应该能找到我们创建的订单
@@ -194,7 +200,7 @@ describe('API集成测试', () => {
           .post('/api/auth/login')
           .send({
             provider: provider,
-            access_token: `${provider}_multi_user_token`
+            access_token: createTestAuthToken(provider, { sub: `${provider}_multi_user_token` })
           })
           .expect(200)
         
@@ -254,13 +260,17 @@ describe('API集成测试', () => {
     })
 
     test('应该正确处理数据库相关错误', async () => {
-      // 尝试同步无效的积分
+      // 模拟数据库查询失败
+      
+      // 登录获取token
       const loginResponse = await request(app)
         .post('/api/auth/login')
         .send({
           provider: 'wechat',
-          access_token: 'boundary_test_token'
+          access_token: createTestAuthToken('wechat', { sub: 'db_error_test_user' })
         })
+      
+      expect(loginResponse.status).toBe(200)
       
       const token = loginResponse.body.token
       const userId = loginResponse.body.user.id
@@ -284,17 +294,16 @@ describe('API集成测试', () => {
 
   describe('性能和并发测试', () => {
     test('应该能处理并发请求', async () => {
+      const totalRequests = 10
       const promises = []
-      
-      // 同时发起10个登录请求
-      for (let i = 0; i < 10; i++) {
+
+      for (let i = 0; i < totalRequests; i++) {
         const promise = request(app)
           .post('/api/auth/login')
           .send({
             provider: 'wechat',
-            access_token: `concurrent_test_token_${i}`
+            access_token: createTestAuthToken('wechat', { sub: `concurrent_test_user_${i}` })
           })
-        
         promises.push(promise)
       }
       

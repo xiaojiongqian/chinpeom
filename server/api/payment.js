@@ -1,13 +1,9 @@
 import express from 'express'
-import mysql from 'mysql2/promise'
-import config from '../config/database.js'
+import pool from '../config/db.js'
 import { auth } from '../middleware/auth.js'
 import { v4 as uuidv4 } from 'uuid'
 
 const router = express.Router()
-
-// 创建数据库连接池
-const pool = mysql.createPool(config.database)
 
 /**
  * 简化的Mock支付服务
@@ -85,7 +81,8 @@ const mockPaymentService = {
         success: false,
         order_no,
         error: '支付失败',
-        status: 'failed'
+        status: 'failed',
+        third_party_order_id: null
       }
     }
   }
@@ -406,7 +403,7 @@ router.post('/cancel', auth, async (req, res) => {
       // 更新订单状态为已取消
       await connection.execute(
         'UPDATE payment_records SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        ['cancelled', orders[0].id]
+        ['failed', orders[0].id]
       )
 
       res.json({

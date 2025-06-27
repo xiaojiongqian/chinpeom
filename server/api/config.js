@@ -1,11 +1,7 @@
 import express from 'express'
-import mysql from 'mysql2/promise'
-import config from '../config/database.js'
+import pool from '../config/db.js'
 
 const router = express.Router()
-
-// 创建数据库连接池
-const pool = mysql.createPool(config.database)
 
 /**
  * 获取所有学级称号配置

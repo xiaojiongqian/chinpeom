@@ -1,5 +1,4 @@
-import mysql from 'mysql2/promise'
-import config from '../../config/database.js'
+import pool from '../../config/db.js'
 
 /**
  * 测试数据库帮助工具
@@ -7,27 +6,9 @@ import config from '../../config/database.js'
  */
 class TestDatabaseHelper {
   constructor() {
-    this.connection = null
     this.createdUserIds = new Set()
     this.createdOrderNos = new Set()
     this.createdThirdPartyAccountIds = new Set()
-    this.isSetup = false
-  }
-
-  /**
-   * 初始化测试数据库连接
-   */
-  async setup() {
-    if (this.isSetup) return
-
-    try {
-      this.connection = await mysql.createConnection(config.database)
-      console.log(`[测试数据库] 连接到测试数据库: ${config.database.database}`)
-      this.isSetup = true
-    } catch (error) {
-      console.error('[测试数据库] 连接失败:', error.message)
-      throw error
-    }
   }
 
   /**
@@ -58,12 +39,8 @@ class TestDatabaseHelper {
    * 获取测试过程中创建的用户ID列表
    */
   async getTestUserIds() {
-    if (!this.connection) {
-      throw new Error('数据库连接未初始化')
-    }
-
     // 获取测试用户（通过显示名称识别）
-    const [users] = await this.connection.execute(`
+    const [users] = await pool.execute(`
       SELECT id FROM users 
       WHERE display_name LIKE '%测试%' 
         OR display_name LIKE '%test%'
@@ -80,19 +57,16 @@ class TestDatabaseHelper {
    * 清理单个测试创建的数据
    */
   async cleanupTestData() {
-    if (!this.connection) {
-      console.log('[测试数据库] 未连接，跳过清理')
-      return
-    }
-
+    let connection;
     try {
-      await this.connection.beginTransaction()
+      connection = await pool.getConnection();
+      await connection.beginTransaction()
 
       // 1. 清理支付记录
       if (this.createdOrderNos.size > 0) {
         const orderNos = Array.from(this.createdOrderNos)
         const placeholders = orderNos.map(() => '?').join(',')
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM payment_records WHERE order_no IN (${placeholders})`,
           orderNos
         )
@@ -103,7 +77,7 @@ class TestDatabaseHelper {
       if (this.createdUserIds.size > 0) {
         const userIds = Array.from(this.createdUserIds)
         const placeholders = userIds.map(() => '?').join(',')
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM third_party_accounts WHERE user_id IN (${placeholders})`,
           userIds
         )
@@ -114,14 +88,14 @@ class TestDatabaseHelper {
       if (this.createdUserIds.size > 0) {
         const userIds = Array.from(this.createdUserIds)
         const placeholders = userIds.map(() => '?').join(',')
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM users WHERE id IN (${placeholders})`,
           userIds
         )
         console.log(`[测试数据库] 清理了 ${userIds.length} 个用户`)
       }
 
-      await this.connection.commit()
+      await connection.commit()
 
       // 重置跟踪记录
       this.createdUserIds.clear()
@@ -130,9 +104,11 @@ class TestDatabaseHelper {
 
       console.log('[测试数据库] 数据清理完成')
     } catch (error) {
-      await this.connection.rollback()
+      if (connection) await connection.rollback()
       console.error('[测试数据库] 清理失败:', error.message)
       throw error
+    } finally {
+      if (connection) connection.release()
     }
   }
 
@@ -140,13 +116,10 @@ class TestDatabaseHelper {
    * 全量清理测试数据库
    */
   async cleanupAllTestData() {
-    if (!this.connection) {
-      console.log('[测试数据库] 未连接，跳过全量清理')
-      return
-    }
-
+    let connection;
     try {
-      await this.connection.beginTransaction()
+      connection = await pool.getConnection();
+      await connection.beginTransaction()
 
       // 获取所有测试用户ID
       const testUserIds = await this.getTestUserIds()
@@ -155,19 +128,19 @@ class TestDatabaseHelper {
         const placeholders = testUserIds.map(() => '?').join(',')
 
         // 1. 清理支付记录
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM payment_records WHERE user_id IN (${placeholders})`,
           testUserIds
         )
 
         // 2. 清理第三方账号绑定
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM third_party_accounts WHERE user_id IN (${placeholders})`,
           testUserIds
         )
 
         // 3. 清理用户数据
-        await this.connection.execute(
+        await connection.execute(
           `DELETE FROM users WHERE id IN (${placeholders})`,
           testUserIds
         )
@@ -177,11 +150,13 @@ class TestDatabaseHelper {
         console.log('[测试数据库] 没有找到测试数据，跳过清理')
       }
 
-      await this.connection.commit()
+      await connection.commit()
     } catch (error) {
-      await this.connection.rollback()
+      if (connection) await connection.rollback()
       console.error('[测试数据库] 全量清理失败:', error.message)
       throw error
+    } finally {
+      if (connection) connection.release()
     }
   }
 
@@ -189,10 +164,8 @@ class TestDatabaseHelper {
    * 检查数据库连接状态
    */
   async checkConnection() {
-    if (!this.connection) return false
-
     try {
-      await this.connection.ping()
+      await pool.ping()
       return true
     } catch (error) {
       console.error('[测试数据库] 连接检查失败:', error.message)
@@ -202,18 +175,13 @@ class TestDatabaseHelper {
 
   /**
    * 关闭数据库连接
+   *
+   * @deprecated The connection pool is now managed globally and closed in afterAll.
    */
   async teardown() {
-    if (this.connection) {
-      try {
-        await this.connection.end()
-        console.log('[测试数据库] 连接已关闭')
-      } catch (error) {
-        console.error('[测试数据库] 关闭连接失败:', error.message)
-      }
-      this.connection = null
-      this.isSetup = false
-    }
+    // The global pool is managed and closed in the test setup file (e.g., afterAll hook)
+    // This method is kept for backward compatibility but does nothing.
+    console.log('[测试数据库] 全局连接池将在所有测试完成后关闭')
   }
 
   /**
@@ -224,13 +192,11 @@ class TestDatabaseHelper {
       trackedUsers: this.createdUserIds.size,
       trackedOrders: this.createdOrderNos.size,
       trackedThirdPartyAccounts: this.createdThirdPartyAccountIds.size,
-      isConnected: !!this.connection
+      isConnected: !!pool
     }
   }
 }
 
-// 导出单例实例
-export const testDbHelper = new TestDatabaseHelper()
-
-// 导出类以便测试
-export { TestDatabaseHelper } 
+// 导出一个单例
+const testDbHelper = new TestDatabaseHelper()
+export default testDbHelper 

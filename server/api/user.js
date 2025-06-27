@@ -1,12 +1,8 @@
 import express from 'express'
-import mysql from 'mysql2/promise'
-import config from '../config/database.js'
+import pool from '../config/db.js'
 import { auth } from '../middleware/auth.js'
 
 const router = express.Router()
-
-// 创建数据库连接池
-const pool = mysql.createPool(config.database)
 
 /**
  * 获取用户完整信息
@@ -15,6 +11,7 @@ const pool = mysql.createPool(config.database)
 router.get('/profile', auth, async (req, res) => {
   try {
     const userId = req.user.id
+
     const connection = await pool.getConnection()
 
     try {

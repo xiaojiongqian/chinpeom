@@ -1,30 +1,11 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import mysql from 'mysql2/promise'
-import config from '../config/database.js'
+import pool from '../config/db.js'
 import appConfig from '../config/env/default.js'
 import { auth } from '../middleware/auth.js'
 import { firebaseAuthService } from '../services/firebaseAdmin.js'
 
 const router = express.Router()
-
-// 创建数据库连接池
-console.log('🔍 [Auth] 数据库配置:', {
-  host: config.database.host,
-  port: config.database.port,
-  user: config.database.user,
-  database: config.database.database,
-  hasPassword: !!config.database.password
-})
-
-let pool
-try {
-  pool = mysql.createPool(config.database)
-  console.log('✅ [Auth] 数据库连接池创建成功')
-} catch (error) {
-  console.error('❌ [Auth] 数据库连接池创建失败:', error)
-  throw error
-}
 
 /**
  * Firebase Google登录验证
@@ -129,25 +110,30 @@ router.post('/login', async (req, res) => {
 
     let authUser
     
-    // 根据环境和provider选择认证方式
-    if (provider === 'google') {
-      // Google登录始终使用Firebase认证
-      if (process.env.NODE_ENV === 'development' && access_token.includes('test_')) {
-        // 开发环境的测试模式
-        authUser = await mockAuthentication(provider, access_token)
-      } else {
-        // 使用Firebase验证Google登录
+    try {
+      // 根据环境和provider选择认证方式
+      if (provider === 'google') {
+        // Google登录始终使用Firebase认证
+        if ((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && access_token.includes('test_')) {
+          // 开发环境和测试环境的测试模式
+          authUser = await mockAuthentication(provider, access_token)
+        } else {
+          // 使用Firebase验证Google登录
+          authUser = await verifyFirebaseToken(access_token)
+        }
+      } else if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        // 其他provider在开发或测试环境，我们总是尝试通过Firebase的简化验证
         authUser = await verifyFirebaseToken(access_token)
+      } else {
+        // 生产环境暂不支持其他provider
+        return res.status(400).json({
+          message: `生产环境暂不支持${provider}登录`,
+          supported_providers: ['google']
+        })
       }
-    } else if (process.env.NODE_ENV === 'development') {
-      // 其他provider在开发环境使用Mock
-      authUser = await mockAuthentication(provider, access_token)
-    } else {
-      // 生产环境暂不支持其他provider
-      return res.status(400).json({
-        message: `生产环境暂不支持${provider}登录`,
-        supported_providers: ['google']
-      })
+    } catch (error) {
+      console.error(`[Auth] 认证步骤失败 for provider ${provider}:`, error.message);
+      return res.status(401).json({ message: '第三方认证失败', error: error.message })
     }
 
     // 使用Firebase UID或者auth user的uid作为唯一标识
@@ -164,6 +150,10 @@ router.post('/login', async (req, res) => {
       avatarUrl,
       finalFirebaseUid
     })
+
+    if (displayName === 'INTEGRATION_TEST_USER') {
+      console.log('--- AUTH API: Processing integration test user ---');
+    }
 
     const connection = await pool.getConnection()
     
@@ -230,6 +220,7 @@ router.post('/login', async (req, res) => {
         { 
           id: user.id, 
           provider, 
+          email: providerEmail,
           provider_user_id: providerUserId,
           firebase_uid: finalFirebaseUid,
           iat: Math.floor(Date.now() / 1000)
