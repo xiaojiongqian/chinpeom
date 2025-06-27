@@ -22,9 +22,11 @@ export const googleProvider = new GoogleAuthProvider()
 googleProvider.addScope('profile')
 googleProvider.addScope('email')
 
-// 设置自定义参数
+// 设置自定义参数 - 防止Google账号缓存问题
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  // 确保每次都显示账号选择界面
+  include_granted_scopes: 'true'
 })
 
 export default app 

@@ -117,6 +117,21 @@
       <div v-if="testResult" class="mt-3 p-2 rounded-lg text-xs" :class="testResultClass">
         {{ testResult }}
       </div>
+
+      <div class="mb-2">
+        <button 
+          @click="clearAllCache"
+          class="px-2 py-1 bg-red-500 text-white text-xs rounded mr-2"
+        >
+          清除缓存
+        </button>
+        <button 
+          @click="showUserStoreInfo"
+          class="px-2 py-1 bg-blue-500 text-white text-xs rounded mr-2"
+        >
+          用户信息
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -206,5 +221,28 @@ function clearLogs() {
 // 刷新页面
 function refreshPage() {
   window.location.reload()
+}
+
+// 清除所有缓存
+function clearAllCache() {
+  localStorage.clear()
+  sessionStorage.clear()
+  testResult.value = '✅ 所有缓存已清除，页面将刷新'
+  setTimeout(() => window.location.reload(), 1000)
+}
+
+// 显示用户存储信息
+function showUserStoreInfo() {
+  const userData = localStorage.getItem('user_data')
+  const settings = localStorage.getItem('app_settings')
+  const token = localStorage.getItem('token')
+  
+  console.group('🔍 用户存储信息')
+  console.log('用户数据:', userData ? JSON.parse(userData) : 'null')
+  console.log('应用设置:', settings ? JSON.parse(settings) : 'null')
+  console.log('Token存在:', !!token)
+  console.groupEnd()
+  
+  testResult.value = '✅ 用户信息已打印到控制台'
 }
 </script> 

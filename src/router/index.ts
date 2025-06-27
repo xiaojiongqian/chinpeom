@@ -19,17 +19,17 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'login',
-      component: () => import('../views/LoginView.vue')
+      name: 'home',
+      component: () => import('../views/QuizView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/quizview',
-      name: 'home',
-      component: () => import('../views/QuizView.vue')
+      redirect: '/'  // 重定向到根路径
     },
     {
       path: '/login',
-      name: 'loginPage',
+      name: 'login',
       component: () => import('../views/LoginView.vue')
     },
     {
@@ -59,13 +59,30 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
+  
+  console.log('[Router] 路由守卫检查:', {
+    toPath: to.path,
+    toName: to.name,
+    requiresAuth: to.meta.requiresAuth,
+    isLoggedIn: userStore.isLoggedIn
+  })
 
-  // 如果页面需要登录且用户未登录
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    next({ name: 'login' })
-  } else {
-    next()
+  // 如果去登录页面但已经登录了，重定向到主页
+  if (to.name === 'login' && userStore.isLoggedIn) {
+    console.log('[Router] 已登录用户访问登录页，重定向到主页')
+    next({ name: 'home' })
+    return
   }
+
+  // 如果页面需要登录且用户未登录，重定向到登录页
+  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    console.log('[Router] 需要登录但用户未登录，重定向到登录页')
+    next({ name: 'login' })
+    return
+  }
+
+  // 其他情况直接通过
+  next()
 })
 
 export default router

@@ -61,13 +61,11 @@ export async function loadPoemData(
   try {
     // 过滤出未加载的语言
     const languagesToLoad = languages.filter(lang => !loadedLanguages.has(lang))
-    console.log(`[PoemData] Languages actually needing load: ${languagesToLoad.join(', ')}`)
 
     if (languagesToLoad.length > 0) {
       console.log(`[PoemData] Preparing to load ${languagesToLoad.length} language(s).`)
       const loadPromises = languagesToLoad.map(async lang => {
         const filePath = `/resource/data/poem_${lang}.json`
-        // console.log(`[PoemData] Detail: Preparing to load ${lang} from ${filePath}`); // 更详细的日志，暂时注释
 
         try {
           if (lang === 'chinese') {

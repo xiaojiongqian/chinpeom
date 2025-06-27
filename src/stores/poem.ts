@@ -59,6 +59,7 @@ export const usePoemStore = defineStore('poem', () => {
     try {
       console.log('[PoemStore] Calling loadPoemDataUtil...')
       const hintLang = userStore.hintLanguage
+      
       const languagesToLoad: LanguageType[] = ['chinese']
       if (hintLang !== 'none' && hintLang !== 'chinese') {
         languagesToLoad.push(hintLang as LanguageType)

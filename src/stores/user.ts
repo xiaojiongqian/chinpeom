@@ -183,21 +183,76 @@ export const useUserStore = defineStore('user', () => {
 
   // 同步积分到后端
   async function syncScoreToBackend(totalScore: number) {
-    if (!token.value) {
+    // 检查当前应用配置
+    const { appConfig } = await import('@/config/app')
+    
+    // 如果在Mock模式下，跳过后端同步
+    if (appConfig.auth.mockMode) {
+      console.log('Mock模式下跳过积分同步')
+      return { message: 'Mock模式积分同步已跳过' }
+    }
+    
+    // 尝试从多个位置获取token
+    let authToken = token.value || localStorage.getItem('auth_token') || localStorage.getItem('token')
+    
+    if (!authToken) {
       throw new Error('用户未登录')
     }
 
     try {
-      const response = await fetch('/api/user/score', {
+      // 优先尝试获取Firebase ID Token，失败则使用本地JWT token
+      try {
+        const { firebaseAuth } = await import('@/services/firebaseAuth')
+        const firebaseToken = await firebaseAuth.getCurrentUserToken()
+        if (firebaseToken) {
+          // 如果有Firebase ID Token，发送到后端获取JWT token
+          console.log('使用Firebase ID Token获取最新JWT token')
+          const response = await fetch(`${appConfig.api.baseUrl}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              provider: 'google',
+              access_token: firebaseToken,
+              firebase_uid: firebaseAuth.getCurrentUser()?.uid
+            })
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            authToken = data.token
+            // 更新本地存储的token
+            localStorage.setItem('auth_token', data.token)
+            localStorage.setItem('token', data.token)
+            console.log('获取到最新JWT token用于积分同步')
+          } else {
+            console.log('获取JWT token失败，使用本地token')
+          }
+        }
+      } catch (error) {
+        console.log('获取Firebase Token失败，使用本地token:', error)
+      }
+
+      const apiUrl = `${appConfig.api.baseUrl}/user/score`
+      console.log('积分同步请求URL:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token.value}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ total_score: totalScore })
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('积分同步响应错误:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        })
         throw new Error(`积分同步失败: ${response.status}`)
       }
 
@@ -290,12 +345,32 @@ export const useUserStore = defineStore('user', () => {
     const savedToken = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user_data')
     
+    // 后端locale到前端语言的映射（与App.vue保持一致）
+    const backendToFrontendLanguage: Record<string, string> = {
+      'zh-CN': 'chinese',
+      'en': 'english',
+      'es': 'spanish',
+      'ja': 'japanese',
+      'fr': 'french',
+      'de': 'german'
+    }
+    
     // 先尝试恢复用户会话，如果用户已登录，优先使用用户保存的语言设置
     if (savedToken && savedUser) {
       try {
         token.value = savedToken
-        user.value = JSON.parse(savedUser)
-        console.log('用户会话已恢复:', user.value?.username)
+        const userData = JSON.parse(savedUser)
+        
+        // 转换语言格式（如果需要）
+        if (userData.language && backendToFrontendLanguage[userData.language]) {
+          console.log(`[UserStore] 转换保存的语言格式: ${userData.language} -> ${backendToFrontendLanguage[userData.language]}`)
+          userData.language = backendToFrontendLanguage[userData.language]
+          // 更新localStorage中的数据
+          localStorage.setItem('user_data', JSON.stringify(userData))
+        }
+        
+        user.value = userData
+        console.log('用户会话已恢复:', user.value?.username, '语言:', user.value?.language)
         
         // 如果用户有保存的语言设置，优先使用用户的语言设置
         if (user.value && user.value.language) {

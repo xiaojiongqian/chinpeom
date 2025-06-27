@@ -274,11 +274,17 @@ class AuthApiService {
     try {
       logger.info('[AuthAPI] 检查Firebase redirect认证结果')
       
-      // 检查Firebase redirect结果
-      const firebaseResult = await firebaseAuth.checkRedirectResult()
+      // 直接使用Firebase原生API检查redirect结果
+      const { getRedirectResult } = await import('firebase/auth')
+      const { auth } = await import('@/config/firebase')
+      const redirectResult = await getRedirectResult(auth)
       
-      if (firebaseResult) {
+      if (redirectResult) {
         logger.info('[AuthAPI] 发现redirect认证结果，发送到后端验证')
+        
+        // 获取Firebase ID Token
+        const firebaseIdToken = await redirectResult.user.getIdToken()
+        logger.info('[AuthAPI] 获取到Firebase ID Token，发送到后端验证')
         
         // 发送到后端验证
         const response = await fetch(`${appConfig.api.baseUrl}/auth/login`, {
@@ -288,8 +294,8 @@ class AuthApiService {
           },
           body: JSON.stringify({
             provider: 'google',
-            access_token: firebaseResult.accessToken,
-            firebase_uid: firebaseResult.user.uid
+            access_token: firebaseIdToken,
+            firebase_uid: redirectResult.user.uid
           })
         })
 

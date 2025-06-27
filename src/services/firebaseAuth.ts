@@ -33,7 +33,7 @@ export class FirebaseAuthService {
    * Google登录 - 智能选择认证模式
    */
   async signInWithGoogle(): Promise<FirebaseAuthResult> {
-    // 先尝试快速的popup模式，如果失败则使用redirect模式
+    // 优先尝试popup模式，适用于所有环境
     try {
       logger.info('[Firebase] 开始Google登录 (popup模式)')
       
@@ -57,14 +57,20 @@ export class FirebaseAuthService {
     } catch (error: any) {
       logger.error('[Firebase] Popup模式登录失败:', error)
       
-      // 如果是CORS相关错误或其他popup问题，立即切换到redirect模式
+      // 如果用户取消了popup，不要回退到redirect模式
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('用户取消了登录')
+      }
+      
+      // 如果是CORS相关错误或popup被阻止，回退到redirect模式
       if (error.code === 'auth/popup-blocked' || 
-          error.code === 'auth/popup-closed-by-user' ||
           error.message.includes('Cross-Origin-Opener-Policy') ||
           error.message.includes('window.close') ||
-          error.message.includes('cookies')) {
-        logger.info('[Firebase] 检测到popup/CORS问题，立即切换到redirect模式')
-        return await this.signInWithGoogleRedirect()
+          error.message.includes('cookies') ||
+          error.message.includes('blocked')) {
+        logger.info('[Firebase] 检测到popup/CORS问题，回退到redirect模式')
+        await signInWithRedirect(auth, googleProvider)
+        throw new Error('Popup模式不可用，已切换到页面跳转模式')
       }
       
       // 处理其他特定错误类型
@@ -121,12 +127,14 @@ export class FirebaseAuthService {
    */
   async checkRedirectResult(): Promise<FirebaseAuthResult | null> {
     try {
+      logger.info('[Firebase] 检查redirect认证结果')
       const result = await getRedirectResult(auth)
+      
       if (result) {
         const user = result.user
         const accessToken = await user.getIdToken()
         
-        logger.info('[Firebase] 检测到redirect认证结果', user.displayName)
+        logger.info('[Firebase] 检测到redirect认证结果，用户:', user.displayName)
         
         return {
           user: {
@@ -137,8 +145,10 @@ export class FirebaseAuthService {
           },
           accessToken
         }
+      } else {
+        logger.info('[Firebase] 没有检测到redirect认证结果')
+        return null
       }
-      return null
     } catch (error: any) {
       logger.error('[Firebase] 检查redirect结果失败:', error)
       return null

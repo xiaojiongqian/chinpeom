@@ -131,46 +131,54 @@
 
       console.log(`[LoginView] 开始${provider}登录流程`)
 
-      // 添加超时处理，避免无限等待
-      const loginPromise = authApi.login(provider)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error(t('login.loginTimeout'))), 30000) // 30秒超时
-      )
-      
-      // 调用认证API (带超时)
-      const result = await Promise.race([loginPromise, timeoutPromise]) as any
+      // 调用认证API
+      const result = await authApi.login(provider)
       
       console.log('[LoginView] 登录成功，处理用户数据')
       
-      // 处理语言偏好设置
-      // 优先使用当前用户设置的语言，如果没有则使用后端返回的语言偏好
-      const currentUserLanguage = userStore.language
-      const backendLanguage = result.user.language_preference
+      // 转换后端语言格式到前端格式（与App.vue保持一致）
+      const backendToFrontendLanguage: Record<string, string> = {
+        'zh-CN': 'chinese',
+        'en': 'english',
+        'es': 'spanish',
+        'ja': 'japanese',
+        'fr': 'french',
+        'de': 'german'
+      }
       
-      // 如果用户已经有语言设置，保持当前设置；否则使用后端返回的语言
-      const finalLanguage = currentUserLanguage !== 'english' ? currentUserLanguage : (backendLanguage || 'english')
+      const backendLanguage = result.user.language_preference || 'en'
+      const frontendLanguage = backendToFrontendLanguage[backendLanguage] || 'english'
+      
+      console.log('[LoginView] 语言转换:', backendLanguage, '->', frontendLanguage)
       
       // 更新用户状态
       const userData = {
         id: result.user.id,
         username: result.user.display_name,
         score: result.user.total_score,
-        language: finalLanguage as any
+        language: frontendLanguage as any,
+        isPaid: result.user.is_premium
       }
       
       userStore.login(userData, result.token)
 
-      console.log('[LoginView] 跳转到游戏页面')
-      // 跳转到游戏页面
-      router.push('/quizview')
+      console.log('[LoginView] 登录成功，跳转到主页面')
+      // 跳转到主页面
+      await router.push({ name: 'home' })
     } catch (error: any) {
       console.error(`[LoginView] ${provider}登录失败:`, error)
       
       // 根据错误类型提供更友好的错误信息
       let friendlyMessage = error.message || t('login.loginFailed')
       
-      if (error.message.includes('popup-closed-by-user')) {
+      if (error.message.includes('用户取消了登录')) {
         friendlyMessage = t('login.loginCancelled')
+      } else if (error.message.includes('Popup模式不可用')) {
+        // 如果popup失败并回退到redirect，显示特殊消息
+        friendlyMessage = '页面将跳转到Google进行认证...'
+        errorMessage.value = friendlyMessage
+        // 不要立即清除loading状态，因为页面即将跳转
+        return
       } else if (error.message.includes('popup-blocked')) {
         friendlyMessage = t('login.popupBlocked')
       } else if (error.message.includes('network') || error.message.includes('超时')) {
@@ -200,26 +208,34 @@
       if (result) {
         console.log('[LoginView] 检测到redirect认证结果，处理登录')
         
-        // 处理语言偏好设置
-        // 优先使用当前用户设置的语言，如果没有则使用后端返回的语言偏好
-        const currentUserLanguage = userStore.language
-        const backendLanguage = result.user.language_preference
+        // 转换后端语言格式到前端格式（与handleLogin保持一致）
+        const backendToFrontendLanguage: Record<string, string> = {
+          'zh-CN': 'chinese',
+          'en': 'english',
+          'es': 'spanish',
+          'ja': 'japanese',
+          'fr': 'french',
+          'de': 'german'
+        }
         
-        // 如果用户已经有语言设置，保持当前设置；否则使用后端返回的语言
-        const finalLanguage = currentUserLanguage !== 'english' ? currentUserLanguage : (backendLanguage || 'english')
+        const backendLanguage = result.user.language_preference || 'en'
+        const frontendLanguage = backendToFrontendLanguage[backendLanguage] || 'english'
+        
+        console.log('[LoginView] Redirect语言转换:', backendLanguage, '->', frontendLanguage)
         
         // 更新用户状态
         const userData = {
           id: result.user.id,
           username: result.user.display_name,
           score: result.user.total_score,
-          language: finalLanguage as any
+          language: frontendLanguage as any,
+          isPaid: result.user.is_premium
         }
         
         userStore.login(userData, result.token)
         
-        console.log('[LoginView] Redirect认证成功，跳转到游戏页面')
-        router.push('/quizview')
+        console.log('[LoginView] Redirect认证成功，跳转到主页面')
+        await router.push({ name: 'home' })
       }
     } catch (error: any) {
       console.error('[LoginView] 处理redirect认证失败:', error)
