@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { resolveResourcePath } from '@/utils/resourceLoader'
 
 export const useMusicStore = defineStore('music', () => {
   // 背景音乐列表
@@ -25,7 +26,7 @@ export const useMusicStore = defineStore('music', () => {
 
   // 计算属性
   const currentMusicPath = computed(() => {
-    return `/backgroundmusic/${backgroundMusicList[currentMusicIndex.value]}`
+    return resolveResourcePath(`backgroundmusic/${backgroundMusicList[currentMusicIndex.value]}`)
   })
 
   const currentMusicName = computed(() => {
