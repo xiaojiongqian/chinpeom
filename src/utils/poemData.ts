@@ -65,7 +65,7 @@ export async function loadPoemData(
     if (languagesToLoad.length > 0) {
       console.log(`[PoemData] Preparing to load ${languagesToLoad.length} language(s).`)
       const loadPromises = languagesToLoad.map(async lang => {
-        const filePath = `/resource/data/poem_${lang}.json`
+        const filePath = `resource/data/poem_${lang}.json`
 
         try {
           if (lang === 'chinese') {

@@ -6,6 +6,14 @@
 import { Poem, TranslatedPoem, SupportedLanguage, PoemLanguage } from '../types'
 import logger from './logger'
 
+
+const basePublicPath = import.meta.env.BASE_URL ?? '/'
+const normalizedBasePath = basePublicPath.endsWith('/') ? basePublicPath : `${basePublicPath}/`
+
+export function resolveResourcePath(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path
+  return `${normalizedBasePath}${normalizedPath}`
+}
 /**
  * 支持的语言类型
  */
@@ -28,14 +36,15 @@ export interface ChinesePoem {
  */
 export async function loadJsonFile<T>(path: string): Promise<T> {
   try {
-    // 处理测试环境中的URL解析问题
-    let fullPath = path
+    const isAbsoluteUrl = /^https?:\/\//.test(path)
+    let fullPath = isAbsoluteUrl ? path : resolveResourcePath(path)
+
     // 检查是否在测试环境中
     const isTestEnv = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
 
-    if (isTestEnv && !path.startsWith('http')) {
+    if (isTestEnv && !/^https?:\/\//.test(fullPath)) {
       // 在测试环境中，为相对路径添加基础URL
-      fullPath = `http://localhost${path.startsWith('/') ? '' : '/'}${path}`
+      fullPath = `http://localhost${fullPath.startsWith('/') ? '' : '/'}${fullPath}`
     }
 
     logger.debug(`ResourceLoader: 正在请求 ${fullPath}`)
@@ -107,7 +116,7 @@ export async function loadPoemData(
       await Promise.all(
         language.map(async lang => {
           result[lang] = await loadJsonFile<Poem[] | TranslatedPoem[]>(
-            `/resource/data/poem_${lang}.json`
+            `resource/data/poem_${lang}.json`
           )
         })
       )
@@ -116,7 +125,7 @@ export async function loadPoemData(
     }
 
     // 加载单一语言的数据
-    return await loadJsonFile<Poem[] | TranslatedPoem[]>(`/resource/data/poem_${language}.json`)
+    return await loadJsonFile<Poem[] | TranslatedPoem[]>(`resource/data/poem_${language}.json`)
   } catch (error) {
     console.error(`加载诗歌数据错误: ${error}`)
     throw error
@@ -175,7 +184,7 @@ export async function getPoemTranslation(
  * @returns 配图URL
  */
 export function getPoemImageUrl(poemId: string): string {
-  return `/resource/poem_images/${poemId}.webp`
+  return resolveResourcePath(`resource/poem_images/${poemId}.webp`)
 }
 
 /**
@@ -193,7 +202,7 @@ export async function loadPoemDataUtil(
 
     const loadPromises = languages.map(async lang => {
       try {
-        const data = await loadJsonFile<ChinesePoem[]>(`/data/poems_${lang}.json`)
+        const data = await loadJsonFile<ChinesePoem[]>(`data/poems_${lang}.json`)
         if (!Array.isArray(data) || data.length === 0) {
           logger.warn(`${lang}语言诗歌数据为空或格式无效`)
           return { lang, data: [] }

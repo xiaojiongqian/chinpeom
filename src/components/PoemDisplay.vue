@@ -70,6 +70,7 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
+  import { resolveResourcePath } from '@/utils/resourceLoader'
   import {
     Poem,
     LanguageCode,
@@ -123,7 +124,7 @@
   // 诗歌图片URL
   const poemImageUrl = computed(() => {
     if (!poemData.value) return ''
-    return `/resource/poem_images/${poemData.value.id}.webp`
+    return resolveResourcePath(`resource/poem_images/${poemData.value.id}.webp`)
   })
 
   // 初始加载

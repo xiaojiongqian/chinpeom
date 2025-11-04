@@ -1,3 +1,5 @@
+import { resolveResourcePath } from './resourceLoader'
+
 /**
  * 诗歌数据类型定义
  */
@@ -24,7 +26,7 @@ export async function loadPoemData(language: LanguageCode): Promise<Poem[]> {
   console.log(`[PoemTranslation] 开始加载${language}语言诗歌数据`)
 
   // 直接使用相对路径，Vite会正确处理静态资源
-  const url = `/resource/data/poem_${language}.json`
+  const url = resolveResourcePath(`resource/data/poem_${language}.json`)
   console.log(`[PoemTranslation] 请求URL: ${url}`)
 
   // 检查是否在测试环境中

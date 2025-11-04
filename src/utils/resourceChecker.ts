@@ -1,4 +1,4 @@
-import { LanguageType } from './resourceLoader'
+import { LanguageType, resolveResourcePath } from './resourceLoader'
 
 /**
  * 检查资源文件是否存在
@@ -17,21 +17,23 @@ export async function checkResourceFiles(): Promise<{ success: boolean; errors: 
 
   // 检查诗歌数据文件
   for (const lang of languages) {
+    const resourceUrl = resolveResourcePath(`resource/data/poem_${lang}.json`)
     try {
-      const response = await fetch(`/resource/data/poem_${lang}.json`, { method: 'HEAD' })
+      const response = await fetch(resourceUrl, { method: 'HEAD' })
       if (!response.ok) {
-        errors.push(`诗歌数据文件未找到: /resource/data/poem_${lang}.json`)
+        errors.push(`诗歌数据文件未找到: ${resourceUrl}`)
       }
     } catch (error) {
-      errors.push(`检查资源文件失败: /resource/data/poem_${lang}.json`)
+      errors.push(`检查资源文件失败: ${resourceUrl}`)
     }
   }
 
   // 检查是否有诗歌图片文件夹
   try {
-    const response = await fetch(`/resource/poem_images/`, { method: 'HEAD' })
+    const imagesUrl = resolveResourcePath('resource/poem_images/')
+    const response = await fetch(imagesUrl, { method: 'HEAD' })
     if (!response.ok) {
-      errors.push('诗歌图片文件夹未找到')
+      errors.push(`诗歌图片文件夹未找到: ${imagesUrl}`)
     }
   } catch (error) {
     // 某些服务器可能不允许列出目录内容，这里可以忽略

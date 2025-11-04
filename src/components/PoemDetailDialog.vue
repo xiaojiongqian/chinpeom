@@ -100,6 +100,7 @@
   import { useUserStore } from '@/stores/user'
   import { postToLLM, type LlmMessage } from '@/services/llmApi'
   import type { SupportedLanguage } from '@/types'
+  import { resolveResourcePath } from '@/utils/resourceLoader'
 
   interface StoryDetails {
     meaning: string
@@ -158,7 +159,9 @@
     const finalLang: SupportedLanguage = supportedLangs.includes(lang) ? lang : 'english'
 
     try {
-      const response = await fetch(`/resource/data/poem_stories_${finalLang}.json`)
+      const response = await fetch(
+        resolveResourcePath(`resource/data/poem_stories_${finalLang}.json`)
+      )
       if (!response.ok) throw new Error('Failed to fetch story data')
       const stories = (await response.json()) as PoemStory[]
       poemStory.value = stories.find(story => story.id === id) || null
