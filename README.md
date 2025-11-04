@@ -78,6 +78,24 @@ npm run build
 npm run preview
 ```
 
+### GitHub Pages 部署
+
+项目已配置 GitHub Actions 自动部署到 GitHub Pages：
+
+1. **自动部署**：当代码推送到 `main` 分支时，会自动触发构建和部署
+2. **访问地址**：部署完成后可通过 `https://xiaojiongqian.github.io/chinpeom/` 访问
+3. **手动触发**：也可以在 GitHub Actions 页面手动触发部署
+
+部署配置：
+- 工作流文件：`.github/workflows/deploy.yml`
+- 构建输出目录：`dist/`
+- Base 路径：`/chinpeom/`
+
+**注意**：首次部署需要：
+1. 前往仓库 Settings → Pages
+2. 将 Source 设置为 "GitHub Actions"
+3. 确保 Actions 权限已启用
+
 ### 打包 APP（Capacitor）
 
 ```bash
