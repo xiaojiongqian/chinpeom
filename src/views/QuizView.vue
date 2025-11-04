@@ -47,14 +47,16 @@
           <span class="text-gray-700 font-medium">{{ $t(userStore.rank) }}</span>
           <span class="text-sm text-gray-500">({{ userStore.score }}{{ $t('home.score') }})</span>
         </div>
-        
+
         <!-- 难度指示器 -->
         <div class="flex items-center space-x-2">
-          <span class="text-xs px-2 py-1 rounded-full" 
-                :class="{ 
-                  'bg-green-100 text-green-700': currentDifficulty === 'easy',
-                  'bg-red-100 text-red-700': currentDifficulty === 'hard'
-                }">
+          <span
+            class="text-xs px-2 py-1 rounded-full"
+            :class="{
+              'bg-green-100 text-green-700': currentDifficulty === 'easy',
+              'bg-red-100 text-red-700': currentDifficulty === 'hard'
+            }"
+          >
             {{ currentDifficulty === 'easy' ? $t('settings.easyMode') : $t('settings.hardMode') }}
           </span>
         </div>
@@ -63,11 +65,14 @@
       <!-- 诗歌卡片 -->
       <div class="flex-1 flex flex-col justify-center px-6 py-6">
         <!-- 诗歌内容卡片 - 包含图片和诗歌正文 -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 cursor-pointer" @click="goToPoemDetail">
+        <div
+          class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 cursor-pointer"
+          @click="goToPoemDetail"
+        >
           <!-- 诗歌图片区域 - 占满panel上半部分，4:3长宽比 -->
           <div v-if="hasImage" class="w-full aspect-[4/3] overflow-hidden">
-            <img 
-              :src="imagePath" 
+            <img
+              :src="imagePath"
               :alt="$t('home.noImage')"
               class="w-full h-full object-cover"
               @error="() => {}"
@@ -78,7 +83,9 @@
           <div class="p-5">
             <!-- 标题与作者 -->
             <div class="mb-3">
-              <h2 class="text-2xl font-bold text-gray-800 text-center font-mono">{{ currentPoem?.title }}</h2>
+              <h2 class="text-2xl font-bold text-gray-800 text-center font-mono">
+                {{ currentPoem?.title }}
+              </h2>
               <p class="text-gray-600 text-center mt-1 font-mono">{{ currentPoem?.author }}</p>
             </div>
 
@@ -118,26 +125,26 @@
           <!-- 左侧音乐控制按钮组 -->
           <div class="flex items-center space-x-3 flex-shrink-0">
             <!-- 换音乐按钮（移除图标） -->
-            <button 
-              class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors h-12" 
+            <button
+              class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium transition-colors h-12"
               @click="handlePrevMusic"
             >
               <span>{{ $t('common.switchMusic') }}</span>
             </button>
-            
+
             <!-- 音效开关按钮 -->
-            <button 
-              class="bg-success-500 hover:bg-success-600 text-white p-3 rounded-xl transition-colors flex items-center justify-center h-12 w-12" 
+            <button
+              class="bg-success-500 hover:bg-success-600 text-white p-3 rounded-xl transition-colors flex items-center justify-center h-12 w-12"
               @click="toggleSound"
             >
-              <img 
-                :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon" 
-                :alt="$t('common.soundToggle')" 
-                class="w-5 h-5 filter-white" 
+              <img
+                :src="!musicStore.isMuted ? soundOnIcon : soundOffIcon"
+                :alt="$t('common.soundToggle')"
+                class="w-5 h-5 filter-white"
               />
             </button>
           </div>
-          
+
           <!-- 中间答题结果显示区域 - 始终存在以保持布局稳定 -->
           <div class="flex-1 text-center mx-4 h-12 flex items-center justify-center">
             <div v-if="answered && isCorrect" class="text-success-600 font-medium">
@@ -148,15 +155,20 @@
             </div>
             <!-- 未答题时显示空内容，但保持空间 -->
           </div>
-          
+
           <!-- 右侧下一首按钮 -->
-          <button 
-            class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors h-12 flex-shrink-0" 
+          <button
+            class="bg-success-500 hover:bg-success-600 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 transition-colors h-12 flex-shrink-0"
             @click="getNextPoem"
           >
             <span>{{ $t('common.next') }}</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -166,42 +178,52 @@
           class="fixed-mobile bottom-0 bg-white border-t shadow-md flex justify-around items-center h-16 z-20"
         >
           <!-- 成就页面 -->
-          <router-link 
-            to="/achievement" 
+          <router-link
+            to="/achievement"
             class="flex flex-col items-center transition-colors"
-            :class="route.name === 'achievement' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
+            :class="
+              route.name === 'achievement'
+                ? 'text-success-600'
+                : 'text-gray-800 hover:text-success-600'
+            "
           >
-            <img 
-              src="@/assets/icons/nav/icon_achievement.svg" 
-              :alt="$t('common.achievement')" 
+            <img
+              src="@/assets/icons/nav/icon_achievement.svg"
+              :alt="$t('common.achievement')"
               class="w-7 h-7 mb-0.5"
               :class="route.name === 'achievement' ? 'filter-green' : 'filter-gray'"
             />
           </router-link>
-          
+
           <!-- 主页 -->
-          <router-link 
-            to="/quizview" 
+          <router-link
+            to="/quizview"
             class="flex flex-col items-center transition-colors"
-            :class="route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
+            :class="
+              route.name === 'home' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'
+            "
           >
-            <img 
-              src="@/assets/icons/nav/icon_home.svg" 
-              :alt="$t('common.home')" 
+            <img
+              src="@/assets/icons/nav/icon_home.svg"
+              :alt="$t('common.home')"
               class="w-8 h-8 mb-0.5"
               :class="route.name === 'home' ? 'filter-green' : 'filter-gray'"
             />
           </router-link>
-          
+
           <!-- 设置页面 -->
           <router-link
             to="/settings"
             class="flex flex-col items-center transition-colors"
-            :class="route.name === 'settings' ? 'text-success-600' : 'text-gray-800 hover:text-success-600'"
+            :class="
+              route.name === 'settings'
+                ? 'text-success-600'
+                : 'text-gray-800 hover:text-success-600'
+            "
           >
-            <img 
-              src="@/assets/icons/nav/icon_usersetting.svg" 
-              :alt="$t('common.settings')" 
+            <img
+              src="@/assets/icons/nav/icon_usersetting.svg"
+              :alt="$t('common.settings')"
               class="w-7 h-7 mb-0.5"
               :class="route.name === 'settings' ? 'filter-green' : 'filter-gray'"
             />
@@ -214,7 +236,6 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted, onActivated, onUnmounted, nextTick } from 'vue'
-  import { useI18n } from 'vue-i18n'
   import { usePoemStore } from '../stores/poem'
   import { useUserStore } from '../stores/user'
   import { useMusicStore } from '../stores/music'
@@ -222,7 +243,6 @@
   import soundOnIcon from '@/assets/icons/feature/icon_sound_on.svg'
   import soundOffIcon from '@/assets/icons/feature/icon_sound_off.svg'
 
-  const { t } = useI18n()
   const poemStore = usePoemStore()
   const userStore = useUserStore()
   const musicStore = useMusicStore()
@@ -323,29 +343,14 @@
       selectedAnswer.value = selectedOption.value
       isCorrect.value = poemStore.checkAnswer(selectedOption.value)
       answered.value = true
-      
-      if (userStore.isLoggedIn) {
-        // 根据难度模式调整得分
+
+      if (userStore.isAccountReady) {
         const difficultyMultiplier = currentDifficulty.value === 'hard' ? 2 : 1
         scoreChange.value = isCorrect.value ? difficultyMultiplier : -difficultyMultiplier
-        
-        // 尝试更新分数，如果被限制则显示升级提示
-        const updateSuccess = userStore.updateScore(scoreChange.value)
-        
-        // 如果分数更新被限制（免费用户达到上限）
-        if (!updateSuccess && isCorrect.value) {
-          // 重置scoreChange，因为实际没有增加分数
-          scoreChange.value = 0
-          // 显示升级提示
-          setTimeout(() => {
-            if (confirm(t('quiz.freeUserLimitAlert'))) {
-              // 跳转到成就页面，用户可以在那里购买升级
-              window.location.href = '/achievement'
-            }
-          }, 1000) // 延迟1秒显示，让用户看到答对的反馈
-        }
+        userStore.updateScore(scoreChange.value)
+      } else {
+        scoreChange.value = 0
       }
-      // 移除自动隐藏定时器，让用户手动点击下一首
     }
   }
 
@@ -356,7 +361,7 @@
     selectedOptionIndex.value = null
     isCorrect.value = null
     showFeedback.value = false
-    poemStore.selectRandomPoem(currentDifficulty.value)
+    poemStore.selectRandomPoem()
     // 切换到下一首诗时滚动到顶部
     scrollToTop()
   }
@@ -425,7 +430,9 @@
     letter-spacing: 0.02em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'Noto Sans',
+      sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     display: flex;
     align-items: center;
     justify-content: center;
@@ -440,18 +447,21 @@
   }
 
   .font-mono {
-    font-family: "Courier New", Courier, "Lucida Console", "Monaco", monospace;
+    font-family: 'Courier New', Courier, 'Lucida Console', 'Monaco', monospace;
   }
 
   .filter-green {
-    filter: brightness(0) saturate(100%) invert(42%) sepia(78%) saturate(1084%) hue-rotate(93deg) brightness(96%) contrast(86%);
+    filter: brightness(0) saturate(100%) invert(42%) sepia(78%) saturate(1084%) hue-rotate(93deg)
+      brightness(96%) contrast(86%);
   }
 
   .filter-gray {
-    filter: brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
+    filter: brightness(0) saturate(100%) invert(20%) sepia(0%) saturate(0%) hue-rotate(0deg)
+      brightness(0%) contrast(100%);
   }
 
   .filter-white {
-    filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+    filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg)
+      brightness(100%) contrast(100%);
   }
 </style>

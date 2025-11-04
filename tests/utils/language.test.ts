@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { 
+import {
   isChineseMode,
   detectBrowserLanguage,
   getHintLanguage,
@@ -30,7 +30,7 @@ describe('Language Utils', () => {
   })
 
   describe('detectBrowserLanguage', () => {
-    it('应该检测中文浏览器并返回中文+困难模式', () => {
+    it('应该检测中文浏览器并返回中文+简单模式', () => {
       // Mock navigator.language
       Object.defineProperty(navigator, 'language', {
         writable: true,
@@ -39,7 +39,7 @@ describe('Language Utils', () => {
 
       const result = detectBrowserLanguage()
       expect(result.language).toBe('chinese')
-      expect(result.difficulty).toBe('hard')
+      expect(result.difficulty).toBe('easy')
     })
 
     it('应该检测英文浏览器并返回英文+简单模式', () => {
@@ -92,8 +92,9 @@ describe('Language Utils', () => {
   })
 
   describe('getHintLanguage', () => {
-    it('中文模式应该返回 none', () => {
-      expect(getHintLanguage('chinese')).toBe('none')
+    it('中文模式下简单难度返回英文提示，困难难度无提示', () => {
+      expect(getHintLanguage('chinese', 'easy')).toBe('english')
+      expect(getHintLanguage('chinese', 'hard')).toBe('none')
     })
 
     it('其他语言应该返回对应语言', () => {
@@ -106,9 +107,9 @@ describe('Language Utils', () => {
   })
 
   describe('isValidDifficultyForLanguage', () => {
-    it('中文模式只支持困难模式', () => {
+    it('中文模式支持两种难度', () => {
       expect(isValidDifficultyForLanguage('chinese', 'hard')).toBe(true)
-      expect(isValidDifficultyForLanguage('chinese', 'easy')).toBe(false)
+      expect(isValidDifficultyForLanguage('chinese', 'easy')).toBe(true)
     })
 
     it('其他语言支持所有难度', () => {
@@ -124,8 +125,8 @@ describe('Language Utils', () => {
   })
 
   describe('getDefaultDifficultyForLanguage', () => {
-    it('中文模式默认困难模式', () => {
-      expect(getDefaultDifficultyForLanguage('chinese')).toBe('hard')
+    it('中文模式默认简单模式', () => {
+      expect(getDefaultDifficultyForLanguage('chinese')).toBe('easy')
     })
 
     it('其他语言默认简单模式', () => {
@@ -137,11 +138,19 @@ describe('Language Utils', () => {
   })
 
   describe('handleLanguageChange', () => {
-    it('切换到中文应该强制困难模式', () => {
+    it('切换到中文时保持有效难度，非法值回退到默认简单', () => {
       const result = handleLanguageChange('chinese', 'easy')
       expect(result.language).toBe('chinese')
-      expect(result.difficulty).toBe('hard')
-      expect(result.hintLanguage).toBe('none')
+      expect(result.difficulty).toBe('easy')
+      expect(result.hintLanguage).toBe('english')
+
+      const hardResult = handleLanguageChange('chinese', 'hard')
+      expect(hardResult.difficulty).toBe('hard')
+      expect(hardResult.hintLanguage).toBe('none')
+
+      const fallbackResult = handleLanguageChange('chinese', 'invalid' as DifficultyMode)
+      expect(fallbackResult.difficulty).toBe('easy')
+      expect(fallbackResult.hintLanguage).toBe('english')
     })
 
     it('从中文切换到其他语言应该保持当前难度（如果有效）', () => {
@@ -163,7 +172,7 @@ describe('Language Utils', () => {
     it('应该返回所有支持的语言选项', () => {
       const options = getLanguageOptions()
       expect(options).toHaveLength(6)
-      
+
       // 检查是否包含所有语言
       const values = options.map(opt => opt.value)
       expect(values).toContain('chinese')
@@ -175,7 +184,7 @@ describe('Language Utils', () => {
 
       // 检查中文选项的特殊标注
       const chineseOption = options.find(opt => opt.value === 'chinese')
-      expect(chineseOption?.label).toBe('中文（仅困难模式）')
+      expect(chineseOption?.label).toBe('中文')
     })
 
     it('所有选项都应该是启用状态', () => {
@@ -196,8 +205,8 @@ describe('Language Utils', () => {
       expect(LANGUAGE_MAP).toHaveProperty('german')
     })
 
-    it('中文应该没有提示功能', () => {
-      expect(LANGUAGE_MAP.chinese.hasHint).toBe(false)
+    it('中文应该标记为支持提示', () => {
+      expect(LANGUAGE_MAP.chinese.hasHint).toBe(true)
     })
 
     it('其他语言应该有提示功能', () => {
@@ -212,8 +221,8 @@ describe('Language Utils', () => {
   describe('DEFAULT_SETTINGS', () => {
     it('中文默认设置应该正确', () => {
       expect(DEFAULT_SETTINGS.chinese.language).toBe('chinese')
-      expect(DEFAULT_SETTINGS.chinese.difficulty).toBe('hard')
-      expect(DEFAULT_SETTINGS.chinese.hintLanguage).toBe('none')
+      expect(DEFAULT_SETTINGS.chinese.difficulty).toBe('easy')
+      expect(DEFAULT_SETTINGS.chinese.hintLanguage).toBe('english')
     })
 
     it('非中文默认设置应该正确', () => {
@@ -221,4 +230,4 @@ describe('Language Utils', () => {
       expect(DEFAULT_SETTINGS.nonChinese.difficulty).toBe('easy')
     })
   })
-}) 
+})

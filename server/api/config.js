@@ -26,11 +26,9 @@ router.get('/ranks', async (req, res) => {
           rank_order: rank.rank_order
         }))
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('获取学级称号失败:', error)
     res.status(500).json({ message: '服务器错误' })
@@ -113,11 +111,10 @@ router.get('/app', async (req, res) => {
         }
       }
     })
-
   } catch (error) {
     console.error('获取应用配置失败:', error)
     res.status(500).json({ message: '服务器错误' })
   }
 })
 
-export default router 
+export default router

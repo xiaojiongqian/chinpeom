@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
 import { loadPoemData, getPoemById } from '../../src/utils/poemData'
-import type { Poem, PoemLanguage } from '../../src/types'
-
 // 模拟JSON数据
 const mockChinesePoem = {
   id: 'poem-1',

@@ -7,7 +7,7 @@ console.log(`[测试设置] 设置环境变量: NODE_ENV = ${process.env.NODE_EN
 console.log(`[测试设置] 当前平台: ${process.platform}, Node版本: ${process.version}`)
 
 // 模拟Vue Router
-vi.mock('vue-router', async (importOriginal) => {
+vi.mock('vue-router', async importOriginal => {
   const actual = await importOriginal<typeof import('vue-router')>()
   return {
     ...actual,
@@ -136,14 +136,16 @@ const mockPoems = {
 }
 
 // 添加到全局对象，以便在其他文件中访问
+const globalContext = globalThis as typeof globalThis & {
+  mockPoems?: typeof mockPoems
+}
+
+globalContext.mockPoems = mockPoems
+
 if (typeof window !== 'undefined') {
-  ;(window as any).mockPoems = mockPoems
   console.log('[测试设置] 将模拟诗歌数据添加到全局window对象')
 } else {
-  console.log('[测试设置] window对象不可用，无法添加全局mockPoems')
-  // 在Node环境中添加到global
-  ;(global as any).mockPoems = mockPoems
-  console.log('[测试设置] 将模拟诗歌数据添加到全局global对象')
+  console.log('[测试设置] window对象不可用，已添加到全局上下文')
 }
 
 // 计数器，用于跟踪fetch调用次数
@@ -177,7 +179,8 @@ global.fetch = vi.fn().mockImplementation((url: string | Request) => {
 
   console.log(`[测试环境] fetch #${callId} URL类型: ${urlType}, URL值: ${urlString}`)
 
-  let poemData: any[] = []
+  type MockPoemEntry = (typeof mockPoems)[keyof typeof mockPoems][number]
+  let poemData: MockPoemEntry[] = []
   let languageKey = ''
   let matchFound = false
 
@@ -282,6 +285,7 @@ vi.mock('../src/services/api.ts', () => {
     userApi: {
       register: vi.fn().mockImplementation((username, email, password) => {
         console.log(`[测试环境] 模拟用户注册: ${username}, ${email}`)
+        void password
         return Promise.resolve({
           user: { id: 'test-user-id', username, email, score: 0 },
           token: 'mock-auth-token'
@@ -290,6 +294,7 @@ vi.mock('../src/services/api.ts', () => {
 
       login: vi.fn().mockImplementation((email, password) => {
         console.log(`[测试环境] 模拟用户登录: ${email}`)
+        void password
         return Promise.resolve({
           user: { id: 'test-user-id', username: email.split('@')[0], email, score: 10 },
           token: 'mock-auth-token'

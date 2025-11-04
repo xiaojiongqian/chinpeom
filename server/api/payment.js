@@ -1,7 +1,6 @@
 import express from 'express'
 import pool from '../config/db.js'
 import { auth } from '../middleware/auth.js'
-import { v4 as uuidv4 } from 'uuid'
 
 const router = express.Router()
 
@@ -14,9 +13,9 @@ const mockPaymentService = {
    */
   async createPayment(orderData) {
     await new Promise(resolve => setTimeout(resolve, 200))
-    
+
     const { payment_method, amount, order_no } = orderData
-    
+
     // 模拟不同支付方式的响应
     const mockResponses = {
       alipay: {
@@ -45,7 +44,7 @@ const mockPaymentService = {
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
       }
     }
-    
+
     return {
       success: true,
       order_no,
@@ -61,12 +60,12 @@ const mockPaymentService = {
    */
   async verifyPayment(paymentData) {
     await new Promise(resolve => setTimeout(resolve, 300))
-    
+
     const { order_no, third_party_order_id } = paymentData
-    
+
     // 模拟90%的成功率
     const isSuccess = Math.random() > 0.1
-    
+
     if (isSuccess) {
       return {
         success: true,
@@ -102,14 +101,14 @@ router.post('/create', auth, async (req, res) => {
     const validProductTypes = ['premium_month', 'premium_year', 'premium_lifetime']
 
     if (!payment_method || !validPaymentMethods.includes(payment_method)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: '不支持的支付方式',
         valid_payment_methods: validPaymentMethods
       })
     }
 
     if (!product_type || !validProductTypes.includes(product_type)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: '不支持的产品类型',
         valid_product_types: validProductTypes
       })
@@ -127,7 +126,7 @@ router.post('/create', auth, async (req, res) => {
     }
 
     if (Math.abs(amount - productPrices[product_type]) > 0.01) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: '支付金额与产品价格不符',
         expected_amount: productPrices[product_type]
       })
@@ -149,7 +148,7 @@ router.post('/create', auth, async (req, res) => {
       }
 
       const user = userInfo[0]
-      
+
       // 如果是终身会员，不允许重复购买
       if (user.is_premium && !user.premium_expire_at && product_type === 'premium_lifetime') {
         return res.status(400).json({ message: '您已是终身会员，无需重复购买' })
@@ -191,17 +190,15 @@ router.post('/create', auth, async (req, res) => {
           payment_data: paymentData
         }
       })
-
     } catch (error) {
       await connection.rollback()
       throw error
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('创建订单失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -258,7 +255,7 @@ router.post('/verify', auth, async (req, res) => {
       // 如果支付成功，更新用户付费状态
       if (verificationResult.success) {
         let expireAt = null
-        
+
         // 计算到期时间
         if (order.product_type === 'premium_month') {
           expireAt = new Date()
@@ -286,17 +283,15 @@ router.post('/verify', auth, async (req, res) => {
         },
         verification_result: verificationResult
       })
-
     } catch (error) {
       await connection.rollback()
       throw error
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('验证支付状态失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -316,13 +311,13 @@ router.get('/history', auth, async (req, res) => {
     const pageNum = parseInt(page) || 1
     const limitNum = parseInt(limit) || 10
     const offset = (pageNum - 1) * limitNum
-    
+
     const connection = await pool.getConnection()
 
     try {
       // 构建查询条件
       let whereClause = 'WHERE user_id = ?'
-      let queryParams = [userId]
+      const queryParams = [userId]
 
       if (status) {
         const validStatuses = ['pending', 'paid', 'failed', 'cancelled']
@@ -360,14 +355,12 @@ router.get('/history', auth, async (req, res) => {
           pages: Math.ceil(total / limitNum)
         }
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('查询付费历史失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -410,14 +403,12 @@ router.post('/cancel', auth, async (req, res) => {
         message: '订单已取消',
         order_no: orders[0].order_no
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('取消订单失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -438,12 +429,7 @@ router.get('/products', async (req, res) => {
         duration: '1个月',
         price: 9.9,
         currency: 'CNY',
-        features: [
-          '解锁所有学级等级',
-          '无限制诗歌学习',
-          '专属会员徽章',
-          '优先客服支持'
-        ]
+        features: ['解锁所有学级等级', '无限制诗歌学习', '专属会员徽章', '优先客服支持']
       },
       {
         type: 'premium_year',
@@ -493,14 +479,13 @@ router.get('/products', async (req, res) => {
         { code: 'stripe', name: 'Stripe', enabled: true }
       ]
     })
-
   } catch (error) {
     console.error('获取产品信息失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 })
 
-export default router 
+export default router

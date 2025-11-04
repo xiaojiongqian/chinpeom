@@ -1,3 +1,4 @@
+import { afterAll } from '@jest/globals'
 import dotenv from 'dotenv'
 import testDbHelper from './helpers/testDbHelper.js'
 import pool from '../config/db.js'
@@ -53,20 +54,20 @@ afterAll(async () => {
 global.testDbHelper = testDbHelper
 
 // 添加测试辅助函数
-global.trackTestUser = (userId) => {
+global.trackTestUser = userId => {
   testDbHelper.trackUser(userId)
 }
 
-global.trackTestOrder = (orderNo) => {
+global.trackTestOrder = orderNo => {
   testDbHelper.trackOrder(orderNo)
 }
 
 // 错误处理
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', reason => {
   console.error('[测试] 未处理的Promise拒绝:', reason)
 })
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('[测试] 未捕获的异常:', error)
   process.exit(1)
-}) 
+})

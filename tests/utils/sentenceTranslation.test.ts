@@ -45,7 +45,7 @@ describe('句子翻译工具测试', () => {
   describe('createDisplayContent', () => {
     it('简单模式下应该显示外语翻译', () => {
       const result = createDisplayContent(mockPoem, mockTranslation, 1, 'easy')
-      
+
       expect(result).toHaveLength(4)
       expect(result[0]).toBe('床前明月光') // 原句
       expect(result[1]).toBe('I thought it was frost on the ground') // 外语翻译
@@ -55,7 +55,7 @@ describe('句子翻译工具测试', () => {
 
     it('困难模式下应该显示***', () => {
       const result = createDisplayContent(mockPoem, mockTranslation, 1, 'hard')
-      
+
       expect(result).toHaveLength(4)
       expect(result[0]).toBe('床前明月光') // 原句
       expect(result[1]).toBe('***') // 困难模式占位符
@@ -65,7 +65,7 @@ describe('句子翻译工具测试', () => {
 
     it('当翻译不存在时简单模式应该显示***', () => {
       const result = createDisplayContent(mockPoem, null, 1, 'easy')
-      
+
       expect(result).toHaveLength(4)
       expect(result[0]).toBe('床前明月光') // 原句
       expect(result[1]).toBe('***') // 无翻译时的占位符
@@ -73,14 +73,14 @@ describe('句子翻译工具测试', () => {
       expect(result[3]).toBe('低头思故乡') // 原句
     })
 
-    it('当诗歌对象为null时应该返回空数组', () => {
+    it('当诗歌对象为null时应该返回null', () => {
       const result = createDisplayContent(null, mockTranslation, 1, 'easy')
-      expect(result).toEqual([])
+      expect(result).toBeNull()
     })
 
     it('默认难度（normal）应该显示外语翻译', () => {
       const result = createDisplayContent(mockPoem, mockTranslation, 2)
-      
+
       expect(result).toHaveLength(4)
       expect(result[0]).toBe('床前明月光') // 原句
       expect(result[1]).toBe('疑是地上霜') // 原句

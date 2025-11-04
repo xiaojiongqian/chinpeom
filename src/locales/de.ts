@@ -50,8 +50,10 @@ export default {
     loginTimeout: 'Anmelde-Timeout, bitte versuchen Sie es erneut',
     loginCancelled: 'Anmeldung abgebrochen',
     popupBlocked: 'Anmelde-Popup blockiert, bitte erlauben Sie Popups und versuchen Sie es erneut',
-    networkError: 'Netzwerkverbindungsfehler, bitte überprüfen Sie Ihr Netzwerk und versuchen Sie es erneut',
-    googleServiceError: 'Google-Anmeldedienst vorübergehend nicht verfügbar, bitte versuchen Sie es später erneut'
+    networkError:
+      'Netzwerkverbindungsfehler, bitte überprüfen Sie Ihr Netzwerk und versuchen Sie es erneut',
+    googleServiceError:
+      'Google-Anmeldedienst vorübergehend nicht verfügbar, bitte versuchen Sie es später erneut'
   },
   register: {
     title: 'Registrieren',
@@ -68,10 +70,10 @@ export default {
     language: 'Spracheinstellungen',
     languageHint: 'Wählen Sie die Sprache für Hinweise',
     difficulty: 'Schwierigkeit',
-      easyMode: 'Einfach',
-  easyModeDesc: 'Fremdsprachige Hinweise anzeigen, +1 Punkt für richtige Antworten',
-  hardMode: 'Schwer',
-  hardModeDesc: 'Keine Hinweise anzeigen, +2 Punkte für richtige Antworten',
+    easyMode: 'Einfach',
+    easyModeDesc: 'Fremdsprachige Hinweise anzeigen, +1 Punkt für richtige Antworten',
+    hardMode: 'Schwer',
+    hardModeDesc: 'Keine Hinweise anzeigen, +2 Punkte für richtige Antworten',
     chineseModeUnavailable: 'Nicht verfügbar im chinesischen Modus',
     music: 'Musik',
     musicEnabled: 'Hintergrundmusik',
@@ -91,55 +93,33 @@ export default {
     confirmLogoutAction: 'Abmelden'
   },
   achievement: {
-    title: 'Gelehrten-Erfolge',
-    currentRank: 'Aktueller Rang',
-    totalScore: 'Gesamtpunktzahl',
-    scoreToNext: 'Punkte bis zum nächsten Level',
-    points: 'Punkte',
-    nextLevel: 'Nächstes Level',
-    maxLevel: 'Höchstes Level erreicht',
-    freeUserLimit: 'Gratis-Nutzer-Limit',
-    vipMember: 'VIP-Mitglied',
-    vipUnlocked: '🎉 Alle Level freigeschaltet, kämpfen Sie um den höchsten Gelehrtenrang!',
-    rankSystem: 'Rangsystem',
-    freeUserWarning: '⚠️ Sie haben das höchste Gratis-Nutzer-Level (Schüler) erreicht. Upgraden Sie auf VIP, um höhere Level herauszufordern!',
-    freeUserTip: '💡 Beantworten Sie weiter Fragen, um höhere Level zu erreichen, oder upgraden Sie auf VIP für unbegrenzte Möglichkeiten!',
-    vipUserTip: '🚀 VIP-Mitglieder haben unbegrenzten Zugang, setzen Sie Ihre poetische Kultivierungsreise fort!',
-    upgradeVip: 'VIP werden',
-    unlockNewLevels: 'Neue Level freischalten',
-    upgradeVipMember: 'VIP werden',
-    upgradeVipDesc1: 'Sie haben das höchste Gratis-Nutzer-Level erreicht: Schüler',
-    upgradeVipDesc2: 'Upgraden Sie auf VIP, um Ihre literarische Kultivierungsreise fortzusetzen',
-    upgradeVipDesc3: 'Die vollständige Lernerfahrung freischalten',
-    upgradeVipDesc4: 'Genießen Sie eine unbegrenzte Poesie-Lernreise',
-    vipFeatures: '🌟 VIP-Vorteile',
-    vipFeature1: 'Alle 9 Premium-Level freischalten (Bakkalaureus → Magister)',
-    vipFeature2: 'Kein Punktelimit, literarische Gipfel herausfordern',
-    vipFeature3: 'Exklusives VIP-Abzeichen, Gelehrtenstatus zeigen',
-    vipFeature4: 'Prioritätszugang zu neuen Funktionen und Inhaltsupdates',
-    upgradeNow: 'VIP werden (Demo)',
-    continueFreeTier: 'Kostenlos bleiben',
-    maybeLater: 'Vielleicht später',
-    upgradeSuccess: '🎉 Herzlichen Glückwunsch! Sie haben erfolgreich auf VIP-Nutzer upgegraded und können jetzt höhere Level herausfordern!',
-    freeUserTipText: 'Gratis-Nutzer können auf Schüler-Level upgraden und die Freude am Tang-Poesie-Lernen erleben. Upgraden Sie auf VIP, um alle Level freizuschalten und die vollständige literarische Wachstumsreise zu genießen!',
-    rankLevel: 'Rang',
-    currentLevel: 'Aktuell',
-    premiumLevel: 'Premium',
-    beginnerDesc: 'Anfänger, beginnt gerade die poetische Aufklärungsreise',
-    studentDesc: 'Grundverständnis, kann einfachen poetischen Inhalt verstehen',
-    scholarDesc: 'Literarische Grundlage, schätzt die Schönheit der Poesie',
-    fellowDesc: 'Solide literarische Grundlage, versiert in poetischen Rhythmen',
-    bachelorDesc: 'Tiefes Wissen, einzigartige Einsichten in die Poesie',
-    masterDesc: 'Herausragendes Talent, kann schöne Verse schaffen',
-    candidateDesc: 'Tiefe poetische Leistung, elegantes literarisches Talent',
-    doctorDesc: 'Gelehrte Bildung, meisterhafte poetische Fähigkeiten',
-    thirdPlaceDesc: 'Poesie-Meister, Werke durch die Zeitalter weitergegeben',
-    secondPlaceDesc: 'Literarischer Riese, außergewöhnliche poetische Leistungen',
-    championDesc: 'Poesie-Weiser, durch Jahrtausende gepriesener literarischer Meister',
-    tipText: 'Gratis-Nutzer können auf Schüler-Level upgraden und die Freude am Tang-Poesie-Lernen erleben. Upgraden Sie auf VIP, um alle Level freizuschalten und die vollständige literarische Wachstumsreise zu genießen!',
-    tip: 'Tipp',
-    scoreRange: ' Pkt',
-    userScoreDisplay: ' Pkt'
+    title: 'Rang-Erfolge',
+    subtitle: 'Behalte deinen Fortschritt und deine Übungen im Blick.',
+    pointsLabel: 'Pkt',
+    currentRankLabel: 'Aktueller Rang',
+    scoreLabel: 'Punktestand',
+    accountLabel: 'Konto',
+    lastPlayedLabel: 'Letzte Antwort',
+    noHistory: 'Noch keine Versuche',
+    progressTitle: 'Rangfortschritt',
+    nextRankLabel: 'Nächster Rang: {rank}',
+    nextRankHint: 'Es fehlen {points} {unit} bis {rank}',
+    maxRankReached: 'Du hast den höchsten Rang erreicht.',
+    maxRankReachedShort: 'Höchster Rang',
+    statsTitle: 'Übungsstatistik',
+    totalAnsweredLabel: 'Fragen gesamt',
+    correctAnswersLabel: 'Richtig',
+    incorrectAnswersLabel: 'Falsch',
+    accuracyLabel: 'Genauigkeit',
+    levelSystemTitle: 'Rangübersicht',
+    levelSystemDesc: 'Sieh dir die Punktezonen für jeden historischen Rang an.',
+    levelSystemAction: 'Alle Ränge ansehen',
+    rankSystemTitle: 'Rangdetails',
+    rankSystemDesc: 'Punktebereiche und Beschreibungen aller Ränge.',
+    currentLevelTag: 'Aktuell',
+    close: 'Schließen',
+    scoreRangeClosed: '{min}-{max} {unit}',
+    scoreRangeOpen: '{min} {unit} und mehr'
   },
   feedback: {
     correct: 'Richtig!',
@@ -151,11 +131,12 @@ export default {
     funFact: 'Poesie-Wissen',
     close: 'Schließen',
     next: 'Weiter',
-    gainedPoints: '+{{score}} Pkt erhalten',
-    lostPoints: '{{score}} Pkt verloren'
+    gainedPoints: '+{score} Pkt erhalten',
+    lostPoints: '{score} Pkt verloren'
   },
   quiz: {
-    freeUserLimitAlert: '🎉 Gratulation!\n\nSie haben das höchste Level für kostenlose Nutzer erreicht: Schüler\nUpgrade auf VIP, um das Gelehrten-Level freizuschalten und Ihre Herausforderung fortzusetzen?'
+    freeUserLimitAlert:
+      '🎉 Gratulation!\n\nSie haben das höchste Level für kostenlose Nutzer erreicht: Schüler\nUpgrade auf VIP, um das Gelehrten-Level freizuschalten und Ihre Herausforderung fortzusetzen?'
   },
   rank: {
     baiDing: 'Ungebildeter',
@@ -192,7 +173,8 @@ export default {
     japanese: 'Japanisch'
   },
   errors: {
-    llmError: 'Entschuldigung, es gab einen Fehler bei der Kommunikation mit der KI. Bitte versuchen Sie es erneut.'
+    llmError:
+      'Entschuldigung, es gab einen Fehler bei der Kommunikation mit der KI. Bitte versuchen Sie es erneut.'
   },
   poemDetail: {
     meaning: 'Bedeutung',

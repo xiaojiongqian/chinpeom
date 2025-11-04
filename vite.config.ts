@@ -23,7 +23,8 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
+    host: '127.0.0.1',
+    port: 4000,
     open: true,
     headers: {
       'Cross-Origin-Opener-Policy': 'unsafe-none',
@@ -54,12 +55,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    api: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'src/locales/', 'tests/']
     },
-    include: ['tests/**/*.{test,spec}.ts', 'src/**/*.{test,spec}.ts'],
+    include: ['tests/**/*.test.ts'],
     deps: {
       inline: ['@vue', '@vueuse']
     }

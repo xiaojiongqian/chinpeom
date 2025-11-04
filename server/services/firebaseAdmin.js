@@ -1,11 +1,10 @@
 import admin from 'firebase-admin'
-import config from '../config/env/default.js'
 import jwt from 'jsonwebtoken'
 
 // Firebase Admin配置
 const firebaseConfig = {
-  projectId: "poem2guess-8d19f", // 使用正确的项目ID
-  authDomain: "poem2guess-8d19f.firebaseapp.com"
+  projectId: 'poem2guess-8d19f', // 使用正确的项目ID
+  authDomain: 'poem2guess-8d19f.firebaseapp.com'
 }
 
 // 初始化Firebase Admin SDK
@@ -14,7 +13,7 @@ try {
   if (!admin.apps.length) {
     // 使用项目ID初始化，不依赖服务账号密钥文件
     adminApp = admin.initializeApp({
-      projectId: firebaseConfig.projectId,
+      projectId: firebaseConfig.projectId
       // 不使用credential，让Firebase Admin SDK自动处理
     })
     console.log('✅ [Firebase Admin] 初始化成功 (项目ID模式)')
@@ -65,7 +64,7 @@ export class FirebaseAuthService {
       if (!decoded) {
         throw new Error('Token is malformed and cannot be decoded.')
       }
-      
+
       // Check for the custom claim to force a verification failure
       if (decoded.force_fail) {
         throw new Error('Token verification was forced to fail for testing.')
@@ -107,15 +106,15 @@ export class FirebaseAuthService {
 
     try {
       console.log('[Firebase Admin] 使用完整验证模式验证ID Token')
-      
+
       // 设置较短的超时时间，避免长时间等待
       const decodedToken = await Promise.race([
         admin.auth().verifyIdToken(idToken),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('验证超时')), 3000) // 3秒超时
+        new Promise(
+          (_, reject) => setTimeout(() => reject(new Error('验证超时')), 3000) // 3秒超时
         )
       ])
-      
+
       return {
         uid: decodedToken.uid,
         email: decodedToken.email,
@@ -127,8 +126,8 @@ export class FirebaseAuthService {
         provider_data: decodedToken.firebase?.identities || {}
       }
     } catch (error) {
-      console.error('[Firebase Admin] 完整验证失败:', error.message);
-      throw new Error(`Firebase ID Token验证失败: ${error.message}`);
+      console.error('[Firebase Admin] 完整验证失败:', error.message)
+      throw new Error(`Firebase ID Token验证失败: ${error.message}`)
     }
   }
 
@@ -143,4 +142,4 @@ export class FirebaseAuthService {
 
 // 导出单例实例
 export const firebaseAuthService = new FirebaseAuthService()
-export default firebaseAuthService 
+export default firebaseAuthService

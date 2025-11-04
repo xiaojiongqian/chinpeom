@@ -23,7 +23,7 @@ export const auth = (req, res, next) => {
 
     // 验证令牌
     // 使用与签名时一致的密钥配置
-    const jwtSecret = process.env.JWT_SECRET || appConfig.jwtSecret 
+    const jwtSecret = process.env.JWT_SECRET || appConfig.jwtSecret
     const decoded = jwt.verify(token, jwtSecret)
 
     // 将用户信息添加到请求对象

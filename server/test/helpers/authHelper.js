@@ -1,18 +1,4 @@
-import config from '../../config/env/default.js'
 import jwt from 'jsonwebtoken'
-
-/**
- * 创建一个用于测试的伪JWT
- * @param {object} payload - 要编码的载荷
- * @returns {string} 伪JWT字符串
- */
-const createFakeJwt = (payload) => {
-  const header = { alg: 'HS256', typ: 'JWT' }
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64')
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
-  const signature = 'fake-signature' // 不需要是有效的签名
-  return `${encodedHeader}.${encodedPayload}.${signature}`
-}
 
 /**
  * 为第三方认证生成测试用的JWT
@@ -26,9 +12,6 @@ const createFakeJwt = (payload) => {
  */
 export function createTestAuthToken(provider, options = {}) {
   const { sub, name, email, fail_verification = false } = options
-
-  const now = Math.floor(Date.now() / 1000)
-  const projectId = 'poem2guess-8d19f'
 
   const defaultUser = {
     google: {
@@ -81,4 +64,4 @@ export function createTestAuthToken(provider, options = {}) {
 
   // We are not using a real secret because in test, we just decode, not verify.
   return jwt.sign(payload, 'test-secret')
-} 
+}

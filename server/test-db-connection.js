@@ -22,34 +22,44 @@ const config = {
 
 console.log('\n尝试连接数据库...')
 
-try {
-  const connection = await mysql.createConnection(config)
-  console.log('✅ 数据库连接成功!')
-  
-  // 测试查询
-  const [rows] = await connection.execute('SELECT 1 as test')
-  console.log('✅ 数据库查询测试成功:', rows[0])
-  
-  // 检查表结构
-  const [tables] = await connection.execute('SHOW TABLES')
-  console.log('📋 数据库表列表:')
-  tables.forEach(table => {
-    console.log('  -', Object.values(table)[0])
-  })
-  
-  await connection.end()
-  console.log('✅ 数据库连接已关闭')
-  
-} catch (error) {
-  console.error('❌ 数据库连接失败:', error.message)
-  console.error('错误代码:', error.code)
-  console.error('错误状态:', error.sqlState)
-  
-  // 调试信息
-  console.log('\n🔍 调试信息:')
-  console.log('配置对象:', JSON.stringify(config, null, 2))
-  
-  process.exit(1)
+async function main() {
+  let connection
+  try {
+    connection = await mysql.createConnection(config)
+    console.log('✅ 数据库连接成功!')
+
+    // 测试查询
+    const [rows] = await connection.execute('SELECT 1 as test')
+    console.log('✅ 数据库查询测试成功:', rows[0])
+
+    // 检查表结构
+    const [tables] = await connection.execute('SHOW TABLES')
+    console.log('📋 数据库表列表:')
+    tables.forEach(table => {
+      console.log('  -', Object.values(table)[0])
+    })
+
+    await connection.end()
+    connection = null
+    console.log('✅ 数据库连接已关闭')
+  } catch (error) {
+    console.error('❌ 数据库连接失败:', error.message)
+    console.error('错误代码:', error.code)
+    console.error('错误状态:', error.sqlState)
+
+    // 调试信息
+    console.log('\n🔍 调试信息:')
+    console.log('配置对象:', JSON.stringify(config, null, 2))
+
+    throw error
+  } finally {
+    if (connection) {
+      await connection.end()
+      console.log('✅ 数据库连接已关闭')
+    }
+  }
 }
 
-process.exit(0) 
+main()
+  .then(() => process.exit(0))
+  .catch(() => process.exit(1))

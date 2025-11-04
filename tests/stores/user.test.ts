@@ -1,252 +1,154 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useUserStore } from '../../src/stores/user'
 
-// 模拟localStorage
+// Ensure browser-like globals exist for the store
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
-  clear: vi.fn(),
+  clear: vi.fn()
 }
 
-// 模拟全局localStorage
 vi.stubGlobal('localStorage', localStorageMock)
 
-describe('用户Store测试', () => {
+const mockAccountStorage = {
+  readActiveAccount: vi.fn().mockResolvedValue(null),
+  writeActiveAccount: vi.fn().mockResolvedValue(undefined),
+  readAccount: vi.fn().mockResolvedValue(null),
+  writeAccount: vi.fn().mockResolvedValue(undefined),
+  listAccounts: vi.fn().mockResolvedValue([]),
+  getAccountDirectoryPath: vi.fn().mockResolvedValue(null),
+  isUsingFallbackStorage: vi.fn().mockReturnValue(true)
+}
+
+vi.mock('@/services/accountStorage', () => ({
+  default: mockAccountStorage
+}))
+
+vi.mock('@/utils/logger', () => ({
+  default: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+}))
+
+vi.mock('@/utils/language', async importOriginal => {
+  const actual = await importOriginal<typeof import('@/utils/language')>()
+  return {
+    ...actual,
+    detectBrowserLanguage: vi.fn(() => ({
+      language: 'english' as const,
+      difficulty: 'easy' as const
+    }))
+  }
+})
+
+const { useUserStore } = await import('@/stores/user')
+
+function createTestAccount(
+  overrides: Partial<ReturnType<typeof useUserStore>['accountState']> = {}
+) {
+  const base = {
+    accountName: 'guest',
+    displayName: 'Guest',
+    score: 0,
+    language: 'english',
+    difficulty: 'easy',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    lastUpdatedAt: '2024-01-01T00:00:00.000Z',
+    stats: {
+      totalAnswered: 0,
+      correctAnswers: 0,
+      incorrectAnswers: 0,
+      lastAnsweredAt: null
+    },
+    version: 1,
+    preferences: {
+      musicEnabled: true,
+      musicTrack: null
+    },
+    rank: 'rank.baiDing'
+  } as const
+
+  return { ...base, ...overrides }
+}
+
+describe('useUserStore (account state)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorageMock.getItem.mockReturnValue(null)
+    vi.useFakeTimers()
   })
 
-  it('应该正确初始化用户Store', () => {
-    const userStore = useUserStore()
-    
-    expect(userStore.user).toBeNull()
-    expect(userStore.token).toBeNull()
-    expect(userStore.isLoggedIn).toBe(false)
-    expect(userStore.settings.language).toBe('english')
-    expect(userStore.settings.theme).toBe('light')
-    expect(userStore.settings.soundEffects).toBe(true)
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it('login应该正确设置用户信息', () => {
-    const userStore = useUserStore()
-    const userData = {
-      id: 1,
-      username: 'testuser',
-      score: 100,
-      language: 'english',
-      isPaid: false
-    }
-    const token = 'test-token'
+  it('uses detected browser language for initial settings', () => {
+    const store = useUserStore()
 
-    userStore.login(userData, token)
-
-    expect(userStore.user).toEqual(userData)
-    expect(userStore.token).toBe(token)
-    expect(userStore.isLoggedIn).toBe(true)
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('token', token)
+    expect(store.language).toBe('english')
+    expect(store.difficulty).toBe('easy')
+    expect(store.hintLanguage).toBe('english')
+    expect(store.score).toBe(0)
+    expect(store.isAccountReady).toBe(false)
   })
 
-  it('logout应该清除用户信息', () => {
-    const userStore = useUserStore()
-    
-    // 先登录
-    userStore.login({
-      id: 1,
-      username: 'testuser',
-      score: 100,
-      language: 'english',
-      isPaid: false
-    }, 'test-token')
+  it('setLanguage updates settings and persists account when available', async () => {
+    const store = useUserStore()
+    store.accountState = createTestAccount()
 
-    // 然后登出
-    userStore.logout()
+    store.setLanguage('chinese')
 
-    expect(userStore.user).toBeNull()
-    expect(userStore.token).toBeNull()
-    expect(userStore.isLoggedIn).toBe(false)
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token')
+    expect(store.language).toBe('chinese')
+    expect(store.difficulty).toBe('easy')
+    expect(store.accountState.language).toBe('chinese')
+    expect(store.accountState.difficulty).toBe('easy')
+
+    await vi.runAllTimersAsync()
+    expect(mockAccountStorage.writeAccount).toHaveBeenCalledTimes(1)
+    const payload = mockAccountStorage.writeAccount.mock.calls[0][0]
+    expect(payload.language).toBe('chinese')
   })
 
-  it('updateScore应该正确更新用户分数', () => {
-    const userStore = useUserStore()
-    
-    // 先登录付费用户
-    userStore.login({
-      id: 1,
-      username: 'testuser',
-      score: 100,
-      language: 'english',
-      isPaid: true
-    }, 'test-token')
+  it('updateScore adjusts stats and schedules persistence', async () => {
+    const store = useUserStore()
+    store.accountState = createTestAccount()
 
-    userStore.updateScore(150)
+    const result = store.updateScore(10)
+    expect(result).toBe(true)
 
-    expect(userStore.user?.score).toBe(250)
+    expect(store.score).toBe(10)
+    expect(store.stats.totalAnswered).toBe(1)
+    expect(store.stats.correctAnswers).toBe(1)
+    expect(store.stats.incorrectAnswers).toBe(0)
+
+    await vi.runAllTimersAsync()
+    expect(mockAccountStorage.writeAccount).toHaveBeenCalled()
   })
 
-  it('setLanguage应该正确设置用户语言', () => {
-    const userStore = useUserStore()
-    
-    // 先登录
-    userStore.login({
-      id: 1,
-      username: 'testuser',
-      score: 100,
-      language: 'english',
-      isPaid: false
-    }, 'test-token')
-
-    userStore.setLanguage('spanish')
-
-    expect(userStore.user?.language).toBe('spanish')
-  })
-
-  it('updateSettings应该正确更新应用设置', () => {
-    const userStore = useUserStore()
-    
-    userStore.updateSettings({
-      theme: 'dark',
-      soundEffects: false
+  it('resetScore clears progress immediately', async () => {
+    const store = useUserStore()
+    store.accountState = createTestAccount({
+      score: 120,
+      stats: {
+        totalAnswered: 5,
+        correctAnswers: 4,
+        incorrectAnswers: 1,
+        lastAnsweredAt: '2024-01-01T10:00:00.000Z'
+      }
     })
 
-    expect(userStore.settings.theme).toBe('dark')
-    expect(userStore.settings.soundEffects).toBe(false)
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('app_settings', expect.any(String))
-  })
+    store.resetScore()
 
-  it('toggleSoundEffects应该切换音效设置', () => {
-    const userStore = useUserStore()
-    
-    expect(userStore.settings.soundEffects).toBe(true)
-    
-    userStore.toggleSoundEffects()
-    expect(userStore.settings.soundEffects).toBe(false)
-    
-    userStore.toggleSoundEffects()
-    expect(userStore.settings.soundEffects).toBe(true)
-  })
+    expect(store.score).toBe(0)
+    expect(store.stats.totalAnswered).toBe(0)
+    expect(store.accountState?.stats.totalAnswered).toBe(0)
 
-  it('toggleTheme应该切换主题设置', () => {
-    const userStore = useUserStore()
-    
-    expect(userStore.settings.theme).toBe('light')
-    
-    userStore.toggleTheme()
-    expect(userStore.settings.theme).toBe('dark')
-    
-    userStore.toggleTheme()
-    expect(userStore.settings.theme).toBe('light')
-  })
-
-  it('计算属性应该正确工作', () => {
-    const userStore = useUserStore()
-    
-    expect(userStore.username).toBe('')
-    expect(userStore.score).toBe(0)
-    expect(userStore.rank).toBe('白丁')
-    expect(userStore.language).toBe('english')
-
-    // 登录付费用户后
-    userStore.login({
-      id: 1,
-      username: 'testuser',
-      score: 250,
-      language: 'english',
-      isPaid: true
-    }, 'test-token')
-
-    expect(userStore.username).toBe('testuser')
-    expect(userStore.score).toBe(250)
-    expect(userStore.rank).toBe('探花')
-    expect(userStore.language).toBe('english')
-  })
-
-  it('init应该从localStorage恢复状态', () => {
-    const savedSettings = {
-      language: 'english',
-      difficulty: 'easy',
-      theme: 'dark',
-      soundEffects: false
-    }
-    const savedToken = 'saved-token'
-    const savedUser = {
-      id: 1,
-      username: 'testuser',
-      score: 20,
-      language: 'english',
-      isPaid: false
-    }
-
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'app_settings') {
-        return JSON.stringify(savedSettings)
-      }
-      if (key === 'token') {
-        return savedToken
-      }
-      if (key === 'user_data') {
-        return JSON.stringify(savedUser)
-      }
-      return null
+    await vi.waitFor(() => {
+      expect(mockAccountStorage.writeAccount).toHaveBeenCalled()
     })
-
-    const userStore = useUserStore()
-    userStore.init()
-
-    expect(userStore.settings).toEqual(expect.objectContaining(savedSettings))
-    expect(userStore.token).toBe(savedToken)
   })
-
-  it('init应该处理localStorage解析错误', () => {
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'app_settings') {
-        return 'invalid-json'
-      }
-      return null
-    })
-
-    const userStore = useUserStore()
-    
-    // 不应该抛出错误
-    expect(() => userStore.init()).not.toThrow()
-    
-    // 设置应该保持默认值
-    expect(userStore.settings.language).toBe('english')
-    expect(userStore.settings.theme).toBe('light')
-  })
-
-  it('saveSettings应该保存设置到localStorage', () => {
-    const userStore = useUserStore()
-    
-    userStore.updateSettings({ theme: 'dark' })
-    
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'app_settings',
-      expect.stringContaining('"theme":"dark"')
-    )
-  })
-
-  it('init中的loadSettings应该正确加载设置', () => {
-    const savedSettings = {
-      language: 'spanish',
-      difficulty: 'hard',
-      theme: 'dark',
-      soundEffects: false
-    }
-
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === 'app_settings') {
-        return JSON.stringify(savedSettings)
-      }
-      return null
-    })
-
-    const userStore = useUserStore()
-    userStore.init() // init会调用loadSettings
-
-    expect(userStore.settings).toEqual(expect.objectContaining(savedSettings))
-  })
-}) 
+})

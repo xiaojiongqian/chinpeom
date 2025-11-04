@@ -6,11 +6,27 @@
 interface AppConfig {
   api: {
     baseUrl: string
-    useRealApi: boolean  // 控制是否使用真实API
+    useRealApi: boolean // 控制是否使用真实API
   }
-  
+
   auth: {
-    mockMode: boolean    // 是否使用Mock认证
+    mockMode: boolean // 是否使用Mock认证
+  }
+}
+
+interface ChinpoemDevWindow extends Window {
+  appConfig?: AppConfig
+  enableRealApi?: () => void
+  enableMockApi?: () => void
+  resetConfig?: () => void
+}
+
+declare global {
+  interface Window {
+    appConfig?: AppConfig
+    enableRealApi?: () => void
+    enableMockApi?: () => void
+    resetConfig?: () => void
   }
 }
 
@@ -24,11 +40,11 @@ const CONFIG_STORAGE_KEY = 'chinpoem_app_config'
 const defaultConfig: AppConfig = {
   api: {
     baseUrl: isDevelopment ? 'http://localhost:3001/api' : '/api',
-    useRealApi: true  // 改为使用真实API
+    useRealApi: true // 改为使用真实API
   },
-  
+
   auth: {
-    mockMode: false  // 改为使用真实认证
+    mockMode: false // 改为使用真实认证
   }
 }
 
@@ -48,10 +64,13 @@ function loadConfigFromStorage(): Partial<AppConfig> {
 // 保存配置到localStorage
 function saveConfigToStorage(config: AppConfig) {
   try {
-    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({
-      api: { useRealApi: config.api.useRealApi },
-      auth: { mockMode: config.auth.mockMode }
-    }))
+    localStorage.setItem(
+      CONFIG_STORAGE_KEY,
+      JSON.stringify({
+        api: { useRealApi: config.api.useRealApi },
+        auth: { mockMode: config.auth.mockMode }
+      })
+    )
   } catch (error) {
     console.warn('保存配置失败:', error)
   }
@@ -85,11 +104,12 @@ export function updateConfig(newConfig: {
 
 // 开发环境下的动态配置切换
 if (isDevelopment) {
+  const devWindow = window as ChinpoemDevWindow
   // 暴露配置到全局，方便开发调试
-  ;(window as any).appConfig = appConfig
-  
+  devWindow.appConfig = appConfig
+
   // 提供快捷切换方法
-  ;(window as any).enableRealApi = () => {
+  devWindow.enableRealApi = () => {
     updateConfig({
       api: { useRealApi: true },
       auth: { mockMode: false }
@@ -97,8 +117,7 @@ if (isDevelopment) {
     console.log('✅ 已切换到真实API模式')
     console.log('🔄 请刷新页面生效')
   }
-  
-  ;(window as any).enableMockApi = () => {
+  devWindow.enableMockApi = () => {
     updateConfig({
       api: { useRealApi: false },
       auth: { mockMode: true }
@@ -108,7 +127,7 @@ if (isDevelopment) {
   }
 
   // 添加重置配置的方法
-  ;(window as any).resetConfig = () => {
+  devWindow.resetConfig = () => {
     localStorage.removeItem(CONFIG_STORAGE_KEY)
     console.log('✅ 配置已重置，请刷新页面')
   }

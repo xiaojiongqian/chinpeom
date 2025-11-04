@@ -1,52 +1,14 @@
-# API配置指南
+# 本地资源与API配置指南
 
 ## 概述
-本指南涵盖项目中翻译API的配置、切换和监控。
+遵循纯终端/本地实现原则：
+- 诗歌与翻译数据从本地静态资源读取；
+- 账户与进度持久化到本地JSON文件；
+- 可选对接第三方LLM服务用于诗歌详情问答（无自建服务端）。
 
-## API配置切换
+## 本地数据与加载
 
-### 翻译API配置
-项目支持多种翻译API提供商，可根据需要进行切换：
-
-#### 1. 本地翻译数据（推荐）
-```typescript
-// src/config/api.ts
-export const TRANSLATION_CONFIG = {
-  type: 'local',
-  basePath: '/resource/data/',
-  supportedLanguages: ['en', 'fr', 'es', 'de', 'ja']
-}
-```
-
-#### 2. 在线翻译API（备用）
-```typescript
-export const TRANSLATION_CONFIG = {
-  type: 'online',
-  apiEndpoint: 'https://api.translate.service.com',
-  apiKey: process.env.VITE_TRANSLATE_API_KEY,
-  timeout: 5000
-}
-```
-
-### 环境配置切换
-
-#### 开发环境配置
-```env
-# .env.development
-VITE_API_BASE_URL=http://localhost:3000
-VITE_TRANSLATE_SOURCE=local
-VITE_DEBUG_MODE=true
-```
-
-#### 生产环境配置
-```env
-# .env.production
-VITE_API_BASE_URL=https://chinpoem.example.com
-VITE_TRANSLATE_SOURCE=local
-VITE_DEBUG_MODE=false
-```
-
-## 翻译数据管理
+### 翻译数据结构
 
 ### 数据结构
 ```json
@@ -85,7 +47,7 @@ public/resource/data/
 └── index.json        # 索引文件
 ```
 
-### 数据加载机制
+### 数据加载机制（前端）
 ```typescript
 // 缓存机制
 const translationCache = new Map<string, any>()
@@ -108,13 +70,13 @@ const loadTranslation = async (language: string, poemId: string) => {
 
 ## 监控和日志
 
-### 性能监控指标
-- API响应时间
+### 本地性能与日志指标
+- 本地读取耗时（静态资源）
 - 缓存命中率
 - 错误率统计
-- 用户语言偏好分析
+- 用户语言偏好（仅本地统计，不上传）
 
-### 日志配置
+### 日志配置（本地）
 ```typescript
 // src/utils/logger.ts
 export class ApiLogger {
@@ -132,7 +94,7 @@ export class ApiLogger {
 }
 ```
 
-### 错误处理策略
+### 错误处理策略（无网络依赖）
 ```typescript
 // 渐进降级策略
 const getTranslationWithFallback = async (language: string, poemId: string) => {
@@ -151,7 +113,7 @@ const getTranslationWithFallback = async (language: string, poemId: string) => {
 }
 ```
 
-## API最佳实践
+## 本地数据最佳实践
 
 ### 1. 缓存策略
 - 本地存储翻译数据，减少网络请求
@@ -180,7 +142,7 @@ const getTranslationWithFallback = async (language: string, poemId: string) => {
 **1. 翻译显示为"***"**
 - 检查翻译文件是否存在
 - 验证数据格式是否正确
-- 确认网络连接正常
+- 确认语言选择与资源路径一致（纯本地，无需网络）
 
 **2. 切换语言无效**
 - 清除浏览器缓存
@@ -190,7 +152,85 @@ const getTranslationWithFallback = async (language: string, poemId: string) => {
 **3. 性能问题**
 - 启用数据压缩
 - 优化缓存策略
-- 减少不必要的API调用
+- 合理预加载，避免一次性加载全部文件
+
+## 账户与进度持久化（本地JSON）
+
+### 目录结构
+```
+~/.chinpoem/
+├── active.json                # 当前激活账户
+└── accounts/
+    └── <account>.json         # 账户配置与进度
+```
+
+### active.json 示例
+```json
+{
+  "currentAccount": "laotang",
+  "lastSwitch": "2024-05-12T10:03:17+08:00",
+  "schemaVersion": 1
+}
+```
+
+### <account>.json 示例
+```json
+{
+  "account": "laotang",
+  "score": 28,
+  "rank": "秀才",
+  "language": "zh-CN",
+  "difficulty": "hard",
+  "totalQuestions": 112,
+  "correctQuestions": 87,
+  "lastPlayedAt": "2024-05-12T10:00:01+08:00",
+  "preferences": { "musicEnabled": true },
+  "schemaVersion": 1
+}
+```
+
+### 前端写盘策略
+- Pinia状态节流批量写入；
+- 退出前强制写盘；
+- 写入失败时回退最近有效备份并提示。
+
+## 终端工具 poemctl
+
+### 常用命令
+```bash
+poemctl account create <name>
+poemctl account switch <name>
+poemctl account list
+poemctl account remove <name>
+poemctl account export <name> --out ./backup.json
+poemctl account import ./backup.json
+```
+
+### 行为说明
+- `switch` 会更新 `~/.chinpoem/active.json`；
+- 所有命令均为本地文件操作，无网络请求。
+
+## 可选：LLM 服务（诗歌详情问答）
+若需要启用LLM对话，仅需在前端配置第三方API Key（例如 DeepSeek/OpenAI 兼容接口）。
+
+```typescript
+// src/config/llm.ts
+export const LLM_CONFIG = {
+  baseUrl: import.meta.env.VITE_LLM_BASE_URL,
+  apiKey: import.meta.env.VITE_LLM_API_KEY,
+  model: 'deepseek-chat',
+  timeout: 15000
+}
+```
+
+环境变量示例：
+```env
+# .env.local
+VITE_LLM_BASE_URL=https://api.deepseek.com
+VITE_LLM_API_KEY=sk-xxxx
+```
+
+注意：LLM为可选项；未配置时，诗歌详情页仅展示本地说明，不提供对话功能。
 
 ## 开发调试
 
@@ -218,4 +258,12 @@ npm run test:performance
 
 # 数据完整性检查
 npm run test:data-integrity
-``` 
+```
+
+## 历史服务器实现（存档）
+本项目早期版本包含服务端、第三方登录（Apple/Google/Twitter）、数据库与付费逻辑等。
+- 存档分支：`v1.0-with-backend-server`
+- 涉及技术：Express.js、Firebase Auth/Analytics、MySQL/SQLite、REST API 同步
+- 典型端点（示例）：`POST /api/auth/login`, `PUT /api/user/score`, `POST /api/payment/verify`
+
+该实现已从当前版本中移除，以简化为纯本地/终端模式。需要参考历史细节时，请切换到上述分支。

@@ -6,10 +6,7 @@ import { loadPoemData as loadPoemDataUtil, getAllSentences, LanguageType } from 
 import { getPoemImageUrl } from '@/utils/resourceLoader'
 import { selectRandomPoemAndPrepareTranslation } from '@/utils/randomPoemSelector'
 import { createDisplayContent } from '@/utils/sentenceTranslation'
-import {
-  generateOptionsWithDifficulty as generateOptionsByDifficulty,
-  type DifficultyLevel
-} from '@/utils/optionsGenerator'
+import { generateOptionsWithDifficulty as generateOptionsByDifficulty } from '@/utils/optionsGenerator'
 
 export const usePoemStore = defineStore('poem', () => {
   // 依赖 userStore
@@ -24,7 +21,7 @@ export const usePoemStore = defineStore('poem', () => {
   const loadError = ref<string | null>(null)
   const allPoems = ref<Poem[]>([])
   const allTranslations = ref<Record<string, TranslatedPoem>>({})
-  
+
   // 难度直接从 userStore 获取
   const currentDifficulty = computed(() => userStore.difficulty)
 
@@ -59,12 +56,12 @@ export const usePoemStore = defineStore('poem', () => {
     try {
       console.log('[PoemStore] Calling loadPoemDataUtil...')
       const hintLang = userStore.hintLanguage
-      
+
       const languagesToLoad: LanguageType[] = ['chinese']
       if (hintLang !== 'none' && hintLang !== 'chinese') {
         languagesToLoad.push(hintLang as LanguageType)
       }
-      
+
       const poemData = await loadPoemDataUtil(languagesToLoad)
       console.log('[PoemStore] loadPoemDataUtil returned. poemData exists:', !!poemData)
 
@@ -96,11 +93,14 @@ export const usePoemStore = defineStore('poem', () => {
   }
 
   // 监听用户语言或难度变化，重新加载数据
-  watch([() => userStore.language, () => userStore.difficulty], () => {
-    console.log('检测到用户语言或难度变化，重新初始化诗歌数据...')
-    initialize()
-  }, { deep: true })
-
+  watch(
+    [() => userStore.language, () => userStore.difficulty],
+    () => {
+      console.log('检测到用户语言或难度变化，重新初始化诗歌数据...')
+      initialize()
+    },
+    { deep: true }
+  )
 
   // 随机选择一首诗
   function selectRandomPoem() {
@@ -170,6 +170,6 @@ export const usePoemStore = defineStore('poem', () => {
     initialize,
     selectRandomPoem,
     checkAnswer,
-    generateOptionsWithDifficulty,
+    generateOptionsWithDifficulty
   }
 })

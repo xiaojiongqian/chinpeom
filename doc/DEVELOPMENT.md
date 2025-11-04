@@ -1,4 +1,4 @@
-# 唐诗译境（Chinpoem）开发规范文档
+# 唐诗译境（Chinpoem）开发规范文档（纯本地版）
 
 ## 目录结构
 
@@ -29,7 +29,7 @@
 │   ├── backgroundmusic/    # 背景音乐文件
 │   ├── test-music-debug.html     # 音乐测试页面
 │   ├── test-resume-music.html    # 音乐恢复测试页面
-│   └── test-firebase.html        # Firebase连接测试页面
+│   └── test-firebase.html        # Firebase连接测试页面（历史实现，已归档）
 │
 ├── src/                    # 源代码
 │   ├── assets/             # 项目资源文件
@@ -38,7 +38,7 @@
 │   │   │   └── feature/    # 功能图标
 │   │   ├── main.css        # 全局样式
 │   │   ├── theme.css       # 主题样式
-│   │   └── login_floatwater.webp  # 登录页面背景图
+│   │   └── login_floatwater.webp  # 引导页/欢迎页背景图（历史命名）
 │   ├── components/         # UI组件
 │   │   ├── common/         # 通用组件
 │   │   │   ├── BaseButton.vue
@@ -56,8 +56,8 @@
 │   │   └── PoemDetailDialog.vue # 诗歌详情对话框组件
 │   ├── config/             # 配置文件
 │   │   ├── app.ts          # 应用配置
-│   │   ├── firebase.ts     # Firebase配置
-│   │   └── analytics.ts    # Firebase Analytics配置
+│   │   ├── firebase.ts     # Firebase配置（历史实现，已归档）
+│   │   └── analytics.ts    # Firebase Analytics配置（历史实现，已归档）
 │   ├── locales/            # 国际化文件
 │   │   ├── zh.ts           # 中文翻译
 │   │   ├── en.ts           # 英文翻译
@@ -87,11 +87,11 @@
 │   │   ├── randomPoemSelector.ts # 随机诗歌选择器
 │   │   └── poem.ts         # 诗歌相关工具函数
 │   ├── services/           # 服务层
-│   │   ├── authApi.ts      # 认证API服务（支持Firebase）
-│   │   ├── firebaseAuth.ts # Firebase认证服务
-│   │   └── llmApi.ts       # LLM服务
+│   │   ├── authApi.ts      # 历史认证API服务（已归档）
+│   │   ├── firebaseAuth.ts # 历史Firebase认证服务（已归档）
+│   │   └── llmApi.ts       # LLM服务（可选）
 │   ├── views/              # 页面组件
-│   │   ├── LoginView.vue   # 登录页面
+│   │   ├── LoginView.vue   # 引导页（首次启动，无登录流程）
 │   │   ├── QuizView.vue    # 游戏主页面
 │   │   ├── SettingsView.vue # 设置页面
 │   │   ├── AchievementView.vue # 成就页面
@@ -115,12 +115,12 @@
 │   ├── verify-fetch.mjs    # 数据验证脚本
 │   └── poemTest.mjs        # 诗歌测试脚本
 │
-├── server/                 # 后端服务
-│   ├── server.js           # 服务入口
-│   ├── api/                # 接口实现
-│   ├── data/               # 数据文件
-│   ├── config/             # 配置文件
-│   └── middleware/         # 中间件
+├── server/                 # 后端服务（历史实现，已归档）
+│   ├── server.js           # 服务入口（历史）
+│   ├── api/                # 接口实现（历史）
+│   ├── data/               # 数据文件（历史）
+│   ├── config/             # 配置文件（历史）
+│   └── middleware/         # 中间件（历史）
 │
 ├── coverage/               # 测试覆盖率报告
 ├── dist/                   # 构建输出目录
@@ -146,7 +146,7 @@
 └── README.md               # 项目说明文档
 ```
 
-## 技术栈
+## 技术栈（当前）
 
 ### 前端技术
 - **框架**: Vue 3 (Composition API + \<script setup\>)
@@ -158,9 +158,9 @@
 - **国际化**: Vue I18n (支持中文、英语、西班牙语、日语、法语、德语)
 - **移动端打包**: Capacitor
 - **组件自动导入**: unplugin-auto-import + unplugin-vue-components
-- **数据存储**: localStorage (本地存储模式)
-- **认证服务**: Firebase Authentication (Apple, Google, Twitter/X)
-- **数据分析**: Firebase Analytics (用户行为追踪)
+- **数据存储**: Capacitor Filesystem + localStorage（运行时缓存，持久化到本地JSON）
+- **认证服务**: 无第三方登录（终端本地账户取代）
+- **数据分析**: 本地日志（可导出）
 
 ### 测试技术
 - **测试框架**: Vitest
@@ -174,94 +174,46 @@
 - **编辑器**: VSCode / Cursor
 - **版本控制**: Git
 
-### 后期技术栈（P2）
-- **后端框架**: Express.js
-- **数据库**: SQLite/MySQL
-- **认证**: JWT Token + Firebase UID
-- **API**: RESTful
+### 可选扩展
+- **LLM服务**: DeepSeek/OpenAI兼容接口（前端直连）
 
 ## 核心功能模块
 
 ### 1. 用户管理系统
 **文件位置**: `src/stores/user.ts`, `src/types/user.d.ts`
 - 本地用户状态管理
-- 分数记录与等级系统（免费用户限制至学童25分）
+- 分数记录与等级系统（无付费限制）
 - 统一语言设置：界面语言与诗歌提示语言复用同一UI控件
 - 中文模式特殊处理：简单模式下提示语言为'english'，困难模式为'none' (显示星号)。
 - 默认语言检测：中文浏览器默认中文+简单模式。
-- 本地存储集成
-- Firebase用户认证集成（Apple, Google, Twitter/X）
-- Firebase Analytics用户行为追踪
+- 本地存储集成（Capacitor Filesystem）
+- 终端账户读取与切换（`~/.chinpoem/active.json`）
 
-### 2. 认证系统（Firebase集成 - 重构版）
-**文件位置**: `src/services/authApi.ts`, `src/services/firebaseAuth.ts`, `src/config/firebase.ts`, `server/api/auth.js`
+### 2. 终端账户工具（poemctl）
+**建议位置**: `scripts/poemctl`（Node.js + Commander.js）
 
-#### Firebase配置（更新版）
-- **项目名称**: poem2guess
-- **项目ID**: poem2guess-8d19f
-- **Web API Key**: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
-- **Auth Domain**: poem2guess-8d19f.firebaseapp.com
-- **支持的登录方式**: Apple Sign-In, Google OAuth, Twitter/X API
-- **Analytics**: 用户行为分析与关键动作埋点
+#### 目标
+提供账户创建、删除、切换、导入/导出等本地操作，前端读取`~/.chinpoem`实现进度持久化。
 
-#### 重构后的认证架构
-经过重构后，认证系统采用了更简洁清晰的架构：
+#### 子命令
+- `account create <name>`
+- `account remove <name>`
+- `account list`
+- `account switch <name>`（写入`~/.chinpoem/active.json`）
+- `account export <name> --out <file>`
+- `account import <file>`
 
-**🎯 核心原则**
-1. **多平台登录**: Apple Sign-In, Google OAuth, Twitter/X API统一使用Firebase ID Token认证
-2. **环境区分**: 开发环境支持测试模式，生产环境仅支持真实认证
-3. **简化配置**: 移除复杂的Mock/Real API模式切换
-4. **错误处理**: 完善的错误捕获和用户友好提示
-5. **数据分析**: Firebase Analytics集成，关键用户行为埋点
-
-#### 认证流程（多平台版）
-1. **前端Firebase认证**: 用户选择Apple/Google/Twitter登录，通过Firebase弹窗完成认证
-2. **获取ID Token**: 前端获取Firebase ID Token（JWT格式）
-3. **后端验证**: 后端使用Firebase Admin SDK验证ID Token
-4. **用户存储**: 验证成功后在数据库中创建/更新用户记录
-5. **JWT返回**: 返回应用自己的JWT Token供后续API调用使用
-6. **Analytics埋点**: 记录用户登录行为和平台来源
-
-#### 技术实现要点
-- **多平台支持**: 集成Apple Sign-In、Google OAuth、Twitter/X API三种登录方式
-- **Firebase集成**: 使用Firebase Authentication进行用户身份验证和ID Token生成
-- **后端验证**: 使用Firebase Admin SDK验证前端传递的ID Token
-- **Analytics集成**: 登录成功时记录用户行为数据和登录平台来源
-- **开发模式**: 支持测试token模式，便于开发调试
-- **错误处理**: 完善的错误捕获机制和用户友好提示
-- **状态同步**: Firebase认证状态与本地用户状态保持同步
-
-#### 环境配置（多平台版）
-**开发环境**: 
-- Apple/Google/Twitter登录: 支持真实Firebase认证 + 测试token模式
-- Firebase Analytics: 开发模式，详细日志记录
-
-**生产环境**:
-- Apple/Google/Twitter登录: 仅支持真实Firebase认证
-- Firebase Analytics: 生产模式，用户行为数据收集
-
-#### 测试工具（精简版）
-- **主要测试页面**: `public/test-firebase-auth.html` - Firebase认证端到端测试
-- **登录流程诊断**: `public/test-login-flow.html` - 登录问题诊断工具
-- **简化认证测试**: `public/test-simple-auth.html` - 快速认证测试
-- **音乐功能测试**: `public/test-music-debug.html` - 音乐播放调试
-- **音乐暂停测试**: `public/test-resume-music.html` - 暂停/恢复功能测试
-- **访问地址**: `http://localhost:3000/test-*.html`
-
-#### 重构优势
-1. **架构清晰**: 移除了复杂的Mock服务文件和配置切换
-2. **代码简洁**: 认证逻辑集中在单个文件中，易于维护
-3. **错误处理**: 统一的错误处理和用户友好提示
-4. **开发友好**: 保留测试模式，支持开发调试
-5. **生产就绪**: 生产环境配置简单可靠
+#### 前端写盘策略
+- Pinia状态节流批量写入账户JSON
+- 退出前强制写盘
+- JSON校验失败回滚到最近备份
 
 #### 故障排除
-如果遇到认证问题，请检查：
-1. **Firebase配置**: 确认API Key和项目ID正确
-2. **网络连接**: 确认能访问Firebase服务
-3. **Token格式**: 确认传递的是Firebase ID Token而非Access Token
-4. **环境模式**: 开发环境可以使用`test_google_token`进行测试
-5. **服务器日志**: 查看`server/logs/`目录下的错误日志
+如果遇到账户相关问题，请检查：
+1. `~/.chinpoem/active.json` 是否存在且格式正确
+2. 账户文件是否位于 `~/.chinpoem/accounts/<name>.json`
+3. 文件权限是否允许读写
+4. JSON结构字段是否缺失（参考 API_GUIDE 示例）
 
 ### 3. 诗歌管理系统
 **文件位置**: `src/stores/poem.ts`, `src/utils/poem*.ts`
@@ -290,7 +242,7 @@
 8. Longing in Chang'an.mp3
 
 #### 核心特性
-- **智能播放控制**：登录页默认静音，主页面默认开启
+- **智能播放控制**：引导页默认静音，主页面默认开启
 - **连续播放**：音乐结束后自动随机选择下一首
 - **暂停恢复**：支持从暂停位置继续播放，而非重新开始
 - **浏览器兼容**：处理自动播放限制和用户交互要求
@@ -298,7 +250,7 @@
 
 #### 技术实现要点
 - **状态管理**: 使用Pinia管理音乐播放状态、音量控制和当前曲目
-- **智能播放**: 登录页面固定第一首音乐且默认静音，主页面随机选择且默认开启
+- **智能播放**: 引导页面固定第一首音乐且默认静音，主页面随机选择且默认开启
 - **暂停恢复**: 支持从暂停位置继续播放，避免重新开始造成的体验中断
 - **自动切换**: 音乐自然结束后随机选择下一首，保持连续播放体验
 - **手动控制**: 提供独立的播放/暂停开关和手动切换下一首功能
@@ -311,7 +263,7 @@
 - **暂停恢复优化**：音效开关实现真正的暂停/恢复，提升用户体验
 
 #### 用户交互设计
-1. **登录界面**：固定播放第一首音乐，默认静音，用户可手动开启背景音乐
+1. **引导界面**：固定播放第一首音乐，默认静音，用户可手动开启背景音乐
 2. **主页面**：随机选择音乐，默认开启，提供两个独立按钮：
    - 背景音乐开关按钮：控制播放/暂停（保持播放位置）
    - 背景音乐切换按钮：切换到下一首音乐
@@ -331,7 +283,6 @@
 - 分数进度追踪
 - 等级说明和介绍
 - 成就反馈机制
-- 付费边界处理：25分时显示学童并立即弹出付费提示
 
 ### 7. 语言逻辑系统
 **文件位置**: `src/stores/user.ts`, `src/locales/`, `src/utils/language.ts`
@@ -434,11 +385,11 @@
 - **错误处理**: 实现完善的异常捕获和处理机制
 - **性能优化**: 对计算密集型函数进行优化
 
-### 6. 认证服务开发
-- **服务分离**: Firebase认证服务与通用认证API分离
-- **错误处理**: 针对Firebase特定错误提供友好提示
-- **状态同步**: 确保Firebase状态与本地状态同步
-- **兼容性**: 支持Mock模式和真实API模式切换
+### 6. CLI与文件持久化开发
+- **模块化**: 账户、导入导出、校验分离
+- **错误处理**: 详尽的文件I/O与JSON解析错误提示
+- **状态同步**: 前端状态与文件写盘一致性
+- **兼容性**: Mac/Windows/Linux 路径与权限适配
 
 ## 测试规范
 
@@ -449,7 +400,7 @@ tests/
 ├── stores/         # 状态管理测试
 ├── utils/          # 工具函数测试
 ├── views/          # 页面组件测试
-├── services/       # 服务层测试（包括Firebase）
+├── services/       # 服务层测试（无Firebase）
 ├── router/         # 路由测试
 ├── mocks/          # 模拟数据
 ├── models/         # 测试模型
@@ -461,7 +412,6 @@ tests/
 - **组件测试**: Vue组件的渲染和交互
 - **集成测试**: Store与组件的集成
 - **E2E测试**: 关键用户流程
-- **Firebase测试**: 认证流程和状态管理
 
 ### 3. 测试覆盖率目标
 - **总体覆盖率**: 目标达到80%以上
@@ -512,7 +462,7 @@ tests/
 
 ### 1. 开发环境
 ```bash
-npm run dev          # 开发服务器
+npm run dev          # 前端开发（Vite 开发服务器）
 npm run test         # 运行测试
 npm run coverage     # 生成覆盖率报告
 ```
@@ -546,10 +496,10 @@ npx cap run android  # 运行Android应用
 
 ### 2. 示例
 ```
-feat: 集成Firebase Google登录认证
-fix: 修复音乐播放状态同步问题
-docs: 更新Firebase集成开发规范
-test: 添加Firebase认证服务测试用例
+feat: 新增 poemctl 账户创建与切换
+fix: 修复账户JSON写盘时机导致的丢数据
+docs: 更新纯本地开发规范
+test: 添加 poemctl CLI 与文件持久化测试
 ```
 
 ### 3. 分支管理
@@ -565,7 +515,7 @@ test: 添加Firebase认证服务测试用例
 - 定期更新依赖包到最新稳定版本
 - 使用`npm audit`检查安全漏洞
 - 保持package-lock.json与package.json同步
-- 关注Firebase SDK版本更新
+ 
 
 ### 2. 代码审查清单
 - [ ] 代码符合项目编码规范
@@ -574,7 +524,7 @@ test: 添加Firebase认证服务测试用例
 - [ ] 组件可复用性良好
 - [ ] 性能影响在可接受范围
 - [ ] 移动端兼容性良好
-- [ ] Firebase集成正确处理错误
+ 
 
 ### 3. 发布流程
 1. 功能开发完成并通过测试
@@ -595,21 +545,17 @@ test: 添加Firebase认证服务测试用例
 - **国际化架构**: 需要更新为6语言版本
 
 ### 等级系统
-- 白丁 (0-10分) - 免费
-- 学童 (11-25分) - 免费 (免费用户上限)
-- 秀才 (26-45分) - 需要付费 (付费门槛)
-- 廪生至状元 (46-341+分) - 付费
+- 白丁 (0-10分)
+- 学童 (11-25分)
+- 秀才 (26-45分)
+- 廪生至状元 (46-341+分)
 
-## 3rd Party
+## 3rd Party（可选）
 
-### 1. Firebase配置
-- **项目名称**: poem2guess
-- **项目ID**: poem2guess-8d19f  
-- **Web API Key**: AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek
-- **Auth Domain**: poem2guess-8d19f.firebaseapp.com
-- **支持认证**: Apple Sign-In, Google OAuth, Twitter/X API
-- **Analytics**: 用户行为分析和关键动作埋点
-- **SSO功能**: 检测浏览器登录状态，支持一键登录
+### 1. LLM服务
+- DeepSeek/OpenAI兼容接口（前端直连），用于诗歌详情页问答
+- 通过环境变量 `VITE_LLM_BASE_URL` 与 `VITE_LLM_API_KEY` 配置
+- 未配置则不启用对话功能
 
 ### 2. 多语言架构
 - **界面语言**: 中文、英语、西班牙语、日语、法语、德语
@@ -621,12 +567,17 @@ test: 添加Firebase认证服务测试用例
 
 ### 3. 音乐系统
 - **背景音乐**: 8首古典音乐自动轮播
-- **智能控制**: 登录页默认静音，主页面默认开启
+- **智能控制**: 引导页默认静音，主页面默认开启
 - **暂停恢复**: 支持从暂停位置继续播放
 - **浏览器兼容**: 处理自动播放限制
 
 ### 4. 部署配置
-- **Firebase部署**: 使用Firebase CLI工具进行项目初始化和部署
-- **移动应用打包**: 使用Capacitor添加iOS/Android平台支持
-- **同步更新**: 支持代码同步到移动平台并运行测试
-- **构建优化**: 针对不同平台的资源优化和性能调整
+- 使用Capacitor添加iOS/Android平台支持
+- 支持代码同步到移动平台并运行测试
+- 构建优化：针对不同平台的资源优化和性能调整
+
+## 历史服务器实现（存档）
+曾包含后端、第三方登录、数据库与付费逻辑等，现已简化为纯本地方案。
+- 存档分支：`v1.0-with-backend-server`
+- 相关内容：Express.js 服务、Firebase Auth/Analytics、MySQL/SQLite、REST API、付费限制
+- 如需参考历史细节，请切换至存档分支

@@ -15,7 +15,7 @@ async function initDatabase() {
 
   try {
     console.log('🔧 初始化数据库...')
-    
+
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 3306,
@@ -74,7 +74,7 @@ async function initDatabase() {
 
     // 删除并重新创建学级配置表（如果存在结构问题）
     await connection.execute('DROP TABLE IF EXISTS academic_ranks')
-    
+
     // 创建学级配置表
     await connection.execute(`
       CREATE TABLE academic_ranks (
@@ -119,29 +119,115 @@ async function initDatabase() {
 
     // 插入初始学级配置数据
     const rankData = [
-      { rank_name: '白丁', min_score: 0, max_score: 10, rank_order: 1, requires_premium: false, description: '初学者，刚开始学习唐诗' },
-      { rank_name: '学童', min_score: 11, max_score: 25, rank_order: 2, requires_premium: false, description: '已掌握基础诗句，继续努力' },
-      { rank_name: '秀才', min_score: 26, max_score: 45, rank_order: 3, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '廪生', min_score: 46, max_score: 70, rank_order: 4, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '贡生', min_score: 71, max_score: 100, rank_order: 5, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '举人', min_score: 101, max_score: 135, rank_order: 6, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '贡士', min_score: 136, max_score: 175, rank_order: 7, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '进士', min_score: 176, max_score: 220, rank_order: 8, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '探花', min_score: 221, max_score: 280, rank_order: 9, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '榜眼', min_score: 281, max_score: 340, rank_order: 10, requires_premium: true, description: '需要付费解锁' },
-      { rank_name: '状元', min_score: 341, max_score: null, rank_order: 11, requires_premium: true, description: '最高等级，需要付费解锁' }
+      {
+        rank_name: '白丁',
+        min_score: 0,
+        max_score: 10,
+        rank_order: 1,
+        requires_premium: false,
+        description: '初学者，刚开始学习唐诗'
+      },
+      {
+        rank_name: '学童',
+        min_score: 11,
+        max_score: 25,
+        rank_order: 2,
+        requires_premium: false,
+        description: '已掌握基础诗句，继续努力'
+      },
+      {
+        rank_name: '秀才',
+        min_score: 26,
+        max_score: 45,
+        rank_order: 3,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '廪生',
+        min_score: 46,
+        max_score: 70,
+        rank_order: 4,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '贡生',
+        min_score: 71,
+        max_score: 100,
+        rank_order: 5,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '举人',
+        min_score: 101,
+        max_score: 135,
+        rank_order: 6,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '贡士',
+        min_score: 136,
+        max_score: 175,
+        rank_order: 7,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '进士',
+        min_score: 176,
+        max_score: 220,
+        rank_order: 8,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '探花',
+        min_score: 221,
+        max_score: 280,
+        rank_order: 9,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '榜眼',
+        min_score: 281,
+        max_score: 340,
+        rank_order: 10,
+        requires_premium: true,
+        description: '需要付费解锁'
+      },
+      {
+        rank_name: '状元',
+        min_score: 341,
+        max_score: null,
+        rank_order: 11,
+        requires_premium: true,
+        description: '最高等级，需要付费解锁'
+      }
     ]
 
     for (const rank of rankData) {
-      await connection.execute(`
+      await connection.execute(
+        `
         INSERT IGNORE INTO academic_ranks (rank_name, min_score, max_score, rank_order, requires_premium, description)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [rank.rank_name, rank.min_score, rank.max_score, rank.rank_order, rank.requires_premium, rank.description])
+      `,
+        [
+          rank.rank_name,
+          rank.min_score,
+          rank.max_score,
+          rank.rank_order,
+          rank.requires_premium,
+          rank.description
+        ]
+      )
     }
     console.log('✅ 学级配置数据已初始化')
 
     console.log('\n🎉 数据库初始化完成！')
-
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error.message)
     process.exit(1)
@@ -158,4 +244,4 @@ if (process.argv.includes('--run') || process.argv.includes('init')) {
 } else {
   console.log('使用方法: node initDatabase.js --run')
   console.log('或者: npm run db:init')
-} 
+}

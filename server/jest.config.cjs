@@ -6,19 +6,23 @@ module.exports = {
     }
   },
   transform: {
-    '^.+\\.js$': ['babel-jest', { 
-      presets: [
-        ['@babel/preset-env', {
-          targets: {
-            node: 'current'
-          }
-        }]
-      ]
-    }]
+    '^.+\\.js$': [
+      'babel-jest',
+      {
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              targets: {
+                node: 'current'
+              }
+            }
+          ]
+        ]
+      }
+    ]
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(mysql2)/)'
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(mysql2)/)'],
   moduleFileExtensions: ['js', 'json'],
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
   collectCoverageFrom: [
@@ -40,4 +44,4 @@ module.exports = {
   verbose: true,
   detectOpenHandles: true,
   forceExit: true
-} 
+}

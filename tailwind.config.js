@@ -11,10 +11,10 @@ export default {
               fontSize: theme('fontSize.xl'),
               fontWeight: '700',
               marginTop: theme('spacing.4'),
-              marginBottom: theme('spacing.2'),
-            },
-          },
-        },
+              marginBottom: theme('spacing.2')
+            }
+          }
+        }
       }),
       colors: {
         primary: {
@@ -68,8 +68,5 @@ export default {
       }
     }
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/line-clamp'),
-  ]
+  plugins: [require('@tailwindcss/typography'), require('@tailwindcss/line-clamp')]
 }

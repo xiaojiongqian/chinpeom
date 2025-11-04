@@ -27,6 +27,7 @@ export const mockUserApi = {
    */
   async login(username: string, password: string): Promise<{ user: User; token: string }> {
     await delay(300)
+    void password
 
     // 从本地存储获取用户
     const users = getLocalStorage<User[]>('users', [])
@@ -52,6 +53,7 @@ export const mockUserApi = {
    */
   async register(username: string, password: string): Promise<{ user: User; token: string }> {
     await delay(300)
+    void password
 
     // 从本地存储获取用户
     const users = getLocalStorage<User[]>('users', [])
@@ -86,6 +88,7 @@ export const mockUserApi = {
    */
   async getUserInfo(token: string): Promise<User> {
     await delay(200)
+    void token
 
     // 从本地存储获取用户
     const users = getLocalStorage<User[]>('users', [])

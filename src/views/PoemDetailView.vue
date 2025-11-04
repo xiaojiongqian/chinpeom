@@ -7,5 +7,5 @@
 </template>
 
 <script setup lang="ts">
-import PoemDetailDialog from '@/components/PoemDetailDialog.vue';
-</script> 
+  import PoemDetailDialog from '@/components/PoemDetailDialog.vue'
+</script>

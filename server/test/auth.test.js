@@ -15,7 +15,7 @@ describe('认证API测试', () => {
         provider: 'wechat',
         access_token: createTestAuthToken('wechat', { sub: 'auth_test_user' })
       })
-    
+
     expect(loginResponse.status).toBe(200)
     testToken = loginResponse.body.token
     testUserId = loginResponse.body.user.id
@@ -50,7 +50,10 @@ describe('认证API测试', () => {
     test('应该拒绝无效的访问令牌', async () => {
       await request(app)
         .post('/api/auth/login')
-        .send({ provider: 'wechat', access_token: createTestAuthToken('wechat', { fail_verification: true })})
+        .send({
+          provider: 'wechat',
+          access_token: createTestAuthToken('wechat', { fail_verification: true })
+        })
         .expect(401)
     })
   })
@@ -97,4 +100,4 @@ describe('认证API测试', () => {
       expect(decoded).toHaveProperty('provider', 'wechat')
     })
   })
-}) 
+})

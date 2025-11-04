@@ -8,10 +8,10 @@ export const useMusicStore = defineStore('music', () => {
     '2.关山月.mp3',
     '3.黄鹤归来.mp3',
     '4.将进酒.mp3',
-    '5.The Moon\'s Whisper.mp3',
-    '6.The Winter\'s Embrace(白雪歌送武判官归京).mp3',
+    "5.The Moon's Whisper.mp3",
+    "6.The Winter's Embrace(白雪歌送武判官归京).mp3",
     '7.The Winds of War(轮台歌奉送封大夫出师西征).mp3',
-    '8.Longing in Chang\'an.mp3'
+    "8.Longing in Chang'an.mp3"
   ]
 
   // 状态
@@ -33,18 +33,18 @@ export const useMusicStore = defineStore('music', () => {
   })
 
   // 监听isMuted的变化并持久化到localStorage
-  watch(isMuted, (newVal) => {
+  watch(isMuted, newVal => {
     localStorage.setItem('musicMuted', JSON.stringify(newVal))
   })
 
   // 检测是否在移动应用环境中
-  function isMobileApp() {
-    // 检测Capacitor环境
-    return !!(window as any).Capacitor || 
-           // 检测其他移动应用标识
-           navigator.userAgent.includes('CapacitorApp') ||
-           // 可以添加其他移动应用环境检测逻辑
-           false
+  function isMobileApp(): boolean {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    const capacitorFlag = (window as Window & { Capacitor?: unknown }).Capacitor
+    return Boolean(capacitorFlag || navigator.userAgent.includes('CapacitorApp'))
   }
 
   // 初始化音频
@@ -54,7 +54,7 @@ export const useMusicStore = defineStore('music', () => {
       audio.value.volume = volume.value
       audio.value.loop = false
       audio.value.preload = 'metadata'
-      
+
       // 音乐自然结束时自动随机播放下一首
       audio.value.addEventListener('ended', () => {
         console.log('音乐播放结束:', currentMusicName.value)
@@ -63,7 +63,7 @@ export const useMusicStore = defineStore('music', () => {
       })
 
       // 处理播放错误
-      audio.value.addEventListener('error', (e) => {
+      audio.value.addEventListener('error', e => {
         console.error('音频播放错误:', e, '当前音乐:', currentMusicName.value)
         isPlaying.value = false
         // 延迟一秒后尝试下一首，避免快速连续错误
@@ -101,10 +101,10 @@ export const useMusicStore = defineStore('music', () => {
         nextIndex = Math.floor(Math.random() * backgroundMusicList.length)
       }
     }
-    
+
     console.log('自动切换到下一首:', backgroundMusicList[nextIndex])
     currentMusicIndex.value = nextIndex
-    
+
     if (isAudioEnabled.value && !isMuted.value) {
       playMusic()
     }
@@ -140,36 +140,39 @@ export const useMusicStore = defineStore('music', () => {
     if (!audio.value) {
       initAudio()
     }
-    
+
     if (audio.value && !isMuted.value) {
       const targetSrc = currentMusicPath.value
-      
+
       console.log('准备播放音乐:', currentMusicName.value, '路径:', targetSrc)
-      
+
       // 如果音频源发生变化，才需要设置新的音乐源
       if (audio.value.src !== window.location.origin + targetSrc) {
         // 停止当前播放并设置新的音乐源
         if (!audio.value.paused) {
           audio.value.pause()
         }
-        
+
         // 设置新的音乐源并从头播放
         audio.value.src = targetSrc
         audio.value.currentTime = 0
       }
       // 如果是同一首音乐，直接从暂停位置继续播放
-      
-      audio.value.play().then(() => {
-        isPlaying.value = true
-        console.log('成功开始播放:', currentMusicName.value)
-      }).catch(error => {
-        console.error('播放音乐失败:', error, '音乐:', currentMusicName.value)
-        isPlaying.value = false
-        // 如果播放失败，尝试下一首
-        setTimeout(() => {
-          autoPlayNextMusic()
-        }, 1000)
-      })
+
+      audio.value
+        .play()
+        .then(() => {
+          isPlaying.value = true
+          console.log('成功开始播放:', currentMusicName.value)
+        })
+        .catch(error => {
+          console.error('播放音乐失败:', error, '音乐:', currentMusicName.value)
+          isPlaying.value = false
+          // 如果播放失败，尝试下一首
+          setTimeout(() => {
+            autoPlayNextMusic()
+          }, 1000)
+        })
     }
   }
 
@@ -214,25 +217,28 @@ export const useMusicStore = defineStore('music', () => {
     if (!audio.value) {
       initAudio()
     }
-    
+
     if (audio.value && !isMuted.value) {
       // 确保音频源已设置
       if (!audio.value.src) {
         const targetSrc = currentMusicPath.value
         audio.value.src = targetSrc
       }
-      
-      audio.value.play().then(() => {
-        isPlaying.value = true
-        console.log('成功恢复播放:', currentMusicName.value, '位置:', audio.value?.currentTime)
-      }).catch(error => {
-        console.error('恢复播放失败:', error, '音乐:', currentMusicName.value)
-        isPlaying.value = false
-        // 如果恢复播放失败，尝试从头播放
-        setTimeout(() => {
-          playMusic()
-        }, 1000)
-      })
+
+      audio.value
+        .play()
+        .then(() => {
+          isPlaying.value = true
+          console.log('成功恢复播放:', currentMusicName.value, '位置:', audio.value?.currentTime)
+        })
+        .catch(error => {
+          console.error('恢复播放失败:', error, '音乐:', currentMusicName.value)
+          isPlaying.value = false
+          // 如果恢复播放失败，尝试从头播放
+          setTimeout(() => {
+            playMusic()
+          }, 1000)
+        })
     }
   }
 
@@ -260,14 +266,14 @@ export const useMusicStore = defineStore('music', () => {
   function startBackgroundMusic() {
     // 登录页面固定从第一首开始（古韵绵长.mp3），可以保持音效开启状态
     currentMusicIndex.value = 0
-    
+
     // 添加全局点击监听器，首次点击时启用音频
     const handleFirstInteraction = () => {
       enableAudio()
       document.removeEventListener('click', handleFirstInteraction)
       document.removeEventListener('keydown', handleFirstInteraction)
     }
-    
+
     document.addEventListener('click', handleFirstInteraction)
     document.addEventListener('keydown', handleFirstInteraction)
   }
@@ -275,20 +281,20 @@ export const useMusicStore = defineStore('music', () => {
   // 主页面启动音乐（主页面调用）
   function startMainPageMusic() {
     // 主页面保持音效开启状态（已在初始化时设置为false）
-    
+
     // 如果当前没有播放，随机选择一首音乐
     if (currentMusicIndex.value === 0) {
       const randomIndex = Math.floor(Math.random() * backgroundMusicList.length)
       currentMusicIndex.value = randomIndex
     }
-    
+
     // 添加全局点击监听器，首次点击时启用音频
     const handleFirstInteraction = () => {
       enableAudio()
       document.removeEventListener('click', handleFirstInteraction)
       document.removeEventListener('keydown', handleFirstInteraction)
     }
-    
+
     document.addEventListener('click', handleFirstInteraction)
     document.addEventListener('keydown', handleFirstInteraction)
   }
@@ -301,11 +307,11 @@ export const useMusicStore = defineStore('music', () => {
     volume,
     backgroundMusicList,
     isAudioEnabled,
-    
+
     // 计算属性
     currentMusicPath,
     currentMusicName,
-    
+
     // 方法
     initAudio,
     enableAudio,
@@ -322,4 +328,4 @@ export const useMusicStore = defineStore('music', () => {
     isMobileApp,
     autoEnableAudio
   }
-}) 
+})

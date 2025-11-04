@@ -19,7 +19,7 @@ const CONFIG = {
   retentionDays: 7,
   // 最大文件大小 (MB)
   maxFileSizeMB: 50,
-  // 最大总大小 (MB)  
+  // 最大总大小 (MB)
   maxTotalSizeMB: 200,
   // 日志文件模式
   logFilePattern: /^api-\d{4}-\d{2}-\d{2}.*\.log$/,
@@ -74,7 +74,7 @@ function scanLogFiles() {
   files.forEach(file => {
     const filePath = path.join(CONFIG.logDir, file)
     const fileInfo = getFileInfo(filePath)
-    
+
     if (!fileInfo) return
 
     if (CONFIG.logFilePattern.test(file)) {
@@ -107,7 +107,9 @@ function cleanupExpiredFiles(files, retentionDays) {
       fs.unlinkSync(file.path)
       deletedCount++
       deletedSize += file.size
-      console.log(`✅ 删除过期文件: ${file.name} (${formatSize(file.size)}, ${file.age.toFixed(1)}天前)`)
+      console.log(
+        `✅ 删除过期文件: ${file.name} (${formatSize(file.size)}, ${file.age.toFixed(1)}天前)`
+      )
     } catch (error) {
       console.error(`❌ 删除文件失败: ${file.name}`, error.message)
     }
@@ -187,20 +189,11 @@ function cleanupTestLogs(testLogs) {
 }
 
 /**
- * 压缩旧日志文件
- */
-function compressOldLogs(files) {
-  // 这里可以实现日志压缩功能
-  // 暂时跳过，因为需要额外的压缩库
-  console.log('💡 提示: 可以考虑压缩超过3天的日志文件以节省空间')
-}
-
-/**
  * 主清理函数
  */
 function performCleanup(options = {}) {
   const config = { ...CONFIG, ...options }
-  
+
   console.log('🧹 开始日志清理...')
   console.log(`📁 日志目录: ${config.logDir}`)
   console.log(`⏰ 保留天数: ${config.retentionDays}`)
@@ -210,12 +203,12 @@ function performCleanup(options = {}) {
 
   // 扫描文件
   const { apiLogs, testLogs, others } = scanLogFiles()
-  
+
   console.log('📋 扫描结果:')
   console.log(`   API日志: ${apiLogs.length} 个文件`)
   console.log(`   测试日志: ${testLogs.length} 个文件`)
   console.log(`   其他日志: ${others.length} 个文件`)
-  
+
   const totalSize = [...apiLogs, ...testLogs, ...others].reduce((sum, file) => sum + file.size, 0)
   console.log(`   总大小: ${formatSize(totalSize)}`)
   console.log('')
@@ -274,12 +267,16 @@ function performCleanup(options = {}) {
   console.log('✅ 清理完成!')
   console.log(`   删除文件: ${totalDeleted} 个`)
   console.log(`   释放空间: ${formatSize(totalDeletedSize)}`)
-  
+
   // 重新扫描显示剩余情况
   const finalScan = scanLogFiles()
-  const finalTotalSize = [...finalScan.apiLogs, ...finalScan.testLogs, ...finalScan.others]
-    .reduce((sum, file) => sum + file.size, 0)
-  console.log(`   剩余日志: ${finalScan.apiLogs.length + finalScan.testLogs.length + finalScan.others.length} 个文件`)
+  const finalTotalSize = [...finalScan.apiLogs, ...finalScan.testLogs, ...finalScan.others].reduce(
+    (sum, file) => sum + file.size,
+    0
+  )
+  console.log(
+    `   剩余日志: ${finalScan.apiLogs.length + finalScan.testLogs.length + finalScan.others.length} 个文件`
+  )
   console.log(`   剩余大小: ${formatSize(finalTotalSize)}`)
 
   return {
@@ -298,7 +295,7 @@ function showLogStats() {
   console.log('')
 
   const { apiLogs, testLogs, others } = scanLogFiles()
-  
+
   if (apiLogs.length > 0) {
     console.log('📜 API日志:')
     apiLogs.forEach(file => {
@@ -328,14 +325,14 @@ function showLogStats() {
 
   const totalFiles = apiLogs.length + testLogs.length + others.length
   const totalSize = [...apiLogs, ...testLogs, ...others].reduce((sum, file) => sum + file.size, 0)
-  
+
   console.log(`📋 总计: ${totalFiles} 个文件, ${formatSize(totalSize)}`)
 }
 
 // 命令行参数处理
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2] || 'cleanup'
-  
+
   switch (command) {
     case 'cleanup':
       performCleanup()
@@ -376,4 +373,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
 }
 
-export { performCleanup, showLogStats, scanLogFiles } 
+export { performCleanup, showLogStats, scanLogFiles }

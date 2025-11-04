@@ -3,12 +3,12 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
 // Firebase配置信息 - 来自DEVELOPMENT.md
 const firebaseConfig = {
-  apiKey: "AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek",
-  authDomain: "poem2guess-8d19f.firebaseapp.com",
-  projectId: "poem2guess-8d19f",
-  storageBucket: "poem2guess-8d19f.firebasestorage.app",
-  messagingSenderId: "1090834027836",
-  appId: "1:1090834027836:web:d4a2b8f4f5e1e2f3a4b5c6"
+  apiKey: 'AIzaSyCHt0r0EgWVt7xhOZS_piykzBcTSjKexek',
+  authDomain: 'poem2guess-8d19f.firebaseapp.com',
+  projectId: 'poem2guess-8d19f',
+  storageBucket: 'poem2guess-8d19f.firebasestorage.app',
+  messagingSenderId: '1090834027836',
+  appId: '1:1090834027836:web:d4a2b8f4f5e1e2f3a4b5c6'
 }
 
 // 初始化 Firebase
@@ -29,4 +29,4 @@ googleProvider.setCustomParameters({
   include_granted_scopes: 'true'
 })
 
-export default app 
+export default app

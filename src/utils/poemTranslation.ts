@@ -77,12 +77,13 @@ export async function loadPoemData(language: LanguageCode): Promise<Poem[]> {
     if (isTestEnv) {
       console.log('[PoemTranslation] 在测试环境中返回默认测试数据')
       // 尝试从全局模拟对象获取数据
-      const mockData =
-        typeof window !== 'undefined'
-          ? (window as any).mockPoems?.[language]
-          : typeof global !== 'undefined'
-            ? (global as any).mockPoems?.[language]
-            : undefined
+      const mockDataSource = (
+        globalThis as {
+          mockPoems?: Partial<Record<LanguageCode, Poem[]>>
+        }
+      ).mockPoems
+
+      const mockData = mockDataSource?.[language]
 
       if (mockData) {
         console.log(`[PoemTranslation] 使用全局模拟数据, 共${mockData.length}首诗`)

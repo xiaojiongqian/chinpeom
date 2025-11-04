@@ -12,9 +12,12 @@ interface LoggerConfig {
   maxStoredLogs: number
 }
 
+type LogPayload = Record<string, unknown> | unknown[] | string | number | boolean | null | undefined
+
 class Logger {
   private config: LoggerConfig
-  private logs: Array<{ timestamp: string; level: LogLevel; message: string; data?: any }> = []
+  private logs: Array<{ timestamp: string; level: LogLevel; message: string; data?: LogPayload }> =
+    []
 
   constructor() {
     // 根据环境设置默认配置
@@ -66,14 +69,14 @@ class Logger {
     const levels: LogLevel[] = ['debug', 'info', 'warn', 'error', 'off']
     const currentLevelIndex = levels.indexOf(this.config.level)
     const messageLevelIndex = levels.indexOf(level)
-    
+
     return messageLevelIndex >= currentLevelIndex && this.config.level !== 'off'
   }
 
   /**
    * 添加日志到存储
    */
-  private addToStorage(level: LogLevel, message: string, data?: any) {
+  private addToStorage(level: LogLevel, message: string, data?: LogPayload) {
     if (!this.config.enableLocalStorage) return
 
     const logEntry = {
@@ -107,16 +110,16 @@ class Logger {
   /**
    * 通用日志方法
    */
-  private log(level: LogLevel, message: string, ...args: any[]) {
+  private log(level: LogLevel, message: string, ...args: unknown[]) {
     if (!this.shouldLog(level)) return
 
-    const data = args.length > 0 ? args : undefined
+    const data: LogPayload | undefined = args.length > 0 ? args : undefined
 
     // 输出到控制台
     if (this.config.enableConsole) {
       const timestamp = new Date().toLocaleTimeString()
       const prefix = `[${timestamp}] [${level.toUpperCase()}]`
-      
+
       switch (level) {
         case 'debug':
           console.debug(prefix, message, ...args)
@@ -140,28 +143,28 @@ class Logger {
   /**
    * 调试日志
    */
-  debug(message: string, ...args: any[]) {
+  debug(message: string, ...args: unknown[]) {
     this.log('debug', message, ...args)
   }
 
   /**
    * 信息日志
    */
-  info(message: string, ...args: any[]) {
+  info(message: string, ...args: unknown[]) {
     this.log('info', message, ...args)
   }
 
   /**
    * 警告日志
    */
-  warn(message: string, ...args: any[]) {
+  warn(message: string, ...args: unknown[]) {
     this.log('warn', message, ...args)
   }
 
   /**
    * 错误日志
    */
-  error(message: string, ...args: any[]) {
+  error(message: string, ...args: unknown[]) {
     this.log('error', message, ...args)
   }
 
@@ -199,7 +202,7 @@ class Logger {
   /**
    * 获取存储的日志
    */
-  getLogs(): Array<{ timestamp: string; level: LogLevel; message: string; data?: any }> {
+  getLogs(): Array<{ timestamp: string; level: LogLevel; message: string; data?: LogPayload }> {
     return [...this.logs]
   }
 
@@ -228,7 +231,7 @@ const logger = new Logger()
 
 // 在开发环境下，将logger暴露到全局，方便调试
 if (import.meta.env.DEV) {
-  ;(window as any).logger = logger
+  ;(window as Window & { logger?: Logger }).logger = logger
 }
 
 export default logger
@@ -237,4 +240,4 @@ export default logger
 export const log = logger.info.bind(logger)
 export const warn = logger.warn.bind(logger)
 export const error = logger.error.bind(logger)
-export const debug = logger.debug.bind(logger) 
+export const debug = logger.debug.bind(logger)

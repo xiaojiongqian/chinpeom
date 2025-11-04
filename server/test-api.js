@@ -3,7 +3,6 @@
 import http from 'http'
 import { spawn } from 'child_process'
 
-const BASE_URL = 'http://localhost:3001'
 const tests = []
 let passedTests = 0
 let failedTests = 0
@@ -27,9 +26,9 @@ function makeRequest(method, path, data = null, headers = {}) {
       }
     }
 
-    const req = http.request(options, (res) => {
+    const req = http.request(options, res => {
       let body = ''
-      res.on('data', chunk => body += chunk)
+      res.on('data', chunk => (body += chunk))
       res.on('end', () => {
         try {
           const parsed = body ? JSON.parse(body) : null
@@ -73,7 +72,7 @@ function startServer() {
       }
     }, 10000)
 
-    server.stdout.on('data', (data) => {
+    server.stdout.on('data', data => {
       const output = data.toString()
       console.log('服务器输出:', output)
       if (output.includes('服务器运行在') && !started) {
@@ -84,11 +83,11 @@ function startServer() {
       }
     })
 
-    server.stderr.on('data', (data) => {
+    server.stderr.on('data', data => {
       console.error('服务器错误:', data.toString())
     })
 
-    server.on('close', (code) => {
+    server.on('close', code => {
       if (!started) {
         reject(new Error(`服务器启动失败，退出代码: ${code}`))
       }
@@ -117,7 +116,7 @@ addTest('微信登录接口', async () => {
   assert(response.body && response.body.message === '登录成功', '期望登录成功消息')
   assert(response.body.user && response.body.user.id, '期望返回用户信息')
   assert(response.body.token, '期望返回JWT令牌')
-  
+
   // 保存token用于后续测试
   global.testToken = response.body.token
   global.testUserId = response.body.user.id
@@ -148,9 +147,9 @@ addTest('令牌验证接口', async () => {
   if (!global.testToken) {
     throw new Error('需要先进行登录测试获取token')
   }
-  
+
   const response = await makeRequest('GET', '/api/auth/verify', null, {
-    'Authorization': `Bearer ${global.testToken}`
+    Authorization: `Bearer ${global.testToken}`
   })
   assert(response.statusCode === 200, `期望状态码200，实际: ${response.statusCode}`)
   assert(response.body && response.body.valid === true, '期望令牌有效')
@@ -160,9 +159,9 @@ addTest('用户信息接口', async () => {
   if (!global.testToken) {
     throw new Error('需要先进行登录测试获取token')
   }
-  
+
   const response = await makeRequest('GET', '/api/user/profile', null, {
-    'Authorization': `Bearer ${global.testToken}`
+    Authorization: `Bearer ${global.testToken}`
   })
   assert(response.statusCode === 200, `期望状态码200，实际: ${response.statusCode}`)
   assert(response.body && response.body.user, '期望返回用户信息')
@@ -174,7 +173,7 @@ addTest('学级配置接口', async () => {
   assert(response.statusCode === 200, `期望状态码200，实际: ${response.statusCode}`)
   assert(Array.isArray(response.body.ranks), '期望返回学级数组')
   assert(response.body.ranks.length > 0, '期望至少有一个学级')
-  
+
   const baiDing = response.body.ranks.find(r => r.rank_name === '白丁')
   assert(baiDing, '期望包含白丁学级')
   assert(baiDing.min_score === 0, '期望白丁最低分数为0')
@@ -191,17 +190,17 @@ addTest('产品配置接口', async () => {
 // 运行测试
 async function runTests() {
   console.log('🧪 开始API接口测试\n')
-  
+
   let serverProcess = null
-  
+
   try {
     // 启动服务器
     const startPromise = startServer()
     serverProcess = startPromise.server
     await startPromise
-    
+
     console.log(`\n📝 运行 ${tests.length} 个测试用例...\n`)
-    
+
     // 运行所有测试
     for (const test of tests) {
       try {
@@ -216,7 +215,6 @@ async function runTests() {
       }
       console.log('')
     }
-    
   } catch (error) {
     console.error('❌ 测试运行失败:', error.message)
     process.exit(1)
@@ -228,15 +226,15 @@ async function runTests() {
       setTimeout(() => serverProcess.kill('SIGKILL'), 3000)
     }
   }
-  
+
   // 生成测试报告
   console.log('📊 测试报告')
   console.log('='.repeat(50))
   console.log(`总测试数: ${tests.length}`)
   console.log(`✅ 通过: ${passedTests}`)
   console.log(`❌ 失败: ${failedTests}`)
-  console.log(`📈 通过率: ${(passedTests / tests.length * 100).toFixed(1)}%`)
-  
+  console.log(`📈 通过率: ${((passedTests / tests.length) * 100).toFixed(1)}%`)
+
   if (failedTests > 0) {
     console.log('\n❌ 存在失败的测试用例')
     process.exit(1)
@@ -250,4 +248,4 @@ async function runTests() {
 runTests().catch(error => {
   console.error('测试运行异常:', error)
   process.exit(1)
-}) 
+})

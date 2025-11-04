@@ -12,7 +12,7 @@ describe('支付API测试', () => {
         provider: 'wechat',
         access_token: createTestAuthToken('wechat', { sub: 'payment_test_user' })
       })
-    
+
     testToken = loginResponse.body.token
     const testUserId = loginResponse.body.user.id
     if (global.trackTestUser) {
@@ -95,4 +95,4 @@ describe('支付API测试', () => {
       expect(yearlyOrder.status).toBe('failed')
     })
   })
-}) 
+})

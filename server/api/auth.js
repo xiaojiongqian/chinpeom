@@ -14,10 +14,13 @@ const router = express.Router()
  */
 async function verifyFirebaseToken(firebaseIdToken) {
   try {
-    console.log('[Firebase Auth] 准备验证的Firebase ID Token (前30字符+...):', firebaseIdToken ? firebaseIdToken.substring(0,30) + "..." : "EMPTY_OR_NULL_TOKEN");
+    console.log(
+      '[Firebase Auth] 准备验证的Firebase ID Token (前30字符+...):',
+      firebaseIdToken ? firebaseIdToken.substring(0, 30) + '...' : 'EMPTY_OR_NULL_TOKEN'
+    )
     console.log('[Firebase Auth] 验证Firebase ID Token')
     const firebaseUser = await firebaseAuthService.verifyIdToken(firebaseIdToken)
-    
+
     return {
       uid: firebaseUser.uid,
       email: firebaseUser.email,
@@ -40,7 +43,7 @@ async function verifyFirebaseToken(firebaseIdToken) {
  */
 async function mockAuthentication(provider, token) {
   console.log(`[Mock Auth] 使用模拟认证: ${provider}`)
-  
+
   // 固定的测试用户数据
   const mockUsers = {
     google: {
@@ -93,7 +96,7 @@ router.post('/login', async (req, res) => {
 
     // 验证必需参数
     if (!provider || !access_token) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: '第三方平台和访问令牌不能为空',
         required: ['provider', 'access_token']
       })
@@ -102,23 +105,32 @@ router.post('/login', async (req, res) => {
     // 验证支持的第三方平台
     const supportedProviders = ['wechat', 'apple', 'google']
     if (!supportedProviders.includes(provider)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: '不支持的第三方平台',
         supported_providers: supportedProviders
       })
     }
 
     let authUser
-    
+
     try {
       // 根据环境和provider选择认证方式
+      console.log(
+        `[Auth Debug] NODE_ENV: ${process.env.NODE_ENV}, provider: ${provider}, token includes test_: ${access_token.includes('test_')}`
+      )
+
       if (provider === 'google') {
         // Google登录始终使用Firebase认证
-        if ((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && access_token.includes('test_')) {
+        if (
+          (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') &&
+          access_token.includes('test_')
+        ) {
           // 开发环境和测试环境的测试模式
+          console.log('[Auth Debug] 使用mock认证模式')
           authUser = await mockAuthentication(provider, access_token)
         } else {
           // 使用Firebase验证Google登录
+          console.log('[Auth Debug] 使用Firebase认证模式')
           authUser = await verifyFirebaseToken(access_token)
         }
       } else if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
@@ -132,7 +144,7 @@ router.post('/login', async (req, res) => {
         })
       }
     } catch (error) {
-      console.error(`[Auth] 认证步骤失败 for provider ${provider}:`, error.message);
+      console.error(`[Auth] 认证步骤失败 for provider ${provider}:`, error.message)
       return res.status(401).json({ message: '第三方认证失败', error: error.message })
     }
 
@@ -141,7 +153,7 @@ router.post('/login', async (req, res) => {
     const displayName = authUser.name || `${provider}用户`
     const providerEmail = authUser.email || null
     const avatarUrl = authUser.picture || null
-    const finalFirebaseUid = firebase_uid || null  // 确保firebase_uid不会是undefined
+    const finalFirebaseUid = firebase_uid || null // 确保firebase_uid不会是undefined
 
     console.log(`[Auth] 处理${provider}登录:`, {
       providerUserId,
@@ -152,11 +164,11 @@ router.post('/login', async (req, res) => {
     })
 
     if (displayName === 'INTEGRATION_TEST_USER') {
-      console.log('--- AUTH API: Processing integration test user ---');
+      console.log('--- AUTH API: Processing integration test user ---')
     }
 
     const connection = await pool.getConnection()
-    
+
     try {
       await connection.beginTransaction()
 
@@ -167,16 +179,16 @@ router.post('/login', async (req, res) => {
       )
 
       let user
-      
+
       if (existingAccounts.length > 0) {
         // 用户已存在，更新登录时间
         user = existingAccounts[0]
-        
+
         await connection.execute(
           'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?',
           [user.id]
         )
-        
+
         // 更新第三方账号信息 - 将undefined转换为null避免数据库错误
         await connection.execute(
           'UPDATE third_party_accounts SET access_token = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ?',
@@ -188,28 +200,25 @@ router.post('/login', async (req, res) => {
           'INSERT INTO users (display_name, avatar_url, last_login_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
           [displayName || null, avatarUrl || null]
         )
-        
+
         const userId = userResult.insertId
-        
+
         // 绑定第三方账号 - 将undefined转换为null避免数据库错误
         await connection.execute(
           'INSERT INTO third_party_accounts (user_id, provider, provider_user_id, provider_username, provider_email, access_token, firebase_uid) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
-            userId, 
-            provider, 
-            providerUserId, 
-            displayName || null, 
-            providerEmail || null, 
-            access_token || null, 
+            userId,
+            provider,
+            providerUserId,
+            displayName || null,
+            providerEmail || null,
+            access_token || null,
             finalFirebaseUid
           ]
         )
-        
+
         // 获取新创建的用户信息
-        const [newUsers] = await connection.execute(
-          'SELECT * FROM users WHERE id = ?',
-          [userId]
-        )
+        const [newUsers] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId])
         user = newUsers[0]
       }
 
@@ -217,9 +226,9 @@ router.post('/login', async (req, res) => {
 
       // 生成JWT
       const token = jwt.sign(
-        { 
-          id: user.id, 
-          provider, 
+        {
+          id: user.id,
+          provider,
           email: providerEmail,
           provider_user_id: providerUserId,
           firebase_uid: finalFirebaseUid,
@@ -250,7 +259,6 @@ router.post('/login', async (req, res) => {
         token,
         expires_in: 7 * 24 * 60 * 60 // 7天，秒为单位
       })
-
     } catch (dbError) {
       await connection.rollback()
       console.error('数据库操作失败:', dbError)
@@ -258,10 +266,9 @@ router.post('/login', async (req, res) => {
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('登录失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : '认证失败'
     })
@@ -277,13 +284,12 @@ router.post('/refresh', auth, async (req, res) => {
     const userId = req.user.id
 
     const connection = await pool.getConnection()
-    
+
     try {
       // 获取用户信息
-      const [users] = await connection.execute(
-        'SELECT * FROM v_user_profile WHERE id = ?',
-        [userId]
-      )
+      const [users] = await connection.execute('SELECT * FROM v_user_profile WHERE id = ?', [
+        userId
+      ])
 
       if (users.length === 0) {
         return res.status(404).json({ message: '用户不存在' })
@@ -293,7 +299,7 @@ router.post('/refresh', auth, async (req, res) => {
 
       // 生成新的JWT
       const token = jwt.sign(
-        { 
+        {
           id: user.id,
           iat: Math.floor(Date.now() / 1000)
         },
@@ -324,14 +330,12 @@ router.post('/refresh', auth, async (req, res) => {
         token,
         expires_in: 7 * 24 * 60 * 60
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('刷新令牌失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -346,13 +350,13 @@ router.post('/logout', auth, async (req, res) => {
   try {
     // 由于使用JWT，客户端删除token即可
     // 这里可以添加token黑名单逻辑（如果需要）
-    res.json({ 
+    res.json({
       message: '退出登录成功',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
     console.error('退出登录失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
@@ -367,7 +371,7 @@ router.get('/verify', auth, async (req, res) => {
   try {
     const userId = req.user.id
     const connection = await pool.getConnection()
-    
+
     try {
       const [users] = await connection.execute(
         'SELECT id, display_name, avatar_url FROM users WHERE id = ?',
@@ -384,18 +388,16 @@ router.get('/verify', auth, async (req, res) => {
         exp: req.user.exp,
         iat: req.user.iat
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('验证令牌失败:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       message: '服务器错误',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 })
 
-export default router 
+export default router

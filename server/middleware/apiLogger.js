@@ -33,7 +33,7 @@ function getCurrentLogFile() {
  */
 function checkLogRotation() {
   const logFile = getCurrentLogFile()
-  
+
   if (fs.existsSync(logFile)) {
     const stats = fs.statSync(logFile)
     if (stats.size > LOG_CONFIG.maxFileSize) {
@@ -101,7 +101,7 @@ function formatLogEntry(req, res, responseTime, statusCode, responseBody) {
   const userAgent = req.get('User-Agent') || 'Unknown'
   const ip = req.ip || req.connection.remoteAddress
   const requestBody = req.body ? JSON.stringify(req.body) : ''
-  
+
   const logEntry = {
     timestamp,
     method,
@@ -112,12 +112,15 @@ function formatLogEntry(req, res, responseTime, statusCode, responseBody) {
     userAgent,
     requestHeaders: {
       'content-type': req.get('Content-Type'),
-      'authorization': req.get('Authorization') ? '[HIDDEN]' : undefined
+      authorization: req.get('Authorization') ? '[HIDDEN]' : undefined
     },
     requestBody: requestBody.length > 500 ? '[LARGE_BODY]' : requestBody,
-    responseBody: typeof responseBody === 'string' && responseBody.length > 1000 ? '[LARGE_RESPONSE]' : responseBody
+    responseBody:
+      typeof responseBody === 'string' && responseBody.length > 1000
+        ? '[LARGE_RESPONSE]'
+        : responseBody
   }
-  
+
   return JSON.stringify(logEntry, null, 2)
 }
 
@@ -128,7 +131,7 @@ function writeLog(logEntry) {
   try {
     // 检查日志轮转
     checkLogRotation()
-    
+
     const logFile = getCurrentLogFile()
     const logLine = `${logEntry}\n${'='.repeat(80)}\n`
     fs.appendFileSync(logFile, logLine, 'utf8')
@@ -142,37 +145,40 @@ function writeLog(logEntry) {
  */
 export const apiLogger = (req, res, next) => {
   const startTime = Date.now()
-  
+
   // 保存原始的res.json方法
   const originalJson = res.json
   let responseBody = null
-  
+
   // 重写res.json方法来捕获响应数据
-  res.json = function(body) {
+  res.json = function (body) {
     responseBody = body
     return originalJson.call(this, body)
   }
-  
+
   // 监听响应结束事件
   res.on('finish', () => {
     const endTime = Date.now()
     const responseTime = endTime - startTime
-    
+
     try {
       // 只记录重要的API调用，过滤掉监控端点的频繁调用
       if (!req.originalUrl.includes('/monitor/') || res.statusCode >= 400) {
         const logEntry = formatLogEntry(req, res, responseTime, res.statusCode, responseBody)
         writeLog(logEntry)
       }
-      
+
       // 控制台输出（生产环境只显示错误）
       const shouldLog = LOG_CONFIG.logLevel === 'info' || res.statusCode >= 400
       if (shouldLog) {
-        const color = res.statusCode >= 400 ? '\x1b[31m' : res.statusCode >= 300 ? '\x1b[33m' : '\x1b[32m'
+        const color =
+          res.statusCode >= 400 ? '\x1b[31m' : res.statusCode >= 300 ? '\x1b[33m' : '\x1b[32m'
         const reset = '\x1b[0m'
-        
-        console.log(`${color}[API] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${responseTime}ms${reset}`)
-        
+
+        console.log(
+          `${color}[API] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${responseTime}ms${reset}`
+        )
+
         // 如果是错误，打印更详细的信息
         if (res.statusCode >= 400) {
           console.log(`${color}[ERROR] Request Body: ${JSON.stringify(req.body)}${reset}`)
@@ -185,7 +191,7 @@ export const apiLogger = (req, res, next) => {
       console.error('日志记录失败:', error)
     }
   })
-  
+
   next()
 }
 
@@ -198,31 +204,31 @@ export function getApiStats() {
     if (!fs.existsSync(logFile)) {
       return { totalCalls: 0, errorCalls: 0, averageResponseTime: 0 }
     }
-    
+
     const logContent = fs.readFileSync(logFile, 'utf8')
     const logEntries = logContent.split('='.repeat(80)).filter(entry => entry.trim())
-    
+
     let totalCalls = 0
     let errorCalls = 0
     let totalResponseTime = 0
     const methodStats = {}
     const endpointStats = {}
-    
+
     logEntries.forEach(entry => {
       try {
         const logData = JSON.parse(entry.trim())
         totalCalls++
-        
+
         if (logData.statusCode >= 400) {
           errorCalls++
         }
-        
+
         const responseTime = parseInt(logData.responseTime.replace('ms', ''))
         totalResponseTime += responseTime
-        
+
         // 统计方法
         methodStats[logData.method] = (methodStats[logData.method] || 0) + 1
-        
+
         // 统计端点
         const endpoint = logData.url.split('?')[0] // 移除查询参数
         endpointStats[endpoint] = (endpointStats[endpoint] || 0) + 1
@@ -230,12 +236,14 @@ export function getApiStats() {
         // 忽略解析错误的日志条目
       }
     })
-    
+
     return {
       totalCalls,
       errorCalls,
-      successRate: totalCalls > 0 ? ((totalCalls - errorCalls) / totalCalls * 100).toFixed(2) + '%' : '0%',
-      averageResponseTime: totalCalls > 0 ? Math.round(totalResponseTime / totalCalls) + 'ms' : '0ms',
+      successRate:
+        totalCalls > 0 ? (((totalCalls - errorCalls) / totalCalls) * 100).toFixed(2) + '%' : '0%',
+      averageResponseTime:
+        totalCalls > 0 ? Math.round(totalResponseTime / totalCalls) + 'ms' : '0ms',
       methodStats,
       endpointStats
     }
@@ -256,4 +264,4 @@ export function cleanupLogs() {
 cleanupOldLogs()
 
 // 每小时清理一次过期日志
-setInterval(cleanupOldLogs, 60 * 60 * 1000) 
+setInterval(cleanupOldLogs, 60 * 60 * 1000)

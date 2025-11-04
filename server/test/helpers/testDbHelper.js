@@ -57,9 +57,9 @@ class TestDatabaseHelper {
    * 清理单个测试创建的数据
    */
   async cleanupTestData() {
-    let connection;
+    let connection
     try {
-      connection = await pool.getConnection();
+      connection = await pool.getConnection()
       await connection.beginTransaction()
 
       // 1. 清理支付记录
@@ -88,10 +88,7 @@ class TestDatabaseHelper {
       if (this.createdUserIds.size > 0) {
         const userIds = Array.from(this.createdUserIds)
         const placeholders = userIds.map(() => '?').join(',')
-        await connection.execute(
-          `DELETE FROM users WHERE id IN (${placeholders})`,
-          userIds
-        )
+        await connection.execute(`DELETE FROM users WHERE id IN (${placeholders})`, userIds)
         console.log(`[测试数据库] 清理了 ${userIds.length} 个用户`)
       }
 
@@ -116,9 +113,9 @@ class TestDatabaseHelper {
    * 全量清理测试数据库
    */
   async cleanupAllTestData() {
-    let connection;
+    let connection
     try {
-      connection = await pool.getConnection();
+      connection = await pool.getConnection()
       await connection.beginTransaction()
 
       // 获取所有测试用户ID
@@ -140,12 +137,11 @@ class TestDatabaseHelper {
         )
 
         // 3. 清理用户数据
-        await connection.execute(
-          `DELETE FROM users WHERE id IN (${placeholders})`,
-          testUserIds
-        )
+        await connection.execute(`DELETE FROM users WHERE id IN (${placeholders})`, testUserIds)
 
-        console.log(`[测试数据库] 全量清理完成，删除了 ${testUserIds.length} 个测试用户的所有关联数据`)
+        console.log(
+          `[测试数据库] 全量清理完成，删除了 ${testUserIds.length} 个测试用户的所有关联数据`
+        )
       } else {
         console.log('[测试数据库] 没有找到测试数据，跳过清理')
       }
@@ -199,4 +195,4 @@ class TestDatabaseHelper {
 
 // 导出一个单例
 const testDbHelper = new TestDatabaseHelper()
-export default testDbHelper 
+export default testDbHelper

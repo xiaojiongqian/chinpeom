@@ -100,9 +100,10 @@ export const userApi = {
     try {
       const data = await fetchApi('/user/me')
       return data.user
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
       // 处理认证错误
-      if (error.message === '未授权，请登录' || error.message === '令牌已过期，请重新登录') {
+      if (message === '未授权，请登录' || message === '令牌已过期，请重新登录') {
         this.logout()
       }
       throw error

@@ -15,7 +15,7 @@ async function updateDatabase() {
 
   try {
     console.log('🔧 更新数据库结构...')
-    
+
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 3306,
@@ -36,23 +36,29 @@ async function updateDatabase() {
     })
 
     // 检查provider和provider_user_id字段是否存在
-    const [providerColumns] = await connection.execute(`
+    const [providerColumns] = await connection.execute(
+      `
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'third_party_accounts' AND COLUMN_NAME IN ('provider', 'provider_user_id')
-    `, [process.env.DB_NAME || 'poem2ndguess'])
+    `,
+      [process.env.DB_NAME || 'poem2ndguess']
+    )
 
     if (providerColumns.length < 2) {
       // 检查是否使用了旧的字段名
-      const [oldColumns] = await connection.execute(`
+      const [oldColumns] = await connection.execute(
+        `
         SELECT COLUMN_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'third_party_accounts' AND COLUMN_NAME IN ('platform', 'platform_user_id')
-      `, [process.env.DB_NAME || 'poem2ndguess'])
+      `,
+        [process.env.DB_NAME || 'poem2ndguess']
+      )
 
       if (oldColumns.length === 2) {
         console.log('🔄 重命名字段以匹配代码...')
-        
+
         // 重命名字段以匹配代码
         await connection.execute(`
           ALTER TABLE third_party_accounts 
@@ -83,8 +89,12 @@ async function updateDatabase() {
         } catch (e) {
           console.log('ℹ️  索引idx_platform不存在，跳过删除')
         }
-        await connection.execute('ALTER TABLE third_party_accounts ADD UNIQUE KEY unique_provider_user (provider, provider_user_id)')
-        await connection.execute('ALTER TABLE third_party_accounts ADD INDEX idx_provider (provider)')
+        await connection.execute(
+          'ALTER TABLE third_party_accounts ADD UNIQUE KEY unique_provider_user (provider, provider_user_id)'
+        )
+        await connection.execute(
+          'ALTER TABLE third_party_accounts ADD INDEX idx_provider (provider)'
+        )
         console.log('✅ 索引已更新')
       }
     } else {
@@ -92,11 +102,14 @@ async function updateDatabase() {
     }
 
     // 检查access_token字段是否存在
-    const [tokenColumns] = await connection.execute(`
+    const [tokenColumns] = await connection.execute(
+      `
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'third_party_accounts' AND COLUMN_NAME = 'access_token'
-    `, [process.env.DB_NAME || 'poem2ndguess'])
+    `,
+      [process.env.DB_NAME || 'poem2ndguess']
+    )
 
     if (tokenColumns.length === 0) {
       // 添加access_token字段
@@ -110,11 +123,14 @@ async function updateDatabase() {
     }
 
     // 检查是否存在firebase_uid字段
-    const [columns] = await connection.execute(`
+    const [columns] = await connection.execute(
+      `
       SELECT COLUMN_NAME 
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'third_party_accounts' AND COLUMN_NAME = 'firebase_uid'
-    `, [process.env.DB_NAME || 'poem2ndguess'])
+    `,
+      [process.env.DB_NAME || 'poem2ndguess']
+    )
 
     if (columns.length === 0) {
       // 添加firebase_uid字段
@@ -141,7 +157,6 @@ async function updateDatabase() {
     })
 
     console.log('\n🎉 数据库更新完成！')
-
   } catch (error) {
     console.error('❌ 数据库更新失败:', error.message)
     console.error(error.stack)
@@ -159,4 +174,4 @@ if (process.argv.includes('--run') || process.argv.includes('update')) {
 } else {
   console.log('使用方法: node updateDatabase.js --run')
   console.log('或者: npm run db:update')
-} 
+}

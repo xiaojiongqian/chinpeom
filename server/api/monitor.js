@@ -33,8 +33,12 @@ router.get('/stats', async (req, res) => {
 router.get('/logs', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50
-    const logFile = path.join(process.cwd(), 'logs', `api-${new Date().toISOString().split('T')[0]}.log`)
-    
+    const logFile = path.join(
+      process.cwd(),
+      'logs',
+      `api-${new Date().toISOString().split('T')[0]}.log`
+    )
+
     if (!fs.existsSync(logFile)) {
       return res.json({
         success: true,
@@ -42,9 +46,10 @@ router.get('/logs', async (req, res) => {
         message: '今日暂无API调用日志'
       })
     }
-    
+
     const logContent = fs.readFileSync(logFile, 'utf8')
-    const logEntries = logContent.split('='.repeat(80))
+    const logEntries = logContent
+      .split('='.repeat(80))
       .filter(entry => entry.trim())
       .slice(-limit) // 获取最近的N条
       .map(entry => {
@@ -56,7 +61,7 @@ router.get('/logs', async (req, res) => {
       })
       .filter(entry => entry !== null)
       .reverse() // 最新的在前面
-    
+
     res.json({
       success: true,
       data: logEntries,
@@ -78,7 +83,7 @@ router.get('/logs', async (req, res) => {
 router.get('/logs/info', async (req, res) => {
   try {
     const logDir = path.join(process.cwd(), 'logs')
-    
+
     if (!fs.existsSync(logDir)) {
       return res.json({
         success: true,
@@ -89,7 +94,7 @@ router.get('/logs/info', async (req, res) => {
         }
       })
     }
-    
+
     const files = fs.readdirSync(logDir)
     const logFiles = files
       .filter(file => file.startsWith('api-') && file.endsWith('.log'))
@@ -106,9 +111,9 @@ router.get('/logs/info', async (req, res) => {
         }
       })
       .sort((a, b) => b.modified - a.modified)
-    
+
     const totalSize = logFiles.reduce((sum, file) => sum + file.size, 0)
-    
+
     res.json({
       success: true,
       data: {
@@ -136,7 +141,7 @@ router.get('/status', async (req, res) => {
     const stats = getApiStats()
     const uptime = process.uptime()
     const memoryUsage = process.memoryUsage()
-    
+
     res.json({
       success: true,
       data: {
@@ -148,9 +153,9 @@ router.get('/status', async (req, res) => {
           environment: process.env.NODE_ENV || 'development'
         },
         memory: {
-          used: Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100,
-          total: Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100,
-          external: Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100,
+          used: Math.round((memoryUsage.heapUsed / 1024 / 1024) * 100) / 100,
+          total: Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
+          external: Math.round((memoryUsage.external / 1024 / 1024) * 100) / 100,
           unit: 'MB'
         },
         api: stats,
@@ -176,9 +181,9 @@ router.delete('/logs', async (req, res) => {
     const logDir = path.join(process.cwd(), 'logs')
     let deletedFiles = 0
     let message = ''
-    
+
     switch (cleanupType) {
-      case 'today':
+      case 'today': {
         // 清理今日日志
         const todayLogFile = path.join(logDir, `api-${new Date().toISOString().split('T')[0]}.log`)
         if (fs.existsSync(todayLogFile)) {
@@ -187,19 +192,21 @@ router.delete('/logs', async (req, res) => {
         }
         message = '今日日志已清理'
         break
-        
-      case 'old':
+      }
+
+      case 'old': {
         // 清理过期日志（调用apiLogger的清理函数）
         cleanupLogs()
         message = '过期日志已清理'
         break
-        
-      case 'all':
+      }
+
+      case 'all': {
         // 清理所有日志文件
         if (fs.existsSync(logDir)) {
           const files = fs.readdirSync(logDir)
           const logFiles = files.filter(file => file.startsWith('api-') && file.endsWith('.log'))
-          
+
           logFiles.forEach(file => {
             try {
               fs.unlinkSync(path.join(logDir, file))
@@ -211,14 +218,15 @@ router.delete('/logs', async (req, res) => {
         }
         message = `所有日志已清理 (${deletedFiles} 个文件)`
         break
-        
+      }
+
       default:
         return res.status(400).json({
           success: false,
           error: '无效的清理类型，支持: today, old, all'
         })
     }
-    
+
     res.json({
       success: true,
       message: message,
@@ -238,12 +246,12 @@ router.delete('/logs', async (req, res) => {
  */
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes'
-  
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export default router 
+export default router

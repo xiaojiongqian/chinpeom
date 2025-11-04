@@ -21,7 +21,7 @@ interface LoginResponse {
     difficulty_mode?: string
     hint_language?: string
     sound_enabled?: boolean
-    firebase_uid?: string  // 新增Firebase UID字段
+    firebase_uid?: string // 新增Firebase UID字段
   }
   token: string
   expires_in: number
@@ -35,10 +35,10 @@ class RealAuthService {
 
   async login(provider: string): Promise<LoginResponse> {
     logger.info(`[RealAPI] 开始${provider}登录`)
-    
+
     let accessToken: string
     let firebaseUid: string | undefined
-    
+
     if (provider === 'google') {
       // 使用Firebase进行Google登录
       try {
@@ -55,16 +55,16 @@ class RealAuthService {
       // 其他登录方式使用模拟token
       accessToken = `test_${provider}_token`
     }
-    
+
     const response = await fetch(`${this.baseUrl}/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         provider,
         access_token: accessToken,
-        firebase_uid: firebaseUid  // 发送Firebase UID到后端
+        firebase_uid: firebaseUid // 发送Firebase UID到后端
       })
     })
 
@@ -75,14 +75,14 @@ class RealAuthService {
 
     const data = await response.json()
     logger.info(`[RealAPI] ${provider}登录成功:`, data.user.display_name)
-    
+
     return data
   }
 
   async logout(): Promise<void> {
     logger.info('[RealAPI] 用户登出')
     const token = localStorage.getItem('auth_token')
-    
+
     // Firebase登出
     try {
       await firebaseAuth.signOut()
@@ -90,21 +90,21 @@ class RealAuthService {
     } catch (error) {
       logger.warn('[RealAPI] Firebase登出失败:', error)
     }
-    
+
     if (token) {
       try {
         await fetch(`${this.baseUrl}/auth/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         })
       } catch (error) {
         logger.warn('[RealAPI] 登出请求失败:', error)
       }
     }
-    
+
     localStorage.removeItem('auth_token')
   }
 }
@@ -115,12 +115,12 @@ class RealAuthService {
 class MockAuthService {
   async login(provider: string): Promise<LoginResponse> {
     logger.info(`[MockAPI] 模拟${provider}登录`)
-    
+
     // 模拟网络延迟
     await new Promise(resolve => setTimeout(resolve, 300))
-    
+
     let mockUserData
-    
+
     if (provider === 'google') {
       // Google登录使用Firebase进行真实认证（即使在Mock模式下）
       try {
@@ -173,7 +173,7 @@ class MockAuthService {
 
   async logout(): Promise<void> {
     logger.info('[MockAPI] 模拟用户登出')
-    
+
     // Firebase登出（即使在Mock模式下也需要真实登出Firebase）
     try {
       await firebaseAuth.signOut()
@@ -181,7 +181,7 @@ class MockAuthService {
     } catch (error) {
       logger.warn('[MockAPI] Firebase登出失败:', error)
     }
-    
+
     localStorage.removeItem('auth_token')
   }
 
@@ -208,15 +208,16 @@ class AuthApiService {
 
   async login(provider: 'wechat' | 'google' | 'apple'): Promise<LoginResponse> {
     try {
-      const result = this.currentMode === 'Mock' 
-        ? await this.mockService.login(provider)
-        : await this.realService.login(provider)
-      
+      const result =
+        this.currentMode === 'Mock'
+          ? await this.mockService.login(provider)
+          : await this.realService.login(provider)
+
       // 保存token到本地存储
       if (result.token) {
         localStorage.setItem('auth_token', result.token)
       }
-      
+
       return result
     } catch (error) {
       logger.error('登录失败:', error)
@@ -270,27 +271,27 @@ class AuthApiService {
       // Mock模式下不需要检查redirect结果
       return null
     }
-    
+
     try {
       logger.info('[AuthAPI] 检查Firebase redirect认证结果')
-      
+
       // 直接使用Firebase原生API检查redirect结果
       const { getRedirectResult } = await import('firebase/auth')
       const { auth } = await import('@/config/firebase')
       const redirectResult = await getRedirectResult(auth)
-      
+
       if (redirectResult) {
         logger.info('[AuthAPI] 发现redirect认证结果，发送到后端验证')
-        
+
         // 获取Firebase ID Token
         const firebaseIdToken = await redirectResult.user.getIdToken()
         logger.info('[AuthAPI] 获取到Firebase ID Token，发送到后端验证')
-        
+
         // 发送到后端验证
         const response = await fetch(`${appConfig.api.baseUrl}/auth/login`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             provider: 'google',
@@ -306,17 +307,17 @@ class AuthApiService {
 
         const data = await response.json()
         logger.info('[AuthAPI] Redirect认证流程完成:', data.user.display_name)
-        
+
         // 保存token到本地存储
         if (data.token) {
           localStorage.setItem('auth_token', data.token)
         }
-        
+
         return data
       }
-      
+
       return null
-    } catch (error: any) {
+    } catch (error) {
       logger.error('[AuthAPI] 检查redirect结果失败:', error)
       throw error
     }
@@ -325,4 +326,4 @@ class AuthApiService {
 
 // 导出单例实例
 export const authApi = new AuthApiService()
-export default authApi 
+export default authApi

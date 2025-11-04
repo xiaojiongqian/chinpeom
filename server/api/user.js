@@ -15,10 +15,9 @@ router.get('/profile', auth, async (req, res) => {
     const connection = await pool.getConnection()
 
     try {
-      const [users] = await connection.execute(
-        'SELECT * FROM v_user_profile WHERE id = ?',
-        [userId]
-      )
+      const [users] = await connection.execute('SELECT * FROM v_user_profile WHERE id = ?', [
+        userId
+      ])
 
       if (users.length === 0) {
         return res.status(404).json({ message: '用户不存在' })
@@ -49,11 +48,9 @@ router.get('/profile', auth, async (req, res) => {
           last_sync_at: user.last_sync_at
         }
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('获取用户信息失败:', error)
     res.status(500).json({ message: '服务器错误' })
@@ -80,10 +77,9 @@ router.put('/score', auth, async (req, res) => {
       await connection.execute('CALL SyncUserScore(?, ?)', [userId, total_score])
 
       // 获取更新后的用户信息
-      const [users] = await connection.execute(
-        'SELECT * FROM v_user_profile WHERE id = ?',
-        [userId]
-      )
+      const [users] = await connection.execute('SELECT * FROM v_user_profile WHERE id = ?', [
+        userId
+      ])
 
       if (users.length === 0) {
         return res.status(404).json({ message: '用户不存在' })
@@ -103,11 +99,9 @@ router.put('/score', auth, async (req, res) => {
           last_sync_at: user.last_sync_at
         }
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('同步积分失败:', error)
     res.status(500).json({ message: '服务器错误' })
@@ -197,11 +191,9 @@ router.put('/settings', auth, async (req, res) => {
           sound_enabled: Boolean(users[0].sound_enabled)
         }
       })
-
     } finally {
       connection.release()
     }
-
   } catch (error) {
     console.error('更新设置失败:', error)
     res.status(500).json({ message: '服务器错误' })

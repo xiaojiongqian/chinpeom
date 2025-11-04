@@ -44,9 +44,10 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (obj instanceof Object) {
-    const copy = {} as Record<string, any>
-    Object.keys(obj).forEach(key => {
-      copy[key] = deepClone((obj as Record<string, any>)[key])
+    const source = obj as Record<string, unknown>
+    const copy: Record<string, unknown> = {}
+    Object.keys(source).forEach(key => {
+      copy[key] = deepClone(source[key])
     })
     return copy as T
   }
@@ -60,7 +61,7 @@ export function deepClone<T>(obj: T): T {
  * @param delay 延迟时间（毫秒）
  * @returns 节流后的函数
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -80,11 +81,11 @@ export function throttle<T extends (...args: any[]) => any>(
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  let timer: number | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
   return function (...args: Parameters<T>) {
     if (timer) {
       clearTimeout(timer)
@@ -92,7 +93,7 @@ export function debounce<T extends (...args: any[]) => any>(
     timer = setTimeout(() => {
       fn(...args)
       timer = null
-    }, delay) as unknown as number
+    }, delay)
   }
 }
 

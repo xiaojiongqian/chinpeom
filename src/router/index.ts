@@ -2,8 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import SettingsView from '../views/SettingsView.vue'
 import AchievementView from '../views/AchievementView.vue'
-import ComponentsView from '../views/ComponentsView.vue'
-import PoemDetailView from '../views/PoemDetailView.vue'
+import OnboardingView from '../views/OnboardingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,16 +20,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('../views/QuizView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAccount: true }
     },
     {
       path: '/quizview',
-      redirect: '/'  // 重定向到根路径
+      redirect: '/' // 重定向到根路径
     },
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/LoginView.vue')
+      path: '/onboarding',
+      name: 'onboarding',
+      component: OnboardingView
     },
     {
       path: '/settings',
@@ -45,13 +44,14 @@ const router = createRouter({
     {
       path: '/components',
       name: 'components',
-      component: () => import('../views/ComponentsView.vue'),
+      component: () => import('../views/ComponentsView.vue')
     },
     {
       path: '/poem/:id',
       name: 'PoemDetail',
       component: () => import('../views/PoemDetailView.vue'),
       props: true,
+      meta: { requiresAccount: true }
     }
   ]
 })
@@ -59,29 +59,21 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
-  
-  console.log('[Router] 路由守卫检查:', {
-    toPath: to.path,
-    toName: to.name,
-    requiresAuth: to.meta.requiresAuth,
-    isLoggedIn: userStore.isLoggedIn
-  })
+  const needsAccount = !!to.meta.requiresAccount
 
-  // 如果去登录页面但已经登录了，重定向到主页
-  if (to.name === 'login' && userStore.isLoggedIn) {
-    console.log('[Router] 已登录用户访问登录页，重定向到主页')
+  if (needsAccount && !userStore.isAccountReady) {
+    // 如果账户未就绪，跳转到引导页
+    if (to.name !== 'onboarding') {
+      next({ name: 'onboarding' })
+      return
+    }
+  }
+
+  if (to.name === 'onboarding' && userStore.isAccountReady) {
     next({ name: 'home' })
     return
   }
 
-  // 如果页面需要登录且用户未登录，重定向到登录页
-  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    console.log('[Router] 需要登录但用户未登录，重定向到登录页')
-    next({ name: 'login' })
-    return
-  }
-
-  // 其他情况直接通过
   next()
 })
 

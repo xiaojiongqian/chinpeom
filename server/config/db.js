@@ -12,13 +12,13 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT, 10) || 3306,
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || 'juphoon419708',
   database: process.env.DB_NAME || 'poem2ndguess',
   connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10,
   charset: 'utf8mb4',
   timezone: '+08:00',
   waitForConnections: true,
-  queueLimit: 0,
+  queueLimit: 0
 }
 
 /**
@@ -35,4 +35,4 @@ pool.on('release', function (connection) {
   console.log('✅ [DB Pool] Connection %d released', connection.threadId)
 })
 
-export default pool 
+export default pool

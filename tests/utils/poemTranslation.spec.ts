@@ -49,7 +49,7 @@ describe('诗歌翻译功能', () => {
         ok: true
       }
       // global.fetch.mockResolvedValue(mockResponse) // 使用 mockedFetch
-      mockedFetch.mockResolvedValue(mockResponse as any) // 使用 as any 避免类型错误
+      mockedFetch.mockResolvedValue(mockResponse as unknown as Response)
 
       const poems = await loadPoemData('chinese')
 
@@ -75,7 +75,7 @@ describe('诗歌翻译功能', () => {
         },
         body: null,
         bodyUsed: false
-      } as any)
+      } as unknown as Response)
 
       // 在测试环境中，应该返回默认的测试数据而不是抛出错误
       const result = await loadPoemData('english')

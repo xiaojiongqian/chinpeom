@@ -61,6 +61,50 @@ export type HintLanguage = Language | 'none'
 export type SupportedLanguage = 'chinese' | 'english' | 'french' | 'spanish' | 'german' | 'japanese'
 
 /**
+ * 账户统计信息
+ */
+export interface AccountStats {
+  totalAnswered: number
+  correctAnswers: number
+  incorrectAnswers: number
+  lastAnsweredAt: string | null
+}
+
+/**
+ * 账户偏好设置
+ */
+export interface AccountPreferences {
+  musicEnabled: boolean
+  musicTrack?: string | null
+}
+
+/**
+ * 本地账户状态
+ */
+export interface AccountState {
+  accountName: string
+  displayName: string
+  score: number
+  language: SupportedLanguage
+  difficulty: DifficultyMode
+  createdAt: string
+  lastUpdatedAt: string
+  stats: AccountStats
+  version: number
+  preferences?: AccountPreferences
+  rank?: AcademicRank
+}
+
+/**
+ * 当前激活账户信息
+ */
+export interface ActiveAccountInfo {
+  accountName: string
+  switchedAt: string
+  schemaVersion?: number
+}
+
+/**
  * 难度模式类型
  */
 export type DifficultyMode = 'easy' | 'hard'
@@ -80,23 +124,6 @@ export type AcademicRank =
   | 'rank.tanHua'
   | 'rank.bangYan'
   | 'rank.zhuangYuan'
-
-/**
- * 得分与学级称号映射
- */
-export const RANK_SCORE_MAPPING: Record<AcademicRank, { min: number; max: number }> = {
-  'rank.baiDing': { min: 0, max: 10 },
-  'rank.xueTong': { min: 11, max: 25 },
-  'rank.xiuCai': { min: 26, max: 45 },
-  'rank.linSheng': { min: 46, max: 70 },
-  'rank.gongSheng': { min: 71, max: 100 },
-  'rank.juRen': { min: 101, max: 135 },
-  'rank.gongShi': { min: 136, max: 175 },
-  'rank.jinShi': { min: 176, max: 220 },
-  'rank.tanHua': { min: 221, max: 280 },
-  'rank.bangYan': { min: 281, max: 340 },
-  'rank.zhuangYuan': { min: 341, max: Infinity }
-}
 
 /**
  * 语言设置选项

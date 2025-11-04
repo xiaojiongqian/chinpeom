@@ -45,7 +45,9 @@ export async function loadJsonFile<T>(path: string): Promise<T> {
       logger.debug(`ResourceLoader: 请求完成 ${fullPath}, 状态: ${response.status}`)
 
       if (!response.ok) {
-        logger.error(`ResourceLoader: 请求失败 ${fullPath}: ${response.status} ${response.statusText}`)
+        logger.error(
+          `ResourceLoader: 请求失败 ${fullPath}: ${response.status} ${response.statusText}`
+        )
         throw new Error(`请求失败: ${response.status} ${response.statusText}`)
       }
 
@@ -63,7 +65,7 @@ export async function loadJsonFile<T>(path: string): Promise<T> {
 
     if (isTestEnv && isNetworkError) {
       logger.warn(`ResourceLoader: 测试环境网络错误，使用模拟数据 ${path}`)
-      
+
       // 在测试环境中，如果网络请求失败，返回模拟数据
       if (path.includes('chinese') || path.includes('poems')) {
         const mockChinesePoems: ChinesePoem[] = [
@@ -78,7 +80,7 @@ export async function loadJsonFile<T>(path: string): Promise<T> {
         ]
         return mockChinesePoems as unknown as T
       }
-      
+
       // 其他类型的模拟数据
       return [] as unknown as T
     }
@@ -181,7 +183,9 @@ export function getPoemImageUrl(poemId: string): string {
  * @param languages 要加载的语言列表
  * @returns 包含各语言诗歌数据的对象
  */
-export async function loadPoemDataUtil(languages: string[]): Promise<Record<string, ChinesePoem[]>> {
+export async function loadPoemDataUtil(
+  languages: string[]
+): Promise<Record<string, ChinesePoem[]>> {
   const result: Record<string, ChinesePoem[]> = {}
 
   try {

@@ -31,8 +31,8 @@ export function createDisplayContent(
   poem: Poem | null,
   translation: TranslatedPoem | null,
   sentenceIndex: number,
-  difficulty: DifficultyMode,
-  language: SupportedLanguage
+  difficulty: DifficultyMode = 'easy',
+  language: SupportedLanguage = 'chinese'
 ): string[] | null {
   if (!poem) return null
 
@@ -44,8 +44,7 @@ export function createDisplayContent(
 
   // 困难模式：用星号替换
   if (difficulty === 'hard') {
-    const originalLine = displayLines[sentenceIndex]
-    displayLines[sentenceIndex] = '★'.repeat(originalLine.length)
+    displayLines[sentenceIndex] = '***'
     return displayLines
   }
 
@@ -56,8 +55,7 @@ export function createDisplayContent(
       displayLines[sentenceIndex] = translation.sentence[sentenceIndex].content
     } else {
       // 降级处理：如果没有翻译，显示星号
-      const originalLine = displayLines[sentenceIndex]
-      displayLines[sentenceIndex] = '★'.repeat(originalLine.length)
+      displayLines[sentenceIndex] = '***'
     }
     return displayLines
   }

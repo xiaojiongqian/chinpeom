@@ -69,4 +69,4 @@ app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../dist/index.html'))
 })
 
-export default app 
+export default app
