@@ -28,16 +28,7 @@ export async function checkResourceFiles(): Promise<{ success: boolean; errors: 
     }
   }
 
-  // 检查是否有诗歌图片文件夹
-  try {
-    const imagesUrl = resolveResourcePath('resource/poem_images/')
-    const response = await fetch(imagesUrl, { method: 'HEAD' })
-    if (!response.ok) {
-      errors.push(`诗歌图片文件夹未找到: ${imagesUrl}`)
-    }
-  } catch (error) {
-    // 某些服务器可能不允许列出目录内容，这里可以忽略
-  }
+  // 诗歌图片资源通过具体文件加载时验证，静态托管平台通常不支持目录级探测，因此此处不再发起额外请求。
 
   return {
     success: errors.length === 0,
